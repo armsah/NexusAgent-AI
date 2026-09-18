@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NexusAgent.Api/NexusAgent.Api.csproj" />
+    <Project Path="src/NexusAgent.Application/NexusAgent.Application.csproj" />
+    <Project Path="src/NexusAgent.Domain/NexusAgent.Domain.csproj" />
+    <Project Path="src/NexusAgent.Infrastructure/NexusAgent.Infrastructure.csproj" />
+    <Project Path="src/NexusAgent.Workers/NexusAgent.Workers.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NexusAgent.ArchitectureTests/NexusAgent.ArchitectureTests.csproj" />
+    <Project Path="tests/NexusAgent.IntegrationTests/NexusAgent.IntegrationTests.csproj" />
+    <Project Path="tests/NexusAgent.UnitTests/NexusAgent.UnitTests.csproj" />
+  </Folder>
+</Solution>

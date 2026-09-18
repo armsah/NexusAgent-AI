@@ -10,25 +10,206 @@ The system is designed around a fundamental separation:
 
 ## Project Status
 
-**Current milestone:** P0 — Architecture & Governance Baseline
+**Current milestone:** P1 — Core Application Foundation
 
-P0 defines the system's scope, architecture, security boundaries, autonomy model, non-functional requirements, and evaluation strategy before implementation begins.
+P0 established the architecture, governance model, threat model, autonomy policy, non-functional requirements, and evaluation strategy.
 
-### P0 Status
+P1 implements the first executable platform foundation: a layered .NET solution, application-owned workflow state machine, ASP.NET Core API, PostgreSQL persistence, database migrations, health/readiness probes, and automated architecture, unit, and integration tests.
 
-| Deliverable                              | Status   |
-| ---------------------------------------- | -------- |
-| Problem statement                        | Complete |
-| Data classification                      | Complete |
-| Non-functional requirements              | Complete |
-| Architecture specification               | Complete |
-| ADR-001: Application-owned orchestration | Complete |
-| ADR-002: Azure AI Search                 | Complete |
-| Threat model                             | Complete |
-| Autonomy/human-approval policy           | Complete |
-| Evaluation specification                 | Complete |
+### Phase Status
 
-**P0 exit condition:** scope and quality gates are explicit.
+| Phase | Deliverable                        | Status   |
+| ----- | ---------------------------------- | -------- |
+| P0    | Architecture & Governance Baseline | Complete |
+| P1    | Core Application Foundation        | Complete |
+| P2    | Terraform Azure Baseline           | Next     |
+
+### P1 Evidence
+
+P1 currently provides:
+
+- .NET 10 solution with explicit Domain, Application, Infrastructure, API, and Workers boundaries;
+- application-owned workflow lifecycle and state-transition invariants;
+- PostgreSQL persistence through Entity Framework Core and Npgsql;
+- EF Core migration for workflow and workflow-step state;
+- server-derived development requester and tenant identity;
+- ASP.NET Core workflow lifecycle endpoints;
+- string-based workflow status serialization in the HTTP contract;
+- liveness and PostgreSQL-backed readiness endpoints;
+- Docker Compose PostgreSQL development environment;
+- automated unit, PostgreSQL integration, and architecture dependency tests;
+- manual end-to-end verification of `Created → Running → Completed` persistence.
+
+**P1 exit condition:** the core request lifecycle works locally with durable PostgreSQL state and enforced application boundaries.
+
+---
+
+## P1 Local Development
+
+### Prerequisites
+
+- .NET SDK 10
+- Docker Desktop with Linux containers
+- Docker Compose
+
+The repository pins the .NET SDK through `global.json`.
+
+### Start PostgreSQL
+
+P1 uses PostgreSQL 17 locally through Docker Compose:
+
+```powershell
+docker compose up -d
+docker compose ps
+```
+
+The container exposes PostgreSQL on host port `15432`:
+
+```text
+127.0.0.1:15432 -> container:5432
+```
+
+Port `15432` is intentionally used to avoid collisions with locally installed PostgreSQL instances that commonly use port `5432`.
+
+The credentials in `compose.yaml` are development-only credentials and must not be reused for deployed environments.
+
+### Configure the API Connection
+
+Set the connection string in the PowerShell session that will run the API:
+
+```powershell
+$env:ConnectionStrings__NexusAgent="Host=127.0.0.1;Port=15432;Database=nexusagent;Username=nexusagent;Password=nexusagent_dev_only"
+```
+
+The connection string is supplied through configuration rather than embedded in application source code.
+
+### Apply Database Migrations
+
+Restore the local EF Core tool if required:
+
+```powershell
+dotnet tool restore
+```
+
+Apply the current migration:
+
+```powershell
+dotnet ef database update `
+  --project src\NexusAgent.Infrastructure\NexusAgent.Infrastructure.csproj `
+  --startup-project src\NexusAgent.Api\NexusAgent.Api.csproj
+```
+
+P1 creates durable `workflows` and `workflow_steps` state in PostgreSQL.
+
+### Run the API
+
+```powershell
+dotnet run `
+  --project src\NexusAgent.Api\NexusAgent.Api.csproj `
+  --urls http://localhost:5080
+```
+
+### Health and Readiness
+
+Liveness:
+
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:5080/health" `
+  -Method Get
+```
+
+Database-backed readiness:
+
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:5080/health/ready" `
+  -Method Get
+```
+
+A healthy local environment returns `healthy` for liveness and `ready` when the API can connect to PostgreSQL.
+
+### Workflow Lifecycle API
+
+Create a workflow:
+
+```powershell
+$workflow = Invoke-RestMethod `
+  -Uri "http://localhost:5080/api/workflows/" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"request":"Verify the NexusAgent workflow lifecycle."}'
+
+$workflowId = $workflow.id
+```
+
+Retrieve it:
+
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:5080/api/workflows/$workflowId" `
+  -Method Get
+```
+
+Start it:
+
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:5080/api/workflows/$workflowId/start" `
+  -Method Post
+```
+
+Complete it:
+
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:5080/api/workflows/$workflowId/complete" `
+  -Method Post
+```
+
+The verified P1 lifecycle is:
+
+```text
+Created -> Running -> Completed
+```
+
+Additional domain transitions support approval waiting, failure, and cancellation, while later phases add the governance mechanisms that drive those transitions.
+
+### Development Identity
+
+P1 derives a fixed development identity on the server:
+
+```text
+requesterId = local-developer
+tenantId    = local-development
+```
+
+Requester and tenant identity are not accepted from the workflow request body as authoritative identity.
+
+This is a local-development mechanism only. P3 replaces it with Microsoft Entra authentication and managed workload identity.
+
+### Build and Test
+
+Build the complete solution:
+
+```powershell
+dotnet build NexusAgent.slnx
+```
+
+Run all automated tests:
+
+```powershell
+dotnet test NexusAgent.slnx --no-build
+```
+
+The P1 test suite covers:
+
+- domain workflow invariants and state transitions;
+- application behavior;
+- PostgreSQL workflow persistence;
+- architectural dependency boundaries.
+
+The PostgreSQL integration test requires the local Docker Compose database to be running on port `15432`.
 
 ---
 
@@ -397,11 +578,15 @@ PostgreSQL remains the transactional workflow/governance store.
 
 ---
 
-## Target Repository Structure
+## Repository Structure
 
 ```text
 .
 ├── README.md
+├── NexusAgent.slnx
+├── global.json
+├── dotnet-tools.json
+├── compose.yaml
 ├── docs/
 │   ├── architecture/
 │   ├── adr/
@@ -411,60 +596,45 @@ PostgreSQL remains the transactional workflow/governance store.
 │   ├── runbooks/
 │   └── cost/
 ├── src/
-│   ├── api/
-│   ├── orchestration/
-│   ├── workers/
-│   ├── tool-gateway/
-│   ├── domain/
-│   └── python/
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   ├── contract/
-│   ├── e2e/
-│   ├── ai-quality/
-│   ├── adversarial/
-│   └── load/
-├── evals/
-│   ├── datasets/
-│   ├── scorers/
-│   └── baselines/
-├── infra/
-│   ├── bootstrap/
-│   ├── modules/
-│   └── environments/
-└── .github/
-    └── workflows/
+│   ├── NexusAgent.Domain/
+│   ├── NexusAgent.Application/
+│   ├── NexusAgent.Infrastructure/
+│   ├── NexusAgent.Api/
+│   └── NexusAgent.Workers/
+└── tests/
+    ├── NexusAgent.UnitTests/
+    ├── NexusAgent.IntegrationTests/
+    └── NexusAgent.ArchitectureTests/
 ```
 
-The repository is populated incrementally as each implementation phase is completed.
+P1 establishes the executable solution boundaries. Additional components such as retrieval, AI adapters, the Tool Gateway, evaluation infrastructure, and Azure deployment assets are introduced incrementally in later phases.
 
 ---
 
 ## Implementation Roadmap
 
-| Phase  | Deliverable                                                                           |
-| ------ | ------------------------------------------------------------------------------------- |
-| **P0** | **Architecture, governance, threat model, autonomy policy, evaluation specification** |
-| P1     | .NET solution, API, boundaries, PostgreSQL workflow state                             |
-| P2     | Terraform Azure baseline                                                              |
-| P3     | Entra authentication, managed identity, GitHub OIDC                                   |
-| P4     | Document ingestion and versioning                                                     |
-| P5     | Azure AI Search hybrid/vector retrieval + ACL metadata                                |
-| P6     | Foundry/Azure OpenAI model adapter                                                    |
-| P7     | Grounded Q&A with stable citations                                                    |
-| P8     | Query rewrite, reranking, context budgeting                                           |
-| P9     | Supervisor + Knowledge/Policy agent orchestration                                     |
-| P10    | Typed Tool Gateway                                                                    |
-| P11    | Risk engine + human approval                                                          |
-| P12    | Service Bus async execution, retries, DLQ                                             |
-| P13    | Verification Agent + deterministic postconditions                                     |
-| P14    | Offline evaluation harness and release gates                                          |
-| P15    | Prompt-injection/content-safety test suite                                            |
-| P16    | End-to-end OpenTelemetry/Application Insights                                         |
-| P17    | Token and cost budgets                                                                |
-| P18    | Production-reference private networking                                               |
-| P19    | Load, failure, rollback benchmark and runbooks                                        |
+| Phase  | Deliverable                                                                        |
+| ------ | ---------------------------------------------------------------------------------- |
+| **P0** | **Complete — Architecture, governance, threat model, autonomy, evaluation design** |
+| **P1** | **Complete — .NET solution, API, boundaries, PostgreSQL workflow state**           |
+| **P2** | **Next — Terraform Azure baseline**                                                |
+| P3     | Entra authentication, managed identity, GitHub OIDC                                |
+| P4     | Document ingestion and versioning                                                  |
+| P5     | Azure AI Search hybrid/vector retrieval + ACL metadata                             |
+| P6     | Foundry/Azure OpenAI model adapter                                                 |
+| P7     | Grounded Q&A with stable citations                                                 |
+| P8     | Query rewrite, reranking, context budgeting                                        |
+| P9     | Supervisor + Knowledge/Policy agent orchestration                                  |
+| P10    | Typed Tool Gateway                                                                 |
+| P11    | Risk engine + human approval                                                       |
+| P12    | Service Bus async execution, retries, DLQ                                          |
+| P13    | Verification Agent + deterministic postconditions                                  |
+| P14    | Offline evaluation harness and release gates                                       |
+| P15    | Prompt-injection/content-safety test suite                                         |
+| P16    | End-to-end OpenTelemetry/Application Insights                                      |
+| P17    | Token and cost budgets                                                             |
+| P18    | Production-reference private networking                                            |
+| P19    | Load, failure, rollback benchmark and runbooks                                     |
 
 ---
 
@@ -490,17 +660,21 @@ docs/
     └── threat-model.md
 ```
 
-## Current Phase Exit
+## P1 Phase Exit
 
-P0 establishes:
+P1 establishes:
 
-- explicit project scope;
-- data classification;
-- measurable NFRs;
-- system architecture and trust boundaries;
-- documented architectural decisions;
-- threat model and prompt-injection attack paths;
-- bounded autonomy and human-approval policy;
-- evaluation metrics and hard safety gates.
+- a buildable .NET 10 solution with explicit architectural boundaries;
+- application-owned workflow state and transition invariants;
+- ASP.NET Core lifecycle endpoints;
+- durable PostgreSQL workflow persistence through EF Core;
+- reproducible database migrations;
+- server-derived local development identity;
+- liveness and database-backed readiness probes;
+- string-based workflow status contracts;
+- automated unit, PostgreSQL integration, and architecture tests;
+- verified local `Created → Running → Completed` request lifecycle.
 
-**Next phase:** P1 — Core Application Foundation.
+P1 deliberately does not implement production authentication, RAG, model invocation, multi-agent orchestration, privileged tool execution, human approval records, Azure infrastructure, or production observability. Those capabilities remain assigned to subsequent phases.
+
+**Next phase:** P2 — Terraform Azure Baseline.

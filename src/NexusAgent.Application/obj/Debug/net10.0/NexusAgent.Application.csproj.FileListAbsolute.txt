@@ -1,0 +1,16 @@
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\bin\Debug\net10.0\NexusAgent.Application.deps.json
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\bin\Debug\net10.0\NexusAgent.Application.dll
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\bin\Debug\net10.0\NexusAgent.Application.pdb
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\bin\Debug\net10.0\NexusAgent.Domain.dll
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\bin\Debug\net10.0\NexusAgent.Domain.pdb
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\obj\Debug\net10.0\NexusAgent.Application.csproj.AssemblyReference.cache
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\obj\Debug\net10.0\NexusAgent.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\obj\Debug\net10.0\NexusAgent.Application.AssemblyInfoInputs.cache
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\obj\Debug\net10.0\NexusAgent.Application.AssemblyInfo.cs
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\obj\Debug\net10.0\NexusAgent.Application.csproj.CoreCompileInputs.cache
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\obj\Debug\net10.0\NexusAgent.Application.sourcelink.json
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\obj\Debug\net10.0\NexusAge.820A1F77.Up2Date
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\obj\Debug\net10.0\NexusAgent.Application.dll
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\obj\Debug\net10.0\refint\NexusAgent.Application.dll
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\obj\Debug\net10.0\NexusAgent.Application.pdb
+C:\Users\HP\Desktop\Job application documents\Application for Germany\Technical Projects\Project 7 - NexusAgent AI\src\NexusAgent.Application\obj\Debug\net10.0\ref\NexusAgent.Application.dll
