@@ -852,5 +852,3 @@ P0–P11 implementation milestones are complete.
 Azure infrastructure was not deployed during P2. Deployment and runtime integration verification remain deferred until P0–P11 implementation milestones are complete.
 
 **P2 status:** Infrastructure-as-Code complete; deployment deferred.
-
-**P2 status:** Infrastructure-as-Code complete; deployment deferred.
