@@ -1,0 +1,20 @@
+﻿subscription_id = "REPLACE-WITH-YOUR-SUBSCRIPTION-ID"
+
+location    = "swedencentral"
+prefix      = "nexusagent"
+environment = "dev"
+
+postgres_admin_login = "nexusadmin"
+postgres_allowed_ip  = ""
+
+container_image = "placeholder.azurecr.io/nexusagent-api:dev"
+
+deploy_api         = false
+enable_ai_services = false
+deploy_data_services = false
+
+tags = {
+  project     = "NexusAgent-AI"
+  environment = "dev"
+  managed_by  = "terraform"
+}

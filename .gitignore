@@ -2,51 +2,11 @@
 **/bin/
 **/obj/
 
-# Visual Studio / VS Code
-.vs/
-.vscode/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-
-# JetBrains
-.idea/
-*.sln.iml
-
-# Test and coverage outputs
-TestResults/
-**/TestResults/
-coverage/
-*.coverage
-*.coveragexml
-coverage*.json
-coverage*.xml
-coverage*.info
-
-# NuGet
-*.nupkg
-*.snupkg
-packages/
-
-# Logs
-*.log
-
-# Operating system files
-.DS_Store
-Thumbs.db
-
-# Local environment and secrets
-.env
-.env.*
-!.env.example
-appsettings.Local.json
-appsettings.*.Local.json
-
-# Terraform local/generated state
+# Terraform
 **/.terraform/
 *.tfstate
 *.tfstate.*
+*.tfvars
 *.tfplan
 crash.log
 crash.*.log
@@ -57,3 +17,6 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+
+# Keep example configurations
+!*.tfvars.example
