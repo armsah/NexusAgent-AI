@@ -1,298 +1,259 @@
-NexusAgent AI
+# NexusAgent AI
 
-Governed Enterprise Agentic RAG & Knowledge Automation Platform on Microsoft Azure
+**Governed Enterprise Agentic RAG & Knowledge Automation Platform on Microsoft Azure**
 
 NexusAgent AI is a portfolio-grade enterprise AI platform designed to demonstrate production-oriented engineering for Retrieval-Augmented Generation (RAG), multi-agent orchestration, secure tool execution, human approval, evaluation, LLMOps, observability, and prompt-injection defense.
 
 The system is designed around a fundamental separation:
 
-AI components may reason and propose. Deterministic application controls own authentication, authorization, workflow state, risk, approval, privileged execution, and auditability.
+> AI components may reason and propose. Deterministic application controls own authentication, authorization, workflow state, risk, approval, privileged execution, and auditability.
 
-Project Status
+## Project Status
 
-Current milestone: P3 — Microsoft Entra Authentication and Workload Identity
+**Current milestone:** P3 — Microsoft Entra Authentication and Workload Identity
 
-Phase
+| Phase | Deliverable | Status |
+|---|---|---|
+| P0 | Architecture and Governance Baseline | Complete |
+| P1 | Core Application Foundation | Complete |
+| P2 | Azure Terraform Infrastructure-as-Code | Complete — deployment deferred |
+| P3 | Microsoft Entra authentication, managed identity, GitHub OIDC | Next |
 
-Deliverable
+P2 has been implemented and validated as Terraform configuration. **No Azure resources have been provisioned.** Azure deployment and runtime verification are deferred until P0–P11 implementation milestones are complete and deployment is explicitly approved.
 
-Status
-
-P0
-
-Architecture and Governance Baseline
-
-Complete
-
-P1
-
-Core Application Foundation
-
-Complete
-
-P2
-
-Azure Terraform Infrastructure-as-Code
-
-Complete — deployment deferred
-
-P3
-
-Microsoft Entra authentication, managed identity, GitHub OIDC
-
-Next
-
-P2 has been implemented and validated as Terraform configuration. No Azure resources have been provisioned. Azure deployment and runtime verification are deferred until P0–P11 implementation milestones are complete and deployment is explicitly approved.
-
-P1 Evidence
+### P1 Evidence
 
 P1 currently provides:
 
-.NET 10 solution with explicit Domain, Application, Infrastructure, API, and Workers boundaries;
+- .NET 10 solution with explicit Domain, Application, Infrastructure, API, and Workers boundaries;
+- application-owned workflow lifecycle and state-transition invariants;
+- PostgreSQL persistence through Entity Framework Core and Npgsql;
+- EF Core migration for workflow and workflow-step state;
+- server-derived development requester and tenant identity;
+- ASP.NET Core workflow lifecycle endpoints;
+- string-based workflow status serialization in the HTTP contract;
+- liveness and PostgreSQL-backed readiness endpoints;
+- Docker Compose PostgreSQL development environment;
+- automated unit, PostgreSQL integration, and architecture dependency tests;
+- manual end-to-end verification of `Created → Running → Completed` persistence.
 
-application-owned workflow lifecycle and state-transition invariants;
+**P1 exit condition:** The core request lifecycle works locally with durable PostgreSQL state and enforced application boundaries.
 
-PostgreSQL persistence through Entity Framework Core and Npgsql;
+---
 
-EF Core migration for workflow and workflow-step state;
+### P2 Evidence
 
-server-derived development requester and tenant identity;
+P2 establishes the Azure development infrastructure baseline in `infra/terraform/environments/dev/`. The configuration covers a resource group, Azure Container Registry, Container Apps environment, Service Bus messaging, Blob Storage, Key Vault, user-assigned managed identity, RBAC assignments, Log Analytics, and Application Insights. API/Worker Container Apps, PostgreSQL Flexible Server, Azure AI Search, and Azure OpenAI are optional and disabled in the validated baseline.
 
-ASP.NET Core workflow lifecycle endpoints;
+| Validation | Result |
+|---|---|
+| `terraform init -backend=false -reconfigure` | Passed |
+| `terraform fmt` | Passed |
+| `terraform validate` | Passed |
+| `terraform plan -input=false` | Passed |
+| Planned changes | 16 to add, 0 to change, 0 to destroy |
+| Azure provisioning | Not performed |
 
-string-based workflow status serialization in the HTTP contract;
+**P2 exit condition:** Infrastructure-as-Code complete and locally validated; Azure deployment, connectivity, and operational validation deferred.
 
-liveness and PostgreSQL-backed readiness endpoints;
+---
 
-Docker Compose PostgreSQL development environment;
+## P1 Local Development
 
-automated unit, PostgreSQL integration, and architecture dependency tests;
+### Prerequisites
+- .NET SDK 10
+- Docker Desktop with Linux containers
+- Docker Compose
 
-manual end-to-end verification of Created → Running → Completed persistence.
+The repository pins the .NET SDK through `global.json`.
 
-P1 exit condition: the core request lifecycle works locally with durable PostgreSQL state and enforced application boundaries.
-
-P2 Evidence
-
-P2 establishes the Azure development infrastructure baseline in infra/terraform/environments/dev/. The configuration covers a resource group, Azure Container Registry, Container Apps environment, Service Bus messaging, Blob Storage, Key Vault, user-assigned managed identity, RBAC assignments, Log Analytics, and Application Insights. API/Worker Container Apps, PostgreSQL Flexible Server, Azure AI Search, and Azure OpenAI are optional and disabled in the validated baseline.
-
-Validation
-
-Result
-
-terraform init -backend=false -reconfigure
-
-Passed
-
-terraform fmt
-
-Passed
-
-terraform validate
-
-Passed
-
-terraform plan -input=false
-
-Passed
-
-Planned changes
-
-16 to add, 0 to change, 0 to destroy
-
-Azure provisioning
-
-Not performed
-
-P2 exit condition: Infrastructure-as-Code complete and locally validated; Azure deployment, connectivity, and operational validation deferred.
-
-P1 Local Development
-
-Prerequisites
-
-.NET SDK 10
-
-Docker Desktop with Linux containers
-
-Docker Compose
-
-The repository pins the .NET SDK through global.json.
-
-Start PostgreSQL
-
+### Start PostgreSQL
 P1 uses PostgreSQL 17 locally through Docker Compose:
 
+```powershell
 docker compose up -d
 docker compose ps
+```
 
-The container exposes PostgreSQL on host port 15432:
+The container exposes PostgreSQL on host port `15432`:
 
+```text
 127.0.0.1:15432 -> container:5432
+```
 
-Port 15432 is intentionally used to avoid collisions with locally installed PostgreSQL instances that commonly use port 5432.
+Port `15432` is intentionally used to avoid collisions with locally installed PostgreSQL instances that commonly use port `5432`.
 
-The credentials in compose.yaml are development-only credentials and must not be reused for deployed environments.
+The credentials in `compose.yaml` are development-only credentials and must not be reused for deployed environments.
 
-Configure the API Connection
-
+### Configure the API Connection
 Set the connection string in the PowerShell session that will run the API:
 
-$env:ConnectionStrings\_\_NexusAgent="Host=127.0.0.1;Port=15432;Database=nexusagent;Username=nexusagent;Password=nexusagent_dev_only"
+```powershell
+$env:ConnectionStrings__NexusAgent="Host=127.0.0.1;Port=15432;Database=nexusagent;Username=nexusagent;Password=nexusagent_dev_only"
+```
 
 The connection string is supplied through configuration rather than embedded in application source code.
 
-Apply Database Migrations
-
+### Apply Database Migrations
 Restore the local EF Core tool if required:
 
+```powershell
 dotnet tool restore
+```
 
 Apply the current migration:
 
-dotnet ef database update `  --project src\NexusAgent.Infrastructure\NexusAgent.Infrastructure.csproj`
+```powershell
+dotnet ef database update `
+  --project src\NexusAgent.Infrastructure\NexusAgent.Infrastructure.csproj `
   --startup-project src\NexusAgent.Api\NexusAgent.Api.csproj
+```
 
-P1 creates durable workflows and workflow_steps state in PostgreSQL.
+P1 creates durable `workflows` and `workflow_steps` state in PostgreSQL.
 
-Run the API
-
-dotnet run `  --project src\NexusAgent.Api\NexusAgent.Api.csproj`
+### Run the API
+```powershell
+dotnet run `
+  --project src\NexusAgent.Api\NexusAgent.Api.csproj `
   --urls http://localhost:5080
+```
 
-Health and Readiness
-
+### Health and Readiness
 Liveness:
 
-Invoke-RestMethod `  -Uri "http://localhost:5080/health"`
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:5080/health" `
   -Method Get
+```
 
 Database-backed readiness:
 
-Invoke-RestMethod `  -Uri "http://localhost:5080/health/ready"`
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:5080/health/ready" `
   -Method Get
+```
 
-A healthy local environment returns healthy for liveness and ready when the API can connect to PostgreSQL.
+A healthy local environment returns `healthy` for liveness and `ready` when the API can connect to PostgreSQL.
 
-Workflow Lifecycle API
-
+### Workflow Lifecycle API
 Create a workflow:
 
+```powershell
 $workflow = Invoke-RestMethod `
   -Uri "http://localhost:5080/api/workflows/" `
   -Method Post `
   -ContentType "application/json" `
   -Body '{"request":"Verify the NexusAgent workflow lifecycle."}'
 $workflowId = $workflow.id
+```
 
 Retrieve it:
 
-Invoke-RestMethod `  -Uri "http://localhost:5080/api/workflows/$workflowId"`
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:5080/api/workflows/$workflowId" `
   -Method Get
+```
 
 Start it:
 
-Invoke-RestMethod `  -Uri "http://localhost:5080/api/workflows/$workflowId/start"`
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:5080/api/workflows/$workflowId/start" `
   -Method Post
+```
 
 Complete it:
 
-Invoke-RestMethod `  -Uri "http://localhost:5080/api/workflows/$workflowId/complete"`
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:5080/api/workflows/$workflowId/complete" `
   -Method Post
+```
 
 The verified P1 lifecycle is:
 
+```text
 Created -> Running -> Completed
+```
 
 Additional domain transitions support approval waiting, failure, and cancellation, while later phases add the governance mechanisms that drive those transitions.
 
-Development Identity
-
+### Development Identity
 P1 derives a fixed development identity on the server:
 
+```text
 requesterId = local-developer
 tenantId    = local-development
+```
 
 Requester and tenant identity are not accepted from the workflow request body as authoritative identity.
 
 This is a local-development mechanism only. P3 replaces it with Microsoft Entra authentication and managed workload identity.
 
-Build and Test
-
+### Build and Test
 Build the complete solution:
 
+```powershell
 dotnet build NexusAgent.slnx
+```
 
 Run all automated tests:
 
+```powershell
 dotnet test NexusAgent.slnx --no-build
+```
 
 The P1 test suite covers:
 
-domain workflow invariants and state transitions;
+- domain workflow invariants and state transitions;
+- application behavior;
+- PostgreSQL workflow persistence;
+- architectural dependency boundaries.
 
-application behavior;
+The PostgreSQL integration test requires the local Docker Compose database to be running on port `15432`.
 
-PostgreSQL workflow persistence;
+---
 
-architectural dependency boundaries.
-
-The PostgreSQL integration test requires the local Docker Compose database to be running on port 15432.
-
-Business Scenario
-
+## Business Scenario
 European enterprises maintain operational knowledge across:
 
-policies;
-
-contracts;
-
-manuals;
-
-standard operating procedures;
-
-incident records;
-
-FAQs;
-
-internal APIs and business systems.
+- policies;
+- contracts;
+- manuals;
+- standard operating procedures;
+- incident records;
+- FAQs;
+- internal APIs and business systems.
 
 Employees need AI-assisted knowledge and workflow automation while preserving:
 
-document authorization;
-
-tenant isolation;
-
-evidence and citations;
-
-prompt-injection defenses;
-
-deterministic policy;
-
-human approval for consequential actions;
-
-auditability.
+- document authorization;
+- tenant isolation;
+- evidence and citations;
+- prompt-injection defenses;
+- deterministic policy;
+- human approval for consequential actions;
+- auditability.
 
 NexusAgent AI addresses this scenario with governed RAG and bounded agentic workflows.
 
-Architecture
+---
 
+## Architecture
 NexusAgent uses an application-owned control plane implemented in ASP.NET Core/C#.
 
 The application owns:
 
-workflow state;
-
-authorization-sensitive transitions;
-
-risk decisions;
-
-approval state;
-
-tool execution eligibility;
-
-idempotency;
-
-audit correlation.
+- workflow state;
+- authorization-sensitive transitions;
+- risk decisions;
+- approval state;
+- tool execution eligibility;
+- idempotency;
+- audit correlation.
 
 Microsoft Foundry / Azure OpenAI provides AI capabilities behind application abstractions.
 
@@ -304,8 +265,8 @@ PostgreSQL stores durable workflow and governance state.
 
 Blob Storage / ADLS stores source documents and large artifacts.
 
-High-Level Architecture
-
+### High-Level Architecture
+```text
 Enterprise User
       |
       v
@@ -330,65 +291,38 @@ Azure AI Search     Foundry / Azure       Azure Service Bus
 Durable state  -> PostgreSQL
 Source content -> Blob Storage / ADLS
 Telemetry      -> OpenTelemetry / Application Insights
+```
 
 Detailed architecture:
 
-Architecture Specification
+- [Architecture Specification](docs/architecture/architecture.md)
+- [Problem Statement](docs/architecture/problem-statement.md)
+- [Data Classification](docs/architecture/data-classification.md)
+- [Non-Functional Requirements](docs/architecture/non-functional-requirements.md)
 
-Problem Statement
+---
 
-Data Classification
-
-Non-Functional Requirements
-
-Agent Model
-
+## Agent Model
 NexusAgent defines five logical agent responsibilities.
 
-Agent        
-
-Responsibility                              
-
-Hard Boundary                              
-
-Supervisor  
-
-Classify, plan, delegate, enforce budgets  
-
-No direct business-tool execution          
-
-Knowledge    
-
-Retrieve and synthesize authorized evidence
-
-No ACL bypass                              
-
-Policy      
-
-Interpret enterprise policy                
-
-Cannot grant authorization                
-
-Action      
-
-Produce typed action proposals              
-
-Proposal only; no unrestricted execution  
-
-Verification
-
-Verify evidence/results                    
-
-Cannot override policy or missing approval
+| Agent        | Responsibility                              | Hard Boundary                              |
+| ------------ | ------------------------------------------- | ------------------------------------------ |
+| Supervisor   | Classify, plan, delegate, enforce budgets   | No direct business-tool execution          |
+| Knowledge    | Retrieve and synthesize authorized evidence | No ACL bypass                              |
+| Policy       | Interpret enterprise policy                 | Cannot grant authorization                 |
+| Action       | Produce typed action proposals              | Proposal only; no unrestricted execution   |
+| Verification | Verify evidence/results                     | Cannot override policy or missing approval |
 
 These are logical responsibilities and do not require five independently deployed services.
 
-Governed Tool Execution
+---
 
+## Governed Tool Execution
 Privileged business actions are isolated behind a Tool Gateway.
 
 Execution requires deterministic validation of:
 
+```text
 typed tool contract
         +
 schema validation
@@ -406,51 +340,32 @@ idempotency
 egress restrictions
         +
 audit
+```
 
 The model is never given a generic privileged shell, SQL executor, Terraform/ARM executor, kubectl interface, filesystem/system tool, or arbitrary HTTP client.
 
-Autonomy Levels
+---
 
-Level                  
-
-Meaning                              
-
-Execution                        
-
-L0 — Observe            
-
-Read/retrieve/explain                
-
-No external mutation            
-
-L1 — Recommend          
-
-Produce structured proposal          
-
-No external mutation            
-
-L2 — Approved execution
-
-Consequential mutation                
-
-Explicit human approval required
-
-L3 — Bounded autonomy  
-
-Narrow pre-approved low-risk mutation
-
-Deterministically constrained    
+## Autonomy Levels
+| Level                   | Meaning                               | Execution                        |
+| ----------------------- | ------------------------------------- | -------------------------------- |
+| L0 — Observe            | Read/retrieve/explain                 | No external mutation             |
+| L1 — Recommend          | Produce structured proposal           | No external mutation             |
+| L2 — Approved execution | Consequential mutation                | Explicit human approval required |
+| L3 — Bounded autonomy   | Narrow pre-approved low-risk mutation | Deterministically constrained    |
 
 Any action that changes an external, business, or production system is L2 by default.
 
 L3 must be explicitly configured for a narrowly bounded low-risk operation.
 
-See Autonomy and Human-Approval Policy.
+See [Autonomy and Human-Approval Policy](docs/ai-safety/autonomy-policy.md).
 
-Retrieval Architecture
+---
 
+## Retrieval Architecture
 The target RAG pipeline is:
 
+```text
 Source documents
       |
       v
@@ -489,276 +404,167 @@ Grounded generation
       |
       v
 Citation verification
+```
 
 Authorization filtering occurs before enterprise evidence reaches the model.
 
-Security Model
+---
 
+## Security Model
 NexusAgent treats both model output and retrieved content as untrusted.
 
 Core security invariants include:
 
-model output cannot authenticate a user;
-
-model output cannot grant authorization;
-
-tenant scope is server-derived;
-
-document ACL filtering occurs before model context;
-
-retrieved content cannot override trusted application policy;
-
-secrets are not intentionally supplied to models;
-
-no unrestricted privileged tool exists;
-
-tool identity is server-derived;
-
-L2 execution requires exact valid approval;
-
-changed arguments invalidate approval;
-
-retries cannot duplicate business side effects;
-
-dependency failure cannot broaden authority.
+- model output cannot authenticate a user;
+- model output cannot grant authorization;
+- tenant scope is server-derived;
+- document ACL filtering occurs before model context;
+- retrieved content cannot override trusted application policy;
+- secrets are not intentionally supplied to models;
+- no unrestricted privileged tool exists;
+- tool identity is server-derived;
+- L2 execution requires exact valid approval;
+- changed arguments invalidate approval;
+- retries cannot duplicate business side effects;
+- dependency failure cannot broaden authority.
 
 Primary modeled threats include:
 
-direct prompt injection;
+- direct prompt injection;
+- indirect prompt injection;
+- cross-tenant leakage;
+- ACL bypass;
+- tool privilege escalation;
+- approval replay/substitution;
+- data exfiltration;
+- model-output spoofing;
+- telemetry leakage;
+- supply-chain compromise;
+- cost denial of service.
 
-indirect prompt injection;
+See [Threat Model](docs/threat-model/threat-model.md).
 
-cross-tenant leakage;
+---
 
-ACL bypass;
-
-tool privilege escalation;
-
-approval replay/substitution;
-
-data exfiltration;
-
-model-output spoofing;
-
-telemetry leakage;
-
-supply-chain compromise;
-
-cost denial of service.
-
-See Threat Model.
-
-Evaluation Strategy
-
+## Evaluation Strategy
 NexusAgent evaluates the complete governed system rather than only model output.
 
-Retrieval
+### Retrieval
+- Recall@K
+- Precision@K
+- MRR/NDCG
+- security-filter correctness
+- stale-version retrieval rate
 
-Recall@K
+### Grounded Answers
+- groundedness
+- relevance
+- completeness
+- citation precision/recall
+- unsupported-claim rate
 
-Precision@K
+### Agent Workflows
+- completion
+- plan validity
+- tool selection
+- argument accuracy
+- steps
+- latency
+- token cost
 
-MRR/NDCG
+### Safety
+- unauthorized-action rate
+- prompt-injection success rate
+- data-exfiltration rate
+- cross-tenant leakage
 
-security-filter correctness
+### Human Approval
+- approval correctness
+- rejected-action execution
+- expiry behavior
+- replay behavior
 
-stale-version retrieval rate
-
-Grounded Answers
-
-groundedness
-
-relevance
-
-completeness
-
-citation precision/recall
-
-unsupported-claim rate
-
-Agent Workflows
-
-completion
-
-plan validity
-
-tool selection
-
-argument accuracy
-
-steps
-
-latency
-
-token cost
-
-Safety
-
-unauthorized-action rate
-
-prompt-injection success rate
-
-data-exfiltration rate
-
-cross-tenant leakage
-
-Human Approval
-
-approval correctness
-
-rejected-action execution
-
-expiry behavior
-
-replay behavior
-
-Operations
-
-timeout rate
-
-DLQ rate
-
-fallback success
-
-P95 latency
-
-cost per workflow
+### Operations
+- timeout rate
+- DLQ rate
+- fallback success
+- P95 latency
+- cost per workflow
 
 Hard safety gates established at P0 include:
 
+```text
 unauthorized destructive actions = 0
 cross-tenant leakage cases = 0
 unapproved L2 executions = 0
 rejected-action executions = 0
+```
 
 Empirical AI-quality thresholds will be established from measured baselines rather than invented during architecture design.
 
-See Evaluation Specification.
+See [Evaluation Specification](docs/evaluations/evaluation-specification.md).
 
-Non-Functional Targets
+---
 
+## Non-Functional Targets
 Initial portfolio targets include:
 
-Area                                  
-
-Target                                                          
-
-Availability                          
-
-99.9% demo API SLO                                              
-
-Standard grounded Q&A latency        
-
-P95 < 8 seconds                                                  
-
-Unauthorized destructive actions      
-
-0                                                                
-
-Cross-tenant leakage in curated suite
-
-0                                                                
-
-Unapproved L2 executions              
-
-0                                                                
-
-Rejected-action executions            
-
-0                                                                
-
-Auditability                          
-
-Consequential actions linked to identity/evidence/policy/release
-
-Cost                                  
-
-Token/search/tool cost attributable per workflow                
+| Area                                  | Target                                                           |
+| ------------------------------------- | ---------------------------------------------------------------- |
+| Availability                          | 99.9% demo API SLO                                               |
+| Standard grounded Q&A latency         | P95 < 8 seconds                                                  |
+| Unauthorized destructive actions      | 0                                                                |
+| Cross-tenant leakage in curated suite | 0                                                                |
+| Unapproved L2 executions              | 0                                                                |
+| Rejected-action executions            | 0                                                                |
+| Auditability                          | Consequential actions linked to identity/evidence/policy/release |
+| Cost                                  | Token/search/tool cost attributable per workflow                 |
 
 Long-running workflows use asynchronous execution and are not expected to meet the standard grounded-Q&A latency target.
 
-Architecture Decisions
+---
 
-ADR-001 — Application-Owned Agent Orchestration
+## Architecture Decisions
 
+### ADR-001 — Application-Owned Agent Orchestration
 NexusAgent owns the authoritative workflow state machine in ASP.NET Core/workers.
 
 Foundry agent capabilities may be used behind application abstractions but are not the sole authority for business-critical workflow state.
 
-Read ADR-001
+[Read ADR-001](docs/adr/ADR-001-custom-orchestration.md)
 
-ADR-002 — Azure AI Search for Enterprise Retrieval
-
+### ADR-002 — Azure AI Search for Enterprise Retrieval
 Azure AI Search is the primary enterprise hybrid/vector retrieval platform.
 
 PostgreSQL remains the transactional workflow/governance store.
 
-Read ADR-002
+[Read ADR-002](docs/adr/ADR-002-azure-ai-search.md)
 
-Target Technology Stack
+---
 
-Area                      
+## Target Technology Stack
+| Area                      | Technology                                         |
+| ------------------------- | -------------------------------------------------- |
+| API/control plane         | ASP.NET Core / C#                                  |
+| Evaluation/data utilities | Python                                             |
+| AI                        | Microsoft Foundry / Azure OpenAI                   |
+| Retrieval                 | Azure AI Search                                    |
+| Messaging                 | Azure Service Bus                                  |
+| Compute                   | Azure Container Apps                               |
+| Transactional state       | Azure Database for PostgreSQL Flexible Server      |
+| Documents/artifacts       | Azure Blob Storage / ADLS                          |
+| Identity                  | Microsoft Entra ID                                 |
+| Workload identity         | Azure managed identities                           |
+| Secrets                   | Azure Key Vault                                    |
+| Infrastructure            | Terraform                                          |
+| Observability             | OpenTelemetry, Application Insights, Azure Monitor |
+| CI/CD identity            | GitHub Actions OIDC                                |
 
-Technology                                        
+---
 
-API/control plane        
+## Repository Structure
 
-ASP.NET Core / C#                                  
-
-Evaluation/data utilities
-
-Python                                            
-
-AI                        
-
-Microsoft Foundry / Azure OpenAI                  
-
-Retrieval                
-
-Azure AI Search                                    
-
-Messaging                
-
-Azure Service Bus                                  
-
-Compute                  
-
-Azure Container Apps                              
-
-Transactional state      
-
-Azure Database for PostgreSQL Flexible Server      
-
-Documents/artifacts      
-
-Azure Blob Storage / ADLS                          
-
-Identity                  
-
-Microsoft Entra ID                                
-
-Workload identity        
-
-Azure managed identities                          
-
-Secrets                  
-
-Azure Key Vault                                    
-
-Infrastructure            
-
-Terraform                                          
-
-Observability            
-
-OpenTelemetry, Application Insights, Azure Monitor
-
-CI/CD identity            
-
-GitHub Actions OIDC                                
-
-Repository Structure
-
+```text
 .
 ├── README.md
 ├── NexusAgent.slnx
@@ -766,176 +572,79 @@ Repository Structure
 ├── dotnet-tools.json
 ├── compose.yaml
 ├── docs/
-│ ├── architecture/
-│ ├── adr/
-│ ├── threat-model/
-│ ├── ai-safety/
-│ ├── evaluations/
-│ ├── runbooks/
-│ └── cost/
+│   ├── architecture/
+│   ├── adr/
+│   ├── threat-model/
+│   ├── ai-safety/
+│   ├── evaluations/
+│   ├── runbooks/
+│   └── cost/
 ├── src/
-│ ├── NexusAgent.Domain/
-│ ├── NexusAgent.Application/
-│ ├── NexusAgent.Infrastructure/
-│ ├── NexusAgent.Api/
-│ └── NexusAgent.Workers/
+│   ├── NexusAgent.Domain/
+│   ├── NexusAgent.Application/
+│   ├── NexusAgent.Infrastructure/
+│   ├── NexusAgent.Api/
+│   └── NexusAgent.Workers/
 ├── tests/
-│ ├── NexusAgent.UnitTests/
-│ ├── NexusAgent.IntegrationTests/
-│ └── NexusAgent.ArchitectureTests/
+│   ├── NexusAgent.UnitTests/
+│   ├── NexusAgent.IntegrationTests/
+│   └── NexusAgent.ArchitectureTests/
 └── infra/
-└── terraform/
-└── environments/
-└── dev/
-├── .terraform.lock.hcl
-├── ai.tf
-├── apps.tf
-├── backend.tf
-├── data.tf
-├── main.tf
-├── outputs.tf
-├── platform.tf
-├── security.tf
-├── variables.tf
-├── versions.tf
-└── terraform.tfvars.example
+    └── terraform/
+        └── environments/
+            └── dev/
+                ├── .terraform.lock.hcl
+                ├── ai.tf
+                ├── apps.tf
+                ├── backend.tf
+                ├── data.tf
+                ├── main.tf
+                ├── outputs.tf
+                ├── platform.tf
+                ├── security.tf
+                ├── variables.tf
+                ├── versions.tf
+                └── terraform.tfvars.example
+```
 
 P1 establishes the executable .NET solution. P2 adds the Terraform Azure infrastructure baseline. P3–P19 incrementally implement identity, retrieval, orchestration, governed execution, evaluation, security, and operations. Azure deployment remains deferred until P0–P11 implementation is complete.
 
-Implementation Roadmap
-
-Phase
-
-Deliverable
-
-Status
-
-P0
-
-Architecture, governance, threat model, autonomy, evaluation design
-
-Complete
-
-P1
-
-.NET solution, API, boundaries, PostgreSQL workflow state
-
-Complete
-
-P2
-
-Terraform Azure infrastructure baseline
-
-Complete — deployment deferred
-
-P3
-
-Entra authentication, managed identity, GitHub OIDC
-
-Next
-
-P4
-
-Document ingestion and versioning
-
-Planned
-
-P5
-
-Azure AI Search hybrid/vector retrieval and ACL metadata
-
-Planned
-
-P6
-
-Foundry/Azure OpenAI model adapter
-
-Planned
-
-P7
-
-Grounded Q&A with stable citations
-
-Planned
-
-P8
-
-Query rewriting, reranking, context budgeting
-
-Planned
-
-P9
-
-Supervisor and Knowledge/Policy agent orchestration
-
-Planned
-
-P10
-
-Typed Tool Gateway
-
-Planned
-
-P11
-
-Risk engine and human approval
-
-Planned
-
-P12
-
-Service Bus async execution, retries, DLQ
-
-Planned
-
-P13
-
-Verification Agent and deterministic postconditions
-
-Planned
-
-P14
-
-Offline evaluation harness and release gates
-
-Planned
-
-P15
-
-Prompt-injection/content-safety test suite
-
-Planned
-
-P16
-
-End-to-end OpenTelemetry/Application Insights
-
-Planned
-
-P17
-
-Token and cost budgets
-
-Planned
-
-P18
-
-Production-reference private networking
-
-Planned
-
-P19
-
-Load, failure, rollback benchmark and runbooks
-
-Planned
-
-Deployment policy: Provisioning Azure resources is deferred until implementation through P11 is complete and deployment is explicitly approved.
-
-P0 Evidence
+---
+
+## Implementation Roadmap
+
+| Phase | Deliverable | Status |
+|---|---|---|
+| P0 | Architecture, governance, threat model, autonomy, evaluation design | Complete |
+| P1 | .NET solution, API, boundaries, PostgreSQL workflow state | Complete |
+| P2 | Terraform Azure infrastructure baseline | Complete — deployment deferred |
+| P3 | Entra authentication, managed identity, GitHub OIDC | Next |
+| P4 | Document ingestion and versioning | Planned |
+| P5 | Azure AI Search hybrid/vector retrieval and ACL metadata | Planned |
+| P6 | Foundry/Azure OpenAI model adapter | Planned |
+| P7 | Grounded Q&A with stable citations | Planned |
+| P8 | Query rewriting, reranking, context budgeting | Planned |
+| P9 | Supervisor and Knowledge/Policy agent orchestration | Planned |
+| P10 | Typed Tool Gateway | Planned |
+| P11 | Risk engine and human approval | Planned |
+| P12 | Service Bus async execution, retries, DLQ | Planned |
+| P13 | Verification Agent and deterministic postconditions | Planned |
+| P14 | Offline evaluation harness and release gates | Planned |
+| P15 | Prompt-injection/content-safety test suite | Planned |
+| P16 | End-to-end OpenTelemetry/Application Insights | Planned |
+| P17 | Token and cost budgets | Planned |
+| P18 | Production-reference private networking | Planned |
+| P19 | Load, failure, rollback benchmark and runbooks | Planned |
+
+**Deployment policy:** Provisioning Azure resources is deferred until implementation through P11 is complete and deployment is explicitly approved.
+
+---
+
+## P0 Evidence
 
 The P0 architecture and governance evidence is contained in:
 
+```text
 docs/
 ├── architecture/
 │   ├── architecture.md
@@ -951,182 +660,103 @@ docs/
 │   └── evaluation-specification.md
 └── threat-model/
     └── threat-model.md
+```
 
-P1 Phase Exit
+## P1 Phase Exit
 
 P1 establishes:
 
-a buildable .NET 10 solution with explicit architectural boundaries;
-
-application-owned workflow state and transition invariants;
-
-ASP.NET Core lifecycle endpoints;
-
-durable PostgreSQL workflow persistence through EF Core;
-
-reproducible database migrations;
-
-server-derived local development identity;
-
-liveness and database-backed readiness probes;
-
-string-based workflow status contracts;
-
-automated unit, PostgreSQL integration, and architecture tests;
-
-verified local Created → Running → Completed request lifecycle.
-
-P1 deliberately does not implement production authentication, RAG, model invocation, multi-agent orchestration, privileged tool execution, human approval records, or production observability. The Terraform Azure infrastructure baseline was subsequently completed in P2; provisioning remains deferred.
-
-Next phase: P2 — Terraform Azure Baseline.
-
-P2 — Azure Terraform Infrastructure
-
-Overview
-
-This directory defines the Azure development environment for NexusAgent AI
-
-using Terraform.
-
-The infrastructure is designed for a .NET-based AI agent platform with
-
-API and background-worker workloads, messaging, document storage,
-
-observability, and optional AI services.
-
-Status: Infrastructure-as-Code validated. Azure deployment deferred.
-
-Technology Stack
-
-Terraform >= 1.9
-
-AzureRM provider 4.x
-
-Microsoft Azure (swedencentral)
-
-Azure Container Apps
-
-Azure Container Registry
-
-Azure PostgreSQL Flexible Server
-
-Azure Service Bus
-
-Azure Blob Storage
-
-Azure Key Vault
-
-Azure Monitor / Application Insights
-
-Azure AI Search (optional)
-
-Azure OpenAI (optional)
-
-Infrastructure Components
-
-Component                      
-
-Purpose                                      
-
-Resource Group                
-
-Logical resource organization                
-
-Container Registry            
-
-Container image storage                      
-
-Container Apps Environment    
-
-Hosting environment for application workloads
-
-API Container App              
-
-HTTP API hosting                              
-
-Worker Container App          
-
-Background processing                        
-
-PostgreSQL Flexible Server    
-
-Relational data persistence                  
-
-Service Bus                    
-
-Asynchronous workflow messaging              
-
-Blob Storage                  
-
-Document storage                              
-
-Key Vault                      
-
-Secrets management                            
-
-User-Assigned Managed Identity
-
-Workload authentication                      
-
-Log Analytics                  
-
-Centralized logging                          
-
-Application Insights          
-
-Application observability                    
-
-Azure AI Search                
-
-Optional retrieval infrastructure            
-
-Azure OpenAI                  
-
-Optional AI model service                    
-
-Deployment Controls
-
+- a buildable .NET 10 solution with explicit architectural boundaries;
+- application-owned workflow state and transition invariants;
+- ASP.NET Core lifecycle endpoints;
+- durable PostgreSQL workflow persistence through EF Core;
+- reproducible database migrations;
+- server-derived local development identity;
+- liveness and database-backed readiness probes;
+- string-based workflow status contracts;
+- automated unit, PostgreSQL integration, and architecture tests;
+- verified local `Created → Running → Completed` request lifecycle.
+
+P1 deliberately did not implement production authentication, RAG, model invocation, multi-agent orchestration, privileged tool execution, human approval records, or production observability. P2 subsequently completed the Terraform Azure infrastructure baseline without deploying resources.
+
+**Next phase:** P3 — Microsoft Entra authentication, managed identity, and GitHub OIDC.
+
+---
+
+## P2 — Azure Terraform Infrastructure
+
+### Overview
+
+The `infra/terraform/environments/dev/` directory defines the Azure development environment for NexusAgent AI using Terraform.
+
+The infrastructure supports .NET API and background-worker workloads, messaging, document storage, observability, and optional AI services.
+
+**Status:** Infrastructure-as-Code validated. Azure deployment deferred.
+
+### Technology Stack
+- Terraform >= 1.9
+- AzureRM provider 4.x
+- Microsoft Azure (`swedencentral`)
+- Azure Container Apps
+- Azure Container Registry
+- Azure PostgreSQL Flexible Server
+- Azure Service Bus
+- Azure Blob Storage
+- Azure Key Vault
+- Azure Monitor / Application Insights
+- Azure AI Search (optional)
+- Azure OpenAI (optional)
+
+### Infrastructure Components
+| Component                      | Purpose                                       |
+| ------------------------------ | --------------------------------------------- |
+| Resource Group                 | Logical resource organization                 |
+| Container Registry             | Container image storage                       |
+| Container Apps Environment     | Hosting environment for application workloads |
+| API Container App              | HTTP API hosting                              |
+| Worker Container App           | Background processing                         |
+| PostgreSQL Flexible Server     | Relational data persistence                   |
+| Service Bus                    | Asynchronous workflow messaging               |
+| Blob Storage                   | Document storage                              |
+| Key Vault                      | Secrets management                            |
+| User-Assigned Managed Identity | Workload authentication                       |
+| Log Analytics                  | Centralized logging                           |
+| Application Insights           | Application observability                     |
+| Azure AI Search                | Optional retrieval infrastructure             |
+| Azure OpenAI                   | Optional AI model service                     |
+
+### Deployment Controls
 The following variables control optional infrastructure:
 
+```hcl
 deploy_api           = false
 deploy_data_services = false
 enable_ai_services   = false
+```
 
 When disabled:
 
-API and Worker Container Apps are excluded from the plan.
-
-PostgreSQL resources are excluded from the plan.
-
-Azure AI Search and Azure OpenAI resources are excluded from the plan.
+- API and Worker Container Apps are excluded from the plan.
+- PostgreSQL resources are excluded from the plan.
+- Azure AI Search and Azure OpenAI resources are excluded from the plan.
 
 Core infrastructure remains part of the Terraform plan.
 
-These flags do not make a deployment free.
+**These flags do not make a deployment free.**
 
-Security
-
+### Security
 The configuration uses:
 
-User-assigned managed identity for application workloads.
-
-Azure RBAC for resource authorization.
-
-Container Registry authentication without an admin account.
-
-Service Bus with local authentication disabled.
-
-Storage with shared-key authentication disabled.
-
-Microsoft Entra ID authentication for supported Storage operations.
-
-Private Blob container access.
-
-HTTPS-only Storage traffic.
-
-TLS 1.2 minimum for Storage and Service Bus.
-
-Key Vault RBAC authorization and purge protection.
+- User-assigned managed identity for application workloads.
+- Azure RBAC for resource authorization.
+- Container Registry authentication without an admin account.
+- Service Bus with local authentication disabled.
+- Storage with shared-key authentication disabled.
+- Microsoft Entra ID authentication for supported Storage operations.
+- Private Blob container access.
+- HTTPS-only Storage traffic.
+- TLS 1.2 minimum for Storage and Service Bus.
+- Key Vault RBAC authorization and purge protection.
 
 Some Azure services currently have public network endpoints enabled.
 
@@ -1134,11 +764,10 @@ Network isolation and private endpoints require additional design and
 
 validation before a production deployment.
 
-Terraform State
-
+### Terraform State
 The intended production approach is an Azure Storage remote backend.
 
-The remote backend is currently documented in backend.tf but is
+The remote backend is currently documented in `backend.tf` but is
 
 not enabled.
 
@@ -1148,86 +777,73 @@ and planning.
 
 State files, plans, and local variable files must not be committed.
 
-Local Validation
+### Local Validation
 
 Prerequisites:
 
-Terraform CLI installed.
-
-Azure CLI installed and authenticated.
-
-Access to the target Azure subscription.
-
-A local terraform.tfvars file based on terraform.tfvars.example.
+1. Terraform CLI installed.
+2. Azure CLI installed and authenticated.
+3. Access to the target Azure subscription.
+4. A local `terraform.tfvars` file based on `terraform.tfvars.example`.
 
 Initialize Terraform without a remote backend:
 
+```powershell
 terraform init -backend=false -reconfigure
+```
 
 Format and validate:
 
+```powershell
 terraform fmt
 terraform validate
+```
 
 Generate a plan:
 
+```powershell
 terraform plan -input=false
+```
 
 The current development configuration produces:
 
+```text
 Plan: 16 to add, 0 to change, 0 to destroy.
+```
 
 This is a planning result, not proof that Azure resource provisioning
 
 or application integration will succeed.
 
-Deployment Prerequisites
+### Deployment Prerequisites
 
 Before any deployment:
 
-Obtain explicit approval to provision billable Azure resources.
+1. Obtain explicit approval to provision billable Azure resources.
+2. Configure and initialize the Azure Storage remote-state backend.
+3. Confirm resource names and Azure service availability.
+4. Verify required Azure RBAC permissions.
+5. Verify Microsoft Entra ID access for Storage container management.
+6. Replace placeholder container images with published images.
+7. Configure PostgreSQL credentials securely.
+8. Review networking, public access, and production security requirements.
+9. Confirm Azure AI service quotas and regional availability.
+10. Review estimated Azure costs and establish budget controls.
+11. Test application connectivity, identity permissions, and observability.
 
-Configure and initialize the Azure Storage remote-state backend.
+### Current Validation Status
 
-Confirm resource names and Azure service availability.
+- Terraform initialization: passed.
+- Terraform formatting: passed.
+- Terraform validation: passed.
+- Terraform plan: passed.
+- Planned core resources: 16.
+- Optional application resources: disabled.
+- Optional PostgreSQL resources: disabled.
+- Optional AI resources: disabled.
+- Azure deployment: not performed.
 
-Verify required Azure RBAC permissions.
-
-Verify Microsoft Entra ID access for Storage container management.
-
-Replace placeholder container images with published images.
-
-Configure PostgreSQL credentials securely.
-
-Review networking, public access, and production security requirements.
-
-Confirm Azure AI service quotas and regional availability.
-
-Review estimated Azure costs and establish budget controls.
-
-Test application connectivity, identity permissions, and observability.
-
-Current Validation Status
-
-Terraform initialization: passed.
-
-Terraform formatting: passed.
-
-Terraform validation: passed.
-
-Terraform plan: passed.
-
-Planned core resources: 16.
-
-Optional application resources: disabled.
-
-Optional PostgreSQL resources: disabled.
-
-Optional AI resources: disabled.
-
-Azure deployment: not performed.
-
-Project Policy
+### Project Policy
 
 Azure infrastructure deployment is intentionally deferred until the
 
@@ -1235,4 +851,6 @@ P0–P11 implementation milestones are complete.
 
 Azure infrastructure was not deployed during P2. Deployment and runtime integration verification remain deferred until P0–P11 implementation milestones are complete.
 
-P2 status: Infrastructure-as-Code complete; deployment deferred.
+**P2 status:** Infrastructure-as-Code complete; deployment deferred.
+
+**P2 status:** Infrastructure-as-Code complete; deployment deferred.
