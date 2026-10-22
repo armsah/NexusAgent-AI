@@ -1058,3 +1058,43 @@ The P0 threat model is complete when:
 - later implementation phases map to required controls.
 
 This threat model is a living artifact and must be updated when new privileged tools, trust boundaries, data classes, or external integrations are introduced.
+
+---
+
+## Revised P0 — Document Retrieval Security
+
+The following controls apply to the P0–P9 implementation roadmap.
+
+### Authorization and tenant isolation
+
+- Derive tenant and requester identity from trusted authentication.
+- Construct retrieval authorization filters server-side.
+- Deny documents with missing or malformed ACL metadata.
+- Prevent cross-tenant document and passage retrieval.
+- Ensure passage permissions never exceed source-document permissions.
+- Exclude deleted and superseded document versions.
+- Revalidate authorization before privileged actions.
+
+### Additional threat scenarios
+
+| Threat | Required mitigation | Evaluation case |
+|---|---|---|
+| Cross-tenant retrieval | Trusted tenant filter and default-deny policy | SEC-003 |
+| Missing document ACL | Reject incomplete authorization metadata | SEC-004 |
+| Deleted content retrieval | Lifecycle-aware filtering and invalidation | SEC-005 |
+| Superseded version retrieval | Current-version enforcement | SEC-006 |
+| Indirect prompt injection | Treat retrieved instructions as untrusted | SEC-007 |
+| Missing human approval | Deterministic execution gate | SEC-008 |
+| Modified approved payload | Exact payload binding | SEC-009 |
+
+### Security acceptance criteria
+
+- Zero cross-tenant disclosures in the curated security suite.
+- Zero unauthorized destructive actions.
+- Zero unapproved consequential executions.
+- Zero rejected-action executions.
+
+These are required future test outcomes, not measured P0 results.
+
+See `docs/architecture/document-authorization-model.md`.
+See `docs/evaluations/p0-evaluation-cases.json`.

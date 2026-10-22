@@ -1273,3 +1273,51 @@ The architecture is considered sufficiently specified for P0 when:
 - implementation phases map to architectural capabilities.
 
 Detailed implementation begins in P1 without changing these security invariants unless a later ADR explicitly documents the change.
+
+---
+
+## Revised P0 Governance Contract
+
+**Status:** Architecture baseline; runtime enforcement pending.
+
+### Governed knowledge use cases
+
+The approved design scenarios are documented in:
+
+- `docs/architecture/governed-knowledge-use-cases.md`
+- `docs/architecture/document-authorization-model.md`
+
+### Retrieval authorization boundary
+
+1. Validate identity and tenant membership before retrieval.
+2. Construct tenant and ACL filters in trusted application code.
+3. Apply identical authorization constraints to lexical, vector, and hybrid retrieval.
+4. Reject missing, malformed, or conflicting authorization metadata.
+5. Exclude deleted and superseded document versions.
+6. Ensure passage permissions cannot exceed source-document permissions.
+7. Never delegate authorization decisions to an LLM.
+
+### Autonomy boundary
+
+- L0: Read-only retrieval and explanation.
+- L1: Action recommendations without execution.
+- L2: Consequential mutations requiring explicit human approval.
+- L3: Narrow, pre-authorized low-risk mutations under deterministic policy.
+
+All mutations require authorization and allow-listed Tool Gateway operations.
+L2 approvals must bind to immutable action payloads.
+
+### Evaluation evidence
+
+The versioned P0 evaluation dataset is:
+
+`docs/evaluations/p0-evaluation-cases.json`
+
+The dataset defines expected outcomes. Runtime test results will be
+collected during subsequent implementation phases.
+
+### Deployment boundary
+
+Existing .NET and Terraform foundations are retained.
+
+Azure deployment remains deferred until explicitly authorized.

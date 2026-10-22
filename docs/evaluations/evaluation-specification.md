@@ -1117,3 +1117,49 @@ The evaluation specification is complete for P0 when:
 P0 establishes what NexusAgent must prove.
 
 Later phases provide the implementation and empirical evidence.
+
+---
+
+## Revised P0 — Versioned Governance Evaluation Dataset
+
+The initial evaluation specification is stored in:
+
+`docs/evaluations/p0-evaluation-cases.json`
+
+Dataset identifier: `nexusagent-p0-governance-v1`
+
+Schema version: `1.0`
+
+Initial coverage:
+
+| Category | Cases |
+|---|---|
+| Authorization | SEC-001, SEC-002, SEC-004 |
+| Tenant isolation | SEC-003 |
+| Document lifecycle | SEC-005, SEC-006 |
+| Prompt injection | SEC-007 |
+| Human approval | SEC-008, SEC-009 |
+| Grounded answers | RAG-001, RAG-002 |
+| Workflow resilience | OPS-001 |
+
+### Evaluation execution policy
+
+- Maintain versioned, reproducible test cases.
+- Distinguish expected outcomes from measured results.
+- Evaluate authorization before generation.
+- Fail security release gates on any confirmed cross-tenant disclosure.
+- Fail security release gates on unauthorized consequential execution.
+- Require valid citations for supported factual claims.
+- Require abstention when authorized evidence is insufficient.
+- Compare candidate quality against a measured baseline.
+- Reject material quality regression according to calibrated thresholds.
+
+### P0 limitations
+
+The dataset defines scenarios and expected decisions.
+
+It does not demonstrate that runtime authorization, retrieval,
+grounding, approval, or recovery controls have passed.
+
+Automated execution and measured results are introduced in
+subsequent implementation phases.

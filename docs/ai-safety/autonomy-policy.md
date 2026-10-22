@@ -847,3 +847,37 @@ The autonomy policy is sufficiently specified when:
 - safety tests and hard-gate outcomes are defined.
 
 Detailed implementation begins in P10–P13 without weakening these policy invariants.
+
+---
+
+## Revised P0 — Action-Risk and Approval Requirements
+
+Risk classification is deterministic and application-owned.
+
+| Level | Operation | Execution policy |
+|---|---|---|
+| L0 | Observe, retrieve, explain | No external mutation |
+| L1 | Recommend an action | Proposal only |
+| L2 | Consequential external mutation | Explicit valid human approval |
+| L3 | Narrow, pre-authorized low-risk mutation | Explicit policy configuration and bounded execution |
+
+### Mandatory controls
+
+1. An LLM cannot grant permissions or approve actions.
+2. Consequential mutations default to L2.
+3. An approval identifies the requester, action type, exact payload, and scope.
+4. The approved payload must be immutable or cryptographically bound.
+5. Changed arguments invalidate approval.
+6. Expired, rejected, revoked, or replayed approvals cannot authorize execution.
+7. Every privileged action passes authorization and policy checks immediately before execution.
+8. Execution is restricted to explicitly allow-listed Tool Gateway operations.
+9. Idempotency prevents duplicate side effects.
+10. Policy or identity service failures result in denial.
+
+### Required evaluation coverage
+
+- SEC-008: Missing approval must deny execution.
+- SEC-009: Modified approved payload must deny execution.
+
+These controls are design requirements at P0. Runtime implementation
+is scheduled for P5–P6.

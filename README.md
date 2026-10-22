@@ -10,18 +10,29 @@ The system is designed around a fundamental separation:
 
 ## Project Status
 
-**Current milestone:** P3 — Microsoft Entra Authentication and Workload Identity
+**Current milestone:** Revised P0 complete — P1 document ingestion next.
 
-| Phase | Deliverable | Status |
+| Revised phase | Deliverable | Status |
 |---|---|---|
-| P0 | Architecture and Governance Baseline | Complete |
-| P1 | Core Application Foundation | Complete |
-| P2 | Azure Terraform Infrastructure-as-Code | Complete — deployment deferred |
-| P3 | Microsoft Entra authentication, managed identity, GitHub OIDC | Next |
+| P0 | Governed knowledge architecture, ACLs, citation targets, action-risk tiers | Complete — design baseline |
+| P1 | Document ingestion, Blob versioning, ingestion events | Planned |
+| P2 | Tenant-aware ACL-filtered hybrid/vector retrieval | Planned |
+| P3 | Grounded Q&A, citation verification, abstention | Planned |
+| P4 | Supervisor, Knowledge, Policy agents and durable task state | Planned |
+| P5 | Allow-listed typed Tool Gateway | Planned |
+| P6 | Risk decisions, human approvals, immutable action payloads | Planned |
+| P7 | Verifier agent, prompt-injection defense, adversarial retrieval | Planned |
+| P8 | Token spend, retrieval quality, OpenTelemetry traces | Planned |
+| P9 | Load, outages, index drift, recovery and rollback | Planned |
 
-P2 has been implemented and validated as Terraform configuration. **No Azure resources have been provisioned.** Azure deployment and runtime verification are deferred until P0–P11 implementation milestones are complete and deployment is explicitly approved.
+**Existing implementation foundations:** The .NET 10 application, PostgreSQL
+workflow persistence, tests, and Azure Terraform baseline were completed under
+the previous roadmap. They are retained as reusable foundations, but do not
+constitute completion of revised P1 or P2.
 
-### P1 Evidence
+**Azure deployment:** No Azure resources have been provisioned. Deployment
+remains deferred until explicitly authorized.
+### Previous Roadmap — P1 Evidence
 
 P1 currently provides:
 
@@ -41,7 +52,7 @@ P1 currently provides:
 
 ---
 
-### P2 Evidence
+### Previous Roadmap — P2 Evidence
 
 P2 establishes the Azure development infrastructure baseline in `infra/terraform/environments/dev/`. The configuration covers a resource group, Azure Container Registry, Container Apps environment, Service Bus messaging, Blob Storage, Key Vault, user-assigned managed identity, RBAC assignments, Log Analytics, and Application Insights. API/Worker Container Apps, PostgreSQL Flexible Server, Azure AI Search, and Azure OpenAI are optional and disabled in the validated baseline.
 
@@ -58,7 +69,7 @@ P2 establishes the Azure development infrastructure baseline in `infra/terraform
 
 ---
 
-## P1 Local Development
+## Existing .NET Foundation — Local Development
 
 ### Prerequisites
 - .NET SDK 10
@@ -607,62 +618,82 @@ PostgreSQL remains the transactional workflow/governance store.
                 └── terraform.tfvars.example
 ```
 
-P1 establishes the executable .NET solution. P2 adds the Terraform Azure infrastructure baseline. P3–P19 incrementally implement identity, retrieval, orchestration, governed execution, evaluation, security, and operations. Azure deployment remains deferred until P0–P11 implementation is complete.
+Under the previous roadmap, P1 established the executable .NET solution and P2 added the Terraform Azure infrastructure baseline. These completed foundations are retained. The revised P0–P9 roadmap governs all subsequent implementation. Azure deployment remains deferred until explicitly authorized.
 
 ---
 
 ## Implementation Roadmap
 
-| Phase | Deliverable | Status |
-|---|---|---|
-| P0 | Architecture, governance, threat model, autonomy, evaluation design | Complete |
-| P1 | .NET solution, API, boundaries, PostgreSQL workflow state | Complete |
-| P2 | Terraform Azure infrastructure baseline | Complete — deployment deferred |
-| P3 | Entra authentication, managed identity, GitHub OIDC | Next |
-| P4 | Document ingestion and versioning | Planned |
-| P5 | Azure AI Search hybrid/vector retrieval and ACL metadata | Planned |
-| P6 | Foundry/Azure OpenAI model adapter | Planned |
-| P7 | Grounded Q&A with stable citations | Planned |
-| P8 | Query rewriting, reranking, context budgeting | Planned |
-| P9 | Supervisor and Knowledge/Policy agent orchestration | Planned |
-| P10 | Typed Tool Gateway | Planned |
-| P11 | Risk engine and human approval | Planned |
-| P12 | Service Bus async execution, retries, DLQ | Planned |
-| P13 | Verification Agent and deterministic postconditions | Planned |
-| P14 | Offline evaluation harness and release gates | Planned |
-| P15 | Prompt-injection/content-safety test suite | Planned |
-| P16 | End-to-end OpenTelemetry/Application Insights | Planned |
-| P17 | Token and cost budgets | Planned |
-| P18 | Production-reference private networking | Planned |
-| P19 | Load, failure, rollback benchmark and runbooks | Planned |
+The following P0–P9 roadmap supersedes the original P0–P19 roadmap.
 
-**Deployment policy:** Provisioning Azure resources is deferred until implementation through P11 is complete and deployment is explicitly approved.
+| Phase | Implementation | Azure focus | Required evidence | Exit criterion |
+|---|---|---|---|---|
+| P0 | Governed knowledge use cases, document ACLs, citation targets, action-risk tiers | Architecture / Entra | Threat model and evaluation set | Retrieval and autonomy boundaries approved |
+| P1 | Ingestion API, Blob document versioning, ingestion events | ASP.NET Core / Blob / Service Bus | Ingestion replay tests | Updates and deletions propagate safely |
+| P2 | ACL-filtered hybrid/vector indexes and tenant metadata | Azure AI Search | Cross-tenant denial tests | Only authorized passages retrieved |
+| P3 | Grounded Q&A, citation verification, abstention | Azure OpenAI / Foundry | Grounding benchmark | Unsupported claims rejected |
+| P4 | Supervisor, Knowledge and Policy agents with durable task state | Orchestration / PostgreSQL | Workflow traces | Interrupted tasks resume |
+| P5 | Allow-listed knowledge actions through typed Tool Gateway | Container Apps / API | Tool contracts | No arbitrary tool execution |
+| P6 | Risk decisions, human approvals, immutable action payloads | Entra / Policy / PostgreSQL | Approval replay tests | Privileged changes require valid approval |
+| P7 | Verifier agent, prompt-injection defenses, adversarial retrieval | Foundry / AI Security | Red-team report | Malicious content cannot redirect actions |
+| P8 | Token spend, retrieval quality, end-to-end traces | OpenTelemetry / Monitor | Quality-cost dashboard | Every answer traceable to evidence |
+| P9 | Load, model outages, index drift, recovery, release rollback | Terraform / GitHub Actions | Failure drills and runbooks | Reproducible portfolio demonstration |
+
+### Existing Foundation
+
+The previous implementation produced:
+
+- A buildable .NET 10 solution with Domain, Application, Infrastructure, API and Worker projects.
+- PostgreSQL-backed workflow state and EF Core migrations.
+- Unit, integration and architecture tests.
+- Terraform configuration for the Azure development environment.
+- Locally validated Terraform configuration and plan.
+
+These assets are reused in the revised phases.
+
+### Deployment Policy
+
+Complete implementation and local verification before requesting approval
+to provision billable Azure resources. Azure deployment is a separate,
+explicitly authorized milestone. Live Azure verification remains pending.
+
+---## P0 Evidence
+
+Revised P0 establishes the governed knowledge architecture and security
+boundaries for the P0–P9 implementation roadmap.
+
+### Governance Deliverables
+
+| Deliverable | Evidence |
+|---|---|
+| Enterprise knowledge use cases | `docs/architecture/governed-knowledge-use-cases.md` |
+| Document authorization and tenant isolation | `docs/architecture/document-authorization-model.md` |
+| System architecture and trust boundaries | `docs/architecture/architecture.md` |
+| Data classification | `docs/architecture/data-classification.md` |
+| Non-functional requirements | `docs/architecture/non-functional-requirements.md` |
+| Action-risk tiers and approval boundaries | `docs/ai-safety/autonomy-policy.md` |
+| Threat model | `docs/threat-model/threat-model.md` |
+| Evaluation requirements | `docs/evaluations/evaluation-specification.md` |
+| Versioned evaluation cases | `docs/evaluations/p0-evaluation-cases.json` |
+| Architecture decisions | `docs/adr/ADR-001-custom-orchestration.md`, `docs/adr/ADR-002-azure-ai-search.md` |
+
+### P0 Acceptance Criteria
+
+- Governed knowledge use cases are documented.
+- Tenant and document ACL boundaries are defined.
+- Unauthorized retrieval is explicitly prohibited.
+- Citation verification and abstention are required.
+- Action-risk tiers and human approval boundaries are defined.
+- Threat scenarios are mapped to evaluation cases.
+- The initial evaluation dataset contains 12 uniquely identified cases.
+- The revised P0–P9 implementation roadmap is documented.
+
+**Implementation status:** P0 design and governance baseline complete.
+Runtime authorization, ingestion, retrieval, grounded generation,
+approval enforcement, and Azure verification remain pending.
 
 ---
-
-## P0 Evidence
-
-The P0 architecture and governance evidence is contained in:
-
-```text
-docs/
-├── architecture/
-│   ├── architecture.md
-│   ├── data-classification.md
-│   ├── non-functional-requirements.md
-│   └── problem-statement.md
-├── adr/
-│   ├── ADR-001-custom-orchestration.md
-│   └── ADR-002-azure-ai-search.md
-├── ai-safety/
-│   └── autonomy-policy.md
-├── evaluations/
-│   └── evaluation-specification.md
-└── threat-model/
-    └── threat-model.md
-```
-
-## P1 Phase Exit
+## Previous Roadmap — P1 Foundation Evidence
 
 P1 establishes:
 
@@ -679,11 +710,11 @@ P1 establishes:
 
 P1 deliberately did not implement production authentication, RAG, model invocation, multi-agent orchestration, privileged tool execution, human approval records, or production observability. P2 subsequently completed the Terraform Azure infrastructure baseline without deploying resources.
 
-**Next phase:** P3 — Microsoft Entra authentication, managed identity, and GitHub OIDC.
+**Current phase:** Revised P0 — Governed Knowledge Architecture and Security Boundaries.
 
 ---
 
-## P2 — Azure Terraform Infrastructure
+## Existing Azure Terraform Infrastructure Foundation
 
 ### Overview
 
@@ -847,8 +878,8 @@ Before any deployment:
 
 Azure infrastructure deployment is intentionally deferred until the
 
-P0–P11 implementation milestones are complete.
+the revised implementation milestones are completed and deployment is explicitly approved.
 
-Azure infrastructure was not deployed during P2. Deployment and runtime integration verification remain deferred until P0–P11 implementation milestones are complete.
+Azure infrastructure was not deployed during P2. Deployment and runtime integration verification remain deferred until the revised implementation milestones are completed and deployment is explicitly approved.
 
-**P2 status:** Infrastructure-as-Code complete; deployment deferred.
+**Previous roadmap P2 status:** Infrastructure-as-Code complete; deployment deferred. Revised P2 retrieval implementation remains planned.
