@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using NexusAgent.Application.Abstractions;
+using NexusAgent.Application.Documents;
+using NexusAgent.Infrastructure.Persistence.Outbox;
+using System.Text.Json;
 using NexusAgent.Domain.Documents;
 
 namespace NexusAgent.Infrastructure.Persistence.Repositories;
@@ -32,12 +35,34 @@ public sealed class KnowledgeDocumentRepository(
     {
         ValidateVersion(document, initialVersion);
 
+        var ingestionEvent = new DocumentIngestionEvent(
+            Guid.NewGuid(),
+            DocumentIngestionEventTypes.Created,
+            document.TenantId,
+            document.Id,
+            document.Version,
+            document.ContentVersion,
+            document.UpdatedAt);
+
+        var outboxMessage = OutboxMessage.Create(
+            ingestionEvent.EventId,
+            ingestionEvent.TenantId,
+            ingestionEvent.EventType,
+            ingestionEvent.DocumentId,
+            ingestionEvent.DocumentVersion,
+            JsonSerializer.Serialize(ingestionEvent),
+            ingestionEvent.OccurredAt);
+
         await dbContext.KnowledgeDocuments.AddAsync(
             document, cancellationToken);
 
         await dbContext.DocumentVersions.AddAsync(
             initialVersion, cancellationToken);
 
+        await dbContext.OutboxMessages.AddAsync(
+            outboxMessage, cancellationToken);
+
+        // EF Core commits all three inserts atomically.
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -52,9 +77,35 @@ public sealed class KnowledgeDocumentRepository(
             throw new InvalidOperationException(
                 "Document must be loaded through the tenant-scoped repository.");
 
+        var eventType = version.IsDeleted
+            ? DocumentIngestionEventTypes.Deleted
+            : DocumentIngestionEventTypes.Updated;
+
+        var ingestionEvent = new DocumentIngestionEvent(
+            Guid.NewGuid(),
+            eventType,
+            document.TenantId,
+            document.Id,
+            document.Version,
+            document.ContentVersion,
+            document.UpdatedAt);
+
+        var outboxMessage = OutboxMessage.Create(
+            ingestionEvent.EventId,
+            ingestionEvent.TenantId,
+            ingestionEvent.EventType,
+            ingestionEvent.DocumentId,
+            ingestionEvent.DocumentVersion,
+            JsonSerializer.Serialize(ingestionEvent),
+            ingestionEvent.OccurredAt);
+
         await dbContext.DocumentVersions.AddAsync(
             version, cancellationToken);
 
+        await dbContext.OutboxMessages.AddAsync(
+            outboxMessage, cancellationToken);
+
+        // Document update, version snapshot, and event commit together.
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);

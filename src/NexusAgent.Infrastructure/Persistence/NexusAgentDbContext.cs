@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using NexusAgent.Domain.Workflows;
 using NexusAgent.Domain.Documents;
+using NexusAgent.Infrastructure.Persistence.Outbox;
 
 namespace NexusAgent.Infrastructure.Persistence;
 
@@ -15,6 +16,12 @@ public sealed class NexusAgentDbContext(
 
     public DbSet<DocumentVersion> DocumentVersions =>
         Set<DocumentVersion>();
+
+    public DbSet<OutboxMessage> OutboxMessages =>
+        Set<OutboxMessage>();
+
+    public DbSet<PublishedDocumentEvent> PublishedDocumentEvents =>
+        Set<PublishedDocumentEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

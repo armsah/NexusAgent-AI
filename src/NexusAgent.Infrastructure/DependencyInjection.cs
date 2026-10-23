@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NexusAgent.Application.Abstractions;
 using NexusAgent.Application.Documents;
 using NexusAgent.Infrastructure.Persistence;
+using NexusAgent.Infrastructure.Persistence.Outbox;
 using NexusAgent.Infrastructure.Persistence.Repositories;
 using NexusAgent.Infrastructure.System;
 using NexusAgent.Infrastructure.Storage;
@@ -26,6 +27,7 @@ public static class DependencyInjection
 
         services.AddScoped<IWorkflowRepository, WorkflowRepository>();
         services.AddScoped<IKnowledgeDocumentRepository, KnowledgeDocumentRepository>();
+        services.AddScoped<IDocumentIngestionEventPublisher, PostgresDocumentIngestionEventPublisher>();
 
         var storageRoot = configuration["DocumentStorage:RootPath"];
 
