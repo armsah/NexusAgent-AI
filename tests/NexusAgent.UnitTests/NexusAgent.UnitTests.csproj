@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\NexusAgent.Domain\NexusAgent.Domain.csproj" />
     <ProjectReference Include="..\..\src\NexusAgent.Application\NexusAgent.Application.csproj" />
+    <ProjectReference Include="..\..\src\NexusAgent.Api\NexusAgent.Api.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,3 +1,4 @@
+using NexusAgent.Api.Documents;
 using NexusAgent.Application;
 using NexusAgent.Application.Workflows;
 using NexusAgent.Api.Identity;
@@ -26,6 +27,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapDocumentEndpoints();
 }
 
 
