@@ -10,14 +10,14 @@ The system is designed around a fundamental separation:
 
 ## Project Status
 
-**Current milestone:** P2 secure retrieval complete locally; P3 grounded question answering is next.
+**Current milestone:** P3 grounded question answering complete locally and merged into `main`; P4 agent orchestration is next.
 
 | Phase | Deliverable | Status |
 |---|---|---|
 | P0 | Governance, document authorization model, threat model, evaluation baseline | Complete |
 | P1 | Versioned document ingestion, transactional outbox, durable event processing | Complete |
 | P2 | Tenant-aware ACL-filtered lexical and hybrid vector retrieval | Complete locally |
-| P3 | Grounded Q&A, source citations, verification, abstention | Next |
+| P3 | Grounded Q&A, source citations, verification, abstention | Complete locally |
 | P4 | Supervisor, Knowledge, Policy agents and durable task state | Planned |
 | P5 | Allow-listed typed Tool Gateway | Planned |
 | P6 | Risk decisions, human approvals, immutable action payloads | Planned |
@@ -906,3 +906,53 @@ No Azure resources are provisioned by P3.
 Security limitations: Citation-ID validation does not prove factual
 entailment. The endpoint currently uses a development identity and is
 not exposed as a production-authenticated endpoint.
+
+## P3 Implementation Evidence
+
+**Status:** Complete locally; merged into `main`.
+
+P3 extends the governed retrieval pipeline with development-only
+grounded question answering.
+
+### Implemented capabilities
+
+- `POST /api/questions/answer` for grounded questions.
+- PostgreSQL full-text evidence retrieval.
+- Tenant-aware and principal-aware authorization filtering.
+- Active-document and current-content-version enforcement.
+- Citation records containing source IDs, document IDs, document
+  versions, content versions, and source excerpts.
+- Extractive fallback without external model dependencies.
+- Optional Azure OpenAI chat-completions generation.
+- Citation-ID validation and fail-closed abstention.
+- HTTP integration tests covering authorized retrieval, tenant and
+  ACL isolation, stale/deleted documents, invalid citations,
+  missing evidence, and generator failures.
+
+### Verified quality gate
+
+- Unit tests: 42 passed.
+- Integration tests: 145 passed.
+- Failures: 0.
+- P3 implementation commit: `df6cb1a`.
+- P3 merge commit: `3104e20`.
+
+### Security boundaries
+
+The endpoint currently uses a server-derived development identity.
+Production authentication and Microsoft Entra integration are not
+implemented.
+
+Citation-ID validation ensures that generated references correspond
+to authorized retrieved evidence. It does not independently prove
+that every factual claim is supported by that evidence.
+
+The optional Azure OpenAI adapter is implemented but has not been
+validated against a live Azure deployment. No Azure resources were
+provisioned.
+
+### Next milestone
+
+**P4 — Agent Orchestration:** Introduce explicit workflow state,
+bounded execution, deterministic transitions, retries, cancellation,
+and auditable step outcomes.
