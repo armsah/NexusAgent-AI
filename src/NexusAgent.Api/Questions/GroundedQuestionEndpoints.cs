@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NexusAgent.Application.Questions;
+using NexusAgent.Application.Observability;
 using NexusAgent.Api.Identity;
 using NexusAgent.Domain.Documents;
 using NexusAgent.Infrastructure.Persistence;
@@ -20,6 +21,11 @@ public static class GroundedQuestionEndpoints
                 IServiceProvider services,
                 CancellationToken cancellationToken) =>
             {
+                using var requestActivity = NexusAgentTelemetry.StartActivity(
+                    "grounded_answer.request");
+
+                GroundedAnswerMetrics.RecordRequest();
+
                 var question = request.Question?.Trim();
 
                 if (string.IsNullOrWhiteSpace(question) ||
@@ -33,6 +39,9 @@ public static class GroundedQuestionEndpoints
 
                 // Every evidence candidate is constrained by server-derived
                 // tenant and requester identity before leaving PostgreSQL.
+                using var retrievalActivity = NexusAgentTelemetry.StartActivity(
+                    "grounded_answer.retrieval");
+
                 var evidence = await (
                     from document in db.KnowledgeDocuments.AsNoTracking()
                     join index in db.DocumentSearchIndexes.AsNoTracking()
@@ -60,6 +69,8 @@ public static class GroundedQuestionEndpoints
                     })
                     .Take(5)
                     .ToListAsync(cancellationToken);
+                retrievalActivity?.SetTag("retrieval.candidate_count", evidence.Count);
+                retrievalActivity?.Dispose();
 
                 var groundingEvidence = evidence.Select((item, position) => new GroundingEvidence(
                         $"S{position + 1}",
@@ -72,8 +83,23 @@ public static class GroundedQuestionEndpoints
                             : item.Content[..600]))
                     .ToArray();
 
+                using var screeningActivity = NexusAgentTelemetry.StartActivity(
+                    "grounded_answer.evidence_screening");
+
                 var safeEvidence = PromptInjectionDefense.FilterEvidence(
                     groundingEvidence);
+
+                screeningActivity?.SetTag(
+                    "screening.safe_count", safeEvidence.Count);
+
+                screeningActivity?.SetTag(
+                    "screening.rejected_count",
+                    groundingEvidence.Length - safeEvidence.Count);
+                screeningActivity?.Dispose();
+
+                GroundedAnswerMetrics.RecordRetrieval(
+                    groundingEvidence.Length,
+                    safeEvidence.Count);
 
                 GroundedGenerationResult? generated = null;
 
@@ -85,10 +111,15 @@ public static class GroundedQuestionEndpoints
                 {
                     try
                     {
+                        using var generationActivity = NexusAgentTelemetry.StartActivity(
+                            "grounded_answer.generation");
+
                         generated = await generator.GenerateAsync(
                             question,
                             safeEvidence,
                             cancellationToken);
+
+                        generationActivity?.Dispose();
                     }
                     catch (OperationCanceledException)
                         when (cancellationToken.IsCancellationRequested)
@@ -97,6 +128,9 @@ public static class GroundedQuestionEndpoints
                     }
                     catch (Exception)
                     {
+                        GroundedAnswerMetrics.RecordGenerationFailure();
+                        GroundedAnswerMetrics.RecordOutcome(true);
+
                         // A failed configured generator must not silently
                         // produce an unverified answer.
                         return Results.Ok(new GroundedQuestionResponse(
@@ -107,10 +141,39 @@ public static class GroundedQuestionEndpoints
                     }
                 }
 
+                using var verificationActivity = NexusAgentTelemetry.StartActivity(
+                    "grounded_answer.verification");
+
                 var decision = GroundedAnswerComposer.Compose(
                     question,
                     safeEvidence,
                     generated);
+
+                verificationActivity?.SetTag("answer.abstained", decision.Abstained);
+                verificationActivity?.SetTag(
+                    "answer.citation_count", decision.Citations.Count);
+
+                verificationActivity?.Dispose();
+
+                requestActivity?.SetTag("answer.abstained", decision.Abstained);
+
+                GroundedAnswerMetrics.RecordOutcome(decision.Abstained);
+
+                if (generated is not null)
+                {
+                    var estimate = GroundedAnswerMetrics.RecordGenerationEstimate(
+                        question,
+                        safeEvidence.Select(item => item.Excerpt),
+                        generated.Answer);
+
+                    requestActivity?.SetTag(
+                        "generation.estimated_input_tokens",
+                        estimate.EstimatedInputTokens);
+
+                    requestActivity?.SetTag(
+                        "generation.estimated_output_tokens",
+                        estimate.EstimatedOutputTokens);
+                }
 
                 var citations = decision.Citations
                     .Select(item => new GroundedCitation(
@@ -126,7 +189,8 @@ public static class GroundedQuestionEndpoints
                     question,
                     decision.Answer,
                     decision.Abstained,
-                    citations));            });
+                    citations));
+            });
 
         return app;
     }

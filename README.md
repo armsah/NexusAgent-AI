@@ -10,7 +10,7 @@ The system is designed around a fundamental separation:
 
 ## Project Status
 
-**Current milestone:** P7 Answer Verification and Prompt-Injection Defense complete; 211 tests passed (102 unit, 3 architecture, 106 integration). Merged into `main` and pushed to GitHub. P8 Observability and Evaluation is next.
+**Current milestone:** P8 Observability and Evaluation complete; 226 tests passed (117 unit, 3 architecture, 106 integration). Merged into `main` and pushed to GitHub.
 
 | Phase | Deliverable | Status |
 |---|---|---|
@@ -22,7 +22,7 @@ The system is designed around a fundamental separation:
 | P5 | Allow-listed typed Tool Gateway | Complete — merged into main |
 | P6 | Risk decisions, human approvals, immutable action payloads | Complete - merged into main |
 | P7 | Verifier, prompt-injection defense, adversarial retrieval | Complete - merged into main |
-| P8 | Token spend, retrieval quality, OpenTelemetry traces | Planned |
+| P8 | Observability, generation estimates, retrieval metrics, evaluation tests | Complete - merged into main |
 | P9 | Failure drills, load testing, recovery, release rollback | Planned |
 
 ### Implemented Capabilities
@@ -625,7 +625,7 @@ The following P0–P9 roadmap supersedes the original P0–P19 roadmap.
 | P5 | Allow-listed knowledge actions through typed Tool Gateway | Container Apps / API | Tool contracts | Complete — merged into main |
 | P6 | Risk decisions, human approvals, immutable action payloads | Entra / Policy / PostgreSQL | Approval replay tests | Privileged changes require valid approval |
 | P7 | Verifier agent, prompt-injection defenses, adversarial retrieval | Foundry / AI Security | Red-team report | Malicious content cannot redirect actions |
-| P8 | Token spend, retrieval quality, end-to-end traces | OpenTelemetry / Monitor | Quality-cost dashboard | Every answer traceable to evidence |
+| P8 | Observability, generation estimates, retrieval metrics, evaluation tests | Complete - merged into main |
 | P9 | Load, model outages, index drift, recovery, release rollback | Terraform / GitHub Actions | Failure drills and runbooks | Reproducible portfolio demonstration |
 
 ### Existing Foundation
@@ -1073,3 +1073,37 @@ P7 adds defense-in-depth controls to the grounded question-answering pipeline:
 **Validation:** 211 tests passing — 102 unit, 3 architecture, and 106 integration.
 
 **Security limitations:** Pattern-based injection detection is heuristic and can miss obfuscated, encoded, multilingual, or novel attacks. Lexical answer verification does not establish semantic entailment and can reject legitimate paraphrases or miss contradictions. Retrieved content remains untrusted; P7 does not independently authorize tool execution or replace existing tenant, ACL, and approval controls.
+
+## P8 — Observability and Evaluation
+
+**Status:** Complete. Validated with 226 passing tests (117 unit, 3 architecture, 106 integration).
+
+### Distributed tracing and correlation
+
+- Uses the built-in .NET `System.Diagnostics.ActivitySource` with source name `NexusAgent`.
+- Instruments the grounded-answer request, authorized PostgreSQL retrieval, prompt-injection evidence screening, generation, and answer verification.
+- Child activities inherit the parent trace identifier when tracing is enabled by an `ActivityListener` or compatible telemetry collector.
+- Records operational span tags such as candidate counts, rejected evidence counts, citation counts, abstention decisions, and estimated token usage.
+- Does not include raw questions, retrieved excerpts, tenant identifiers, or requester identifiers in custom telemetry tags.
+
+### Operational metrics
+
+- Uses the built-in .NET `System.Diagnostics.Metrics` API with meter name `NexusAgent.GroundedAnswers`.
+- Records request counts, abstentions, generation failures, retrieved candidates, safe candidates, rejected candidates, and evidence-retention ratios.
+- Records estimated input/output token counts and estimated generation cost in USD.
+- Token estimates use a simple four-characters-per-token approximation, not provider-reported token usage.
+- Cost estimates accept explicit USD-per-million-token rates. The current endpoint uses the default zero rates, so recorded zero cost must not be interpreted as free model execution or actual billing.
+- Evidence-retention ratio measures how much retrieved evidence survives prompt-injection screening. It is not retrieval precision, recall, relevance, or answer correctness.
+
+### Evaluation and regression coverage
+
+- Unit tests validate token-estimation boundaries, configurable cost arithmetic, invalid retrieval counts, metric measurements, and trace parent-child correlation.
+- Existing integration tests continue to validate tenant isolation, authorization, grounded-answer behavior, verification, and prompt-injection defenses.
+- Full regression suite: **226 passed, 0 failed, 0 skipped**.
+
+### Current limitations
+
+- Activity sources and meters are instrumented, but no OpenTelemetry SDK exporter, collector, hosted dashboard, or production alerting configuration is included.
+- No provider-reported token accounting or billing reconciliation is implemented.
+- No labeled relevance dataset, retrieval precision/recall benchmark, or semantic answer-quality evaluator is implemented.
+- The P7 lexical verifier remains a heuristic rather than a semantic entailment model.
