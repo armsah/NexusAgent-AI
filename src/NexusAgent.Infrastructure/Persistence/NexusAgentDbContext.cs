@@ -1,3 +1,4 @@
+using NexusAgent.Infrastructure.Persistence.Search;
 using Microsoft.EntityFrameworkCore;
 using NexusAgent.Domain.Workflows;
 using NexusAgent.Domain.Documents;
@@ -22,6 +23,12 @@ public sealed class NexusAgentDbContext(
 
     public DbSet<PublishedDocumentEvent> PublishedDocumentEvents =>
         Set<PublishedDocumentEvent>();
+
+    public DbSet<DocumentSearchIndex> DocumentSearchIndexes => Set<DocumentSearchIndex>();
+
+    public DbSet<DocumentVectorIndex> DocumentVectorIndexes => Set<DocumentVectorIndex>();
+
+    public DbSet<ProcessedDocumentIndexEvent> ProcessedDocumentIndexEvents => Set<ProcessedDocumentIndexEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

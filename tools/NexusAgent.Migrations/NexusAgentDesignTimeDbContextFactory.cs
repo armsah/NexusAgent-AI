@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using NexusAgent.Infrastructure.Persistence;
 
@@ -16,7 +16,7 @@ public sealed class NexusAgentDesignTimeDbContextFactory
                 "NEXUSAGENT_MIGRATIONS_CONNECTION is required.");
 
         var options = new DbContextOptionsBuilder<NexusAgentDbContext>()
-            .UseNpgsql(connectionString)
+            .UseNpgsql(connectionString, npgsql => npgsql.UseVector())
             .Options;
 
         return new NexusAgentDbContext(options);

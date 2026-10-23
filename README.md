@@ -10,62 +10,51 @@ The system is designed around a fundamental separation:
 
 ## Project Status
 
-**Current milestone:** Revised P0 complete — P1 document ingestion next.
+**Current milestone:** P2 secure retrieval complete locally; P3 grounded question answering is next.
 
-| Revised phase | Deliverable | Status |
+| Phase | Deliverable | Status |
 |---|---|---|
-| P0 | Governed knowledge architecture, ACLs, citation targets, action-risk tiers | Complete — design baseline |
-| P1 | Document ingestion, Blob versioning, ingestion events | Planned |
-| P2 | Tenant-aware ACL-filtered hybrid/vector retrieval | Planned |
-| P3 | Grounded Q&A, citation verification, abstention | Planned |
+| P0 | Governance, document authorization model, threat model, evaluation baseline | Complete |
+| P1 | Versioned document ingestion, transactional outbox, durable event processing | Complete |
+| P2 | Tenant-aware ACL-filtered lexical and hybrid vector retrieval | Complete locally |
+| P3 | Grounded Q&A, source citations, verification, abstention | Next |
 | P4 | Supervisor, Knowledge, Policy agents and durable task state | Planned |
 | P5 | Allow-listed typed Tool Gateway | Planned |
 | P6 | Risk decisions, human approvals, immutable action payloads | Planned |
-| P7 | Verifier agent, prompt-injection defense, adversarial retrieval | Planned |
+| P7 | Verifier, prompt-injection defense, adversarial retrieval | Planned |
 | P8 | Token spend, retrieval quality, OpenTelemetry traces | Planned |
-| P9 | Load, outages, index drift, recovery and rollback | Planned |
+| P9 | Failure drills, load testing, recovery, release rollback | Planned |
 
-**Existing implementation foundations:** The .NET 10 application, PostgreSQL
-workflow persistence, tests, and Azure Terraform baseline were completed under
-the previous roadmap. They are retained as reusable foundations, but do not
-constitute completion of revised P1 or P2.
+### Implemented Capabilities
 
-**Azure deployment:** No Azure resources have been provisioned. Deployment
-remains deferred until explicitly authorized.
-### Previous Roadmap — P1 Evidence
+**Application foundation**
+- .NET 10 solution with Domain, Application, Infrastructure, API, and Workers projects.
+- PostgreSQL persistence using Entity Framework Core and Npgsql.
+- Durable workflow lifecycle and database-backed readiness checks.
+- Unit, integration, and architecture tests.
 
-P1 currently provides:
+**P1 — Document ingestion**
+- Document CRUD with tenant and document ACL metadata.
+- Versioned document content and document history.
+- Transactional PostgreSQL outbox.
+- Durable event publication and processing with retries, leases, and failure handling.
+- Background document indexing with persistent processing checkpoints.
 
-- .NET 10 solution with explicit Domain, Application, Infrastructure, API, and Workers boundaries;
-- application-owned workflow lifecycle and state-transition invariants;
-- PostgreSQL persistence through Entity Framework Core and Npgsql;
-- EF Core migration for workflow and workflow-step state;
-- server-derived development requester and tenant identity;
-- ASP.NET Core workflow lifecycle endpoints;
-- string-based workflow status serialization in the HTTP contract;
-- liveness and PostgreSQL-backed readiness endpoints;
-- Docker Compose PostgreSQL development environment;
-- automated unit, PostgreSQL integration, and architecture dependency tests;
-- manual end-to-end verification of `Created → Running → Completed` persistence.
+**P2 — Secure retrieval**
+- PostgreSQL full-text document indexing and lexical ranking.
+- pgvector-backed 1,536-dimensional embeddings.
+- Hybrid lexical/vector retrieval with reciprocal-rank fusion.
+- Server-derived development tenant and requester identity.
+- Tenant isolation, document ACL filtering, and exclusion of deleted documents.
+- Content-version checks that prevent stale search indexes from being returned.
+- Optional Azure OpenAI embedding provider; no Azure deployment required for local development.
+- HTTP integration tests covering unauthorized, cross-tenant, deleted, stale, and hybrid retrieval scenarios.
 
-**P1 exit condition:** The core request lifecycle works locally with durable PostgreSQL state and enforced application boundaries.
+**Verification:** The complete local solution test run passed, including 127 integration tests, with zero integration failures.
 
----
+**Important limitations:** Development identity is not production authentication. Azure resources have not been provisioned. Grounded answer generation, agent orchestration, privileged tools, human approval workflows, and production observability remain future milestones.
 
-### Previous Roadmap — P2 Evidence
-
-P2 establishes the Azure development infrastructure baseline in `infra/terraform/environments/dev/`. The configuration covers a resource group, Azure Container Registry, Container Apps environment, Service Bus messaging, Blob Storage, Key Vault, user-assigned managed identity, RBAC assignments, Log Analytics, and Application Insights. API/Worker Container Apps, PostgreSQL Flexible Server, Azure AI Search, and Azure OpenAI are optional and disabled in the validated baseline.
-
-| Validation | Result |
-|---|---|
-| `terraform init -backend=false -reconfigure` | Passed |
-| `terraform fmt` | Passed |
-| `terraform validate` | Passed |
-| `terraform plan -input=false` | Passed |
-| Planned changes | 16 to add, 0 to change, 0 to destroy |
-| Azure provisioning | Not performed |
-
-**P2 exit condition:** Infrastructure-as-Code complete and locally validated; Azure deployment, connectivity, and operational validation deferred.
+**Azure deployment:** Deferred until explicitly authorized.
 
 ---
 
@@ -79,7 +68,7 @@ P2 establishes the Azure development infrastructure baseline in `infra/terraform
 The repository pins the .NET SDK through `global.json`.
 
 ### Start PostgreSQL
-P1 uses PostgreSQL 17 locally through Docker Compose:
+Local development uses PostgreSQL 17 with the pgvector extension through Docker Compose:
 
 ```powershell
 docker compose up -d
@@ -120,7 +109,7 @@ dotnet ef database update `
   --startup-project src\NexusAgent.Api\NexusAgent.Api.csproj
 ```
 
-P1 creates durable `workflows` and `workflow_steps` state in PostgreSQL.
+Database migrations create durable workflow, document, outbox, search-index, and vector-index state in PostgreSQL.
 
 ### Run the API
 ```powershell
@@ -268,7 +257,7 @@ The application owns:
 
 Microsoft Foundry / Azure OpenAI provides AI capabilities behind application abstractions.
 
-Azure AI Search provides authorization-aware enterprise retrieval.
+The implemented local retrieval backend uses PostgreSQL full-text search and pgvector. Azure AI Search remains a documented target architecture option, not a deployed dependency.
 
 Azure Service Bus supports durable asynchronous workflows.
 
@@ -545,7 +534,7 @@ Foundry agent capabilities may be used behind application abstractions but are n
 [Read ADR-001](docs/adr/ADR-001-custom-orchestration.md)
 
 ### ADR-002 — Azure AI Search for Enterprise Retrieval
-Azure AI Search is the primary enterprise hybrid/vector retrieval platform.
+ADR-002 documents Azure AI Search as the target enterprise retrieval platform. The implemented P2 retrieval backend uses PostgreSQL full-text search and pgvector; Azure AI Search integration has not been implemented.
 
 PostgreSQL remains the transactional workflow/governance store.
 
@@ -689,8 +678,8 @@ boundaries for the P0–P9 implementation roadmap.
 - The revised P0–P9 implementation roadmap is documented.
 
 **Implementation status:** P0 design and governance baseline complete.
-Runtime authorization, ingestion, retrieval, grounded generation,
-approval enforcement, and Azure verification remain pending.
+Grounded generation,
+approval enforcement, production authentication, and Azure verification remain pending.
 
 ---
 ## Previous Roadmap — P1 Foundation Evidence
@@ -710,7 +699,7 @@ P1 establishes:
 
 P1 deliberately did not implement production authentication, RAG, model invocation, multi-agent orchestration, privileged tool execution, human approval records, or production observability. P2 subsequently completed the Terraform Azure infrastructure baseline without deploying resources.
 
-**Current phase:** Revised P0 — Governed Knowledge Architecture and Security Boundaries.
+**Original governance milestone:** Revised P0 — Governed Knowledge Architecture and Security Boundaries.
 
 ---
 
@@ -882,4 +871,4 @@ the revised implementation milestones are completed and deployment is explicitly
 
 Azure infrastructure was not deployed during P2. Deployment and runtime integration verification remain deferred until the revised implementation milestones are completed and deployment is explicitly approved.
 
-**Previous roadmap P2 status:** Infrastructure-as-Code complete; deployment deferred. Revised P2 retrieval implementation remains planned.
+**Previous roadmap P2 status:** Infrastructure-as-Code complete; deployment deferred. Revised P2 retrieval implementation is complete locally.

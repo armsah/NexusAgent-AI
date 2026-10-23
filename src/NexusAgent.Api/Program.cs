@@ -1,3 +1,4 @@
+using NexusAgent.Api.Search;
 using NexusAgent.Api.Documents;
 using NexusAgent.Application;
 using NexusAgent.Application.Workflows;
@@ -28,6 +29,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapDocumentEndpoints();
+    app.MapDocumentSearchEndpoints();
 }
 
 

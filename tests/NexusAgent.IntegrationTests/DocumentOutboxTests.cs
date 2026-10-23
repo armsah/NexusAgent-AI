@@ -20,7 +20,7 @@ public sealed class DocumentOutboxTests
         var now = DateTimeOffset.UtcNow;
 
         var options = new DbContextOptionsBuilder<NexusAgentDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(ConnectionString, npgsql => npgsql.UseVector())
             .Options;
 
         await using (var db = new NexusAgentDbContext(options))
@@ -140,7 +140,7 @@ public sealed class DocumentOutboxTests
         var now = DateTimeOffset.UtcNow;
 
         var options = new DbContextOptionsBuilder<NexusAgentDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(ConnectionString, npgsql => npgsql.UseVector())
             .Options;
 
         await using (var db = new NexusAgentDbContext(options))
@@ -252,7 +252,7 @@ public sealed class DocumentOutboxTests
         var now = DateTimeOffset.UtcNow;
 
         var options = new DbContextOptionsBuilder<NexusAgentDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(ConnectionString, npgsql => npgsql.UseVector())
             .Options;
 
         await using (var db = new NexusAgentDbContext(options))
@@ -345,7 +345,7 @@ public sealed class DocumentOutboxTests
         var now = DateTimeOffset.UtcNow;
 
         var options = new DbContextOptionsBuilder<NexusAgentDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(ConnectionString, npgsql => npgsql.UseVector())
             .Options;
 
         await using (var setupDb = new NexusAgentDbContext(options))
@@ -479,7 +479,7 @@ public sealed class DocumentOutboxTests
         var now = DateTimeOffset.UtcNow.AddMinutes(-10);
 
         var options = new DbContextOptionsBuilder<NexusAgentDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(ConnectionString, npgsql => npgsql.UseVector())
             .Options;
 
         var first = NexusAgent.Infrastructure.Persistence.Outbox.OutboxMessage.Create(
@@ -524,13 +524,16 @@ public sealed class DocumentOutboxTests
             var reader =
                 new NexusAgent.Infrastructure.Persistence.Outbox.PendingOutboxMessageReader(db);
 
-            // The database may contain events from other tests.
-            // Use a sufficiently large batch and filter by this test's tenant.
-            var pending = await reader.ReadAsync(1000);
-
-            var matching = pending
-                .Where(message => message.TenantId == tenantId)
-                .ToList();
+            // Query this test's tenant before applying the result limit.
+            // The shared database may contain more than 1,000 pending events.
+            var matching = await db.OutboxMessages
+                .AsNoTracking()
+                .Where(message =>
+                    message.TenantId == tenantId &&
+                    message.ProcessedAt == null)
+                .OrderBy(message => message.CreatedAt)
+                .ThenBy(message => message.Id)
+                .ToListAsync();
 
             Assert.Equal(2, matching.Count);
             Assert.Equal(first.Id, matching[0].Id);
@@ -553,7 +556,7 @@ public sealed class DocumentOutboxTests
         var now = DateTimeOffset.UtcNow;
 
         var options = new DbContextOptionsBuilder<NexusAgentDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(ConnectionString, npgsql => npgsql.UseVector())
             .Options;
 
         await using (var db = new NexusAgentDbContext(options))
