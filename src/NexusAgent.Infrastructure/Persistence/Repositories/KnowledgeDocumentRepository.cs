@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using NexusAgent.Application.Abstractions;
 using NexusAgent.Domain.Documents;
 
@@ -54,7 +55,19 @@ public sealed class KnowledgeDocumentRepository(
         await dbContext.DocumentVersions.AddAsync(
             version, cancellationToken);
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception)
+            when (exception.InnerException is PostgresException postgres &&
+                  postgres.SqlState == PostgresErrorCodes.UniqueViolation &&
+                  postgres.ConstraintName == "IX_document_versions_document_id_version")
+        {
+            throw new DbUpdateConcurrencyException(
+                "The document was modified by another request.",
+                exception);
+        }
     }
 
     private static void ValidateVersion(

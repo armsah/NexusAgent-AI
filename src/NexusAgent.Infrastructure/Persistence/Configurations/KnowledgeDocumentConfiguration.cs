@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using NexusAgent.Domain.Documents;
 
@@ -44,6 +44,11 @@ public sealed class KnowledgeDocumentConfiguration
 
         builder.Property(document => document.Version)
             .HasColumnName("version")
+            .IsConcurrencyToken()
+            .IsRequired();
+
+        builder.Property(document => document.ContentVersion)
+            .HasColumnName("content_version")
             .IsRequired();
 
         builder.Property(document => document.Status)

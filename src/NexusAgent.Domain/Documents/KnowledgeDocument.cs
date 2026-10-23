@@ -1,4 +1,4 @@
-﻿using NexusAgent.Domain.Common;
+using NexusAgent.Domain.Common;
 
 namespace NexusAgent.Domain.Documents;
 
@@ -13,6 +13,7 @@ public sealed class KnowledgeDocument
     public string OwnerId { get; private set; } = string.Empty;
     public string[] AllowedPrincipalIds { get; private set; } = [];
     public int Version { get; private set; }
+    public int ContentVersion { get; private set; }
     public DocumentStatus Status { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
@@ -48,6 +49,7 @@ public sealed class KnowledgeDocument
             OwnerId = ownerId.Trim(),
             AllowedPrincipalIds = principals,
             Version = 1,
+            ContentVersion = 1,
             Status = DocumentStatus.Active,
             CreatedAt = now,
             UpdatedAt = now

@@ -1,4 +1,5 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http.Features;
 using NexusAgent.Api.Identity;
 using NexusAgent.Application.Documents;
@@ -174,6 +175,136 @@ public static class DocumentEndpoints
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status413PayloadTooLarge);
 
+        documents.MapPut(
+            "/{documentId:guid}",
+            async (
+                Guid documentId,
+                UpdateDocumentRequest request,
+                UpdateDocumentHandler handler,
+                DevelopmentRequestIdentity identity,
+                CancellationToken cancellationToken) =>
+            {
+                if (request is null ||
+                    request.ExpectedVersion < 1 ||
+                    string.IsNullOrWhiteSpace(request.Title) ||
+                    string.IsNullOrWhiteSpace(request.Classification) ||
+                    request.Title.Length > 256 ||
+                    request.Classification.Length > 64)
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = "Valid expectedVersion, title, and classification are required."
+                    });
+                }
+
+                try
+                {
+                    var result = await handler.HandleAsync(
+                        new UpdateDocumentCommand(
+                            TenantId: identity.TenantId,
+                            RequesterId: identity.RequesterId,
+                            DocumentId: documentId,
+                            ExpectedVersion: request.ExpectedVersion,
+                            Title: request.Title,
+                            Classification: request.Classification,
+                            AllowedPrincipalIds: [identity.RequesterId]),
+                        cancellationToken);
+
+                    return result is null
+                        ? Results.NotFound()
+                        : Results.Ok(result);
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    return Results.Conflict(new
+                    {
+                        error = "Document version conflict."
+                    });
+                }
+                catch (DomainException exception)
+                    when (exception.Message == "Document version conflict.")
+                {
+                    return Results.Conflict(new
+                    {
+                        error = "Document version conflict."
+                    });
+                }
+                catch (DomainException exception)
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = exception.Message
+                    });
+                }
+            })
+            .WithName("UpdateDocument")
+            .Produces<UpdateDocumentResult>(
+                StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+        documents.MapGet(
+            "/{documentId:guid}",
+            async (
+                Guid documentId,
+                GetDocumentHandler handler,
+                DevelopmentRequestIdentity identity,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await handler.HandleAsync(
+                    new GetDocumentQuery(
+                        identity.TenantId,
+                        identity.RequesterId,
+                        documentId),
+                    cancellationToken);
+
+                return result is null
+                    ? Results.NotFound()
+                    : Results.Ok(result);
+            })
+            .WithName("GetDocument")
+            .Produces<GetDocumentResult>(
+                StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+        documents.MapGet(
+            "/{documentId:guid}/content",
+            async (
+                Guid documentId,
+                GetDocumentContentHandler handler,
+                DevelopmentRequestIdentity identity,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await handler.HandleAsync(
+                    new GetDocumentContentQuery(
+                        identity.TenantId,
+                        identity.RequesterId,
+                        documentId),
+                    cancellationToken);
+
+                if (result is null)
+                {
+                    return Results.NotFound();
+                }
+
+                return Results.File(
+                    result.Content,
+                    contentType: "application/octet-stream",
+                    fileDownloadName: $"{documentId:N}-v{result.Version}.bin");
+            })
+            .WithName("GetDocumentContent")
+            .Produces(
+                StatusCodes.Status200OK,
+                contentType: "application/octet-stream")
+            .Produces(StatusCodes.Status404NotFound);
         return endpoints;
     }
 }
+
+
+
+
+
+public sealed record UpdateDocumentRequest(
+    int ExpectedVersion,
+    string Title,
+    string Classification);

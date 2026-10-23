@@ -10,6 +10,9 @@ public static class DependencyInjection
         this IServiceCollection services)
     {
         services.AddScoped<CreateDocumentHandler>();
+        services.AddScoped<GetDocumentHandler>();
+        services.AddScoped<UpdateDocumentHandler>();
+        services.AddScoped<GetDocumentContentHandler>();
         services.AddScoped<CreateWorkflowHandler>();
         services.AddScoped<GetWorkflowHandler>();
         services.AddScoped<StartWorkflowHandler>();
