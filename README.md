@@ -10,7 +10,7 @@ The system is designed around a fundamental separation:
 
 ## Project Status
 
-**Current milestone:** P3 grounded question answering complete locally and merged into `main`; P4 agent orchestration is next.
+**Current milestone:** P4 application-owned workflow orchestration implemented and validated locally on `feat/p4-agent-orchestration`; P5 typed Tool Gateway is next.
 
 | Phase | Deliverable | Status |
 |---|---|---|
@@ -18,7 +18,7 @@ The system is designed around a fundamental separation:
 | P1 | Versioned document ingestion, transactional outbox, durable event processing | Complete |
 | P2 | Tenant-aware ACL-filtered lexical and hybrid vector retrieval | Complete locally |
 | P3 | Grounded Q&A, source citations, verification, abstention | Complete locally |
-| P4 | Supervisor, Knowledge, Policy agents and durable task state | Planned |
+| P4 | Application-owned bounded orchestration, durable workflow state, retries, cancellation, authorization, and concurrency protection | Complete locally |
 | P5 | Allow-listed typed Tool Gateway | Planned |
 | P6 | Risk decisions, human approvals, immutable action payloads | Planned |
 | P7 | Verifier, prompt-injection defense, adversarial retrieval | Planned |
@@ -50,9 +50,9 @@ The system is designed around a fundamental separation:
 - Optional Azure OpenAI embedding provider; no Azure deployment required for local development.
 - HTTP integration tests covering unauthorized, cross-tenant, deleted, stale, and hybrid retrieval scenarios.
 
-**Verification:** The complete local solution test run passed, including 127 integration tests, with zero integration failures.
+**Verification:** The complete local solution test run passed, including 106 integration tests, with zero integration failures.
 
-**Important limitations:** Development identity is not production authentication. Azure resources have not been provisioned. Grounded answer generation, agent orchestration, privileged tools, human approval workflows, and production observability remain future milestones.
+**Important limitations:** Development identity is not production authentication. Azure resources have not been provisioned. Grounded question answering and application-owned workflow orchestration are implemented locally. Production authentication, model-driven Supervisor/Knowledge/Policy agents, privileged tools, human approval workflows, and production observability remain future work.
 
 **Azure deployment:** Deferred until explicitly authorized.
 
@@ -953,6 +953,53 @@ provisioned.
 
 ### Next milestone
 
-**P4 — Agent Orchestration:** Introduce explicit workflow state,
-bounded execution, deterministic transitions, retries, cancellation,
-and auditable step outcomes.
+**P4 — Agent Orchestration:** Implemented locally. See the
+P4 Implementation Evidence section below for verified capabilities,
+security boundaries, and remaining limitations.
+
+---
+
+## P4 Implementation Evidence
+
+**Status:** Implemented and validated locally on `feat/p4-agent-orchestration`; merge pending.
+
+P4 introduces deterministic, application-owned orchestration over persisted
+workflow state. Execution is controlled by application code rather than
+delegating authoritative workflow transitions to an LLM or external agent.
+
+### Implemented capabilities
+
+- Bounded workflow plans with configurable step and retry limits.
+- Explicit workflow transitions and persisted step outcomes.
+- Retryable step failures, terminal failures, cancellation, and execution timeouts.
+- Tenant/requester authorization before workflow reads and mutations.
+- Development-only workflow HTTP endpoints; workflow routes are unavailable
+  in Staging and Production.
+- PostgreSQL `xmin` optimistic concurrency protection against competing
+  workflow claims.
+- Concurrency regression coverage verifying that a losing worker does not
+  execute workflow steps.
+- Recovery tests verifying persistence of cancellation and failure transitions.
+
+### Verification
+
+- Complete solution build passed.
+- Unit, PostgreSQL integration, and architecture test suites passed.
+- Integration tests: 106 passed.
+- Architecture tests: 3 passed.
+- Failures reported by the full validation script: 0.
+
+### Boundaries and limitations
+
+This milestone provides the orchestration foundation, not a production
+multi-agent runtime. Model-driven Supervisor, Knowledge, and Policy agents,
+production authentication, distributed crash recovery/resumption, typed
+privileged tools, human approvals, and production observability are not
+claimed as implemented.
+
+The local API uses development identity. No Azure resources were provisioned.
+
+### Next milestone
+
+**P5 — Typed Tool Gateway:** Introduce allow-listed tool contracts,
+deterministic authorization boundaries, and controlled tool execution.

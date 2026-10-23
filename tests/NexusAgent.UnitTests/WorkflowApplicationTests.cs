@@ -53,7 +53,7 @@ public sealed class WorkflowApplicationTests
 
         var handler = new GetWorkflowHandler(repository);
 
-        var result = await handler.HandleAsync(workflow.Id);
+        var result = await handler.HandleAsync(workflow.Id, new WorkflowAccess("tenant-abc", "user-123"));
 
         Assert.NotNull(result);
         Assert.Equal(workflow.Id, result.Id);
@@ -67,7 +67,8 @@ public sealed class WorkflowApplicationTests
         var handler = new GetWorkflowHandler(repository);
 
         var result = await handler.HandleAsync(
-            Guid.NewGuid());
+            Guid.NewGuid(),
+            new WorkflowAccess("tenant-abc", "user-123"));
 
         Assert.Null(result);
     }

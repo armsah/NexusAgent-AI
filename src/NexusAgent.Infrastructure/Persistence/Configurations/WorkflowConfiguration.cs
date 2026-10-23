@@ -13,6 +13,11 @@ public sealed class WorkflowConfiguration
 
         builder.HasKey(workflow => workflow.Id);
 
+        // PostgreSQL increments xmin whenever this workflow row changes.
+        // EF Core uses it to reject stale concurrent updates.
+        builder.Property<uint>("xmin")
+            .IsRowVersion();
+
         builder.Property(workflow => workflow.Id)
             .HasColumnName("id")
             .ValueGeneratedNever();
