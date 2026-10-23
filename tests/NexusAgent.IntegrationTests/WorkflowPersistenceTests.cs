@@ -13,7 +13,7 @@ public sealed class WorkflowPersistenceTests
     public async Task WorkflowLifecycle_IsPersistedToPostgreSql()
     {
         var options = new DbContextOptionsBuilder<NexusAgentDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(ConnectionString, npgsql => npgsql.UseVector())
             .Options;
 
         var workflowId = Guid.NewGuid();

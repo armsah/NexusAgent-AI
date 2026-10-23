@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using NexusAgent.Application.Abstractions;
 using NexusAgent.Application.Documents;
@@ -152,7 +152,7 @@ public sealed class CreateDocumentHandlerTests
     private static NexusAgentDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<NexusAgentDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(ConnectionString, npgsql => npgsql.UseVector())
             .Options;
 
         return new NexusAgentDbContext(options);

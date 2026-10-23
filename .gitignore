@@ -1,4 +1,4 @@
-﻿# .NET build outputs
+# .NET build outputs
 **/bin/
 **/obj/
 
@@ -24,3 +24,6 @@ override.tf.json
 **/document-storage/
 **/DocumentStorage/
 **/uploads/
+
+# Local database backups - never commit
+/local-backups/

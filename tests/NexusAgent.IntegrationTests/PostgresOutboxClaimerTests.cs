@@ -14,7 +14,7 @@ public sealed class PostgresOutboxClaimerTests
     private static NexusAgentDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<NexusAgentDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(ConnectionString, npgsql => npgsql.UseVector())
             .Options;
 
         return new NexusAgentDbContext(options);

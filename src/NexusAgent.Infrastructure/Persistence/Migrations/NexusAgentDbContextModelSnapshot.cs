@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NexusAgent.Infrastructure.Persistence;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using Pgvector;
 
 #nullable disable
 
@@ -355,6 +356,96 @@ namespace NexusAgent.Infrastructure.Persistence.Migrations
                     b.ToTable("published_document_events", (string)null);
                 });
 
+            modelBuilder.Entity("NexusAgent.Infrastructure.Persistence.Search.DocumentSearchIndex", b =>
+                {
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("document_id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("content");
+
+                    b.Property<int>("ContentVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("content_version");
+
+                    b.Property<DateTimeOffset>("IndexedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("indexed_at");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("DocumentId");
+
+                    b.HasIndex("Content")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "english");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Content"), "GIN");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("document_search_indexes", (string)null);
+                });
+
+            modelBuilder.Entity("NexusAgent.Infrastructure.Persistence.Search.DocumentVectorIndex", b =>
+                {
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("document_id");
+
+                    b.Property<int>("ContentVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("content_version");
+
+                    b.Property<Vector>("Embedding")
+                        .IsRequired()
+                        .HasColumnType("vector(1536)")
+                        .HasColumnName("embedding");
+
+                    b.Property<string>("EmbeddingModel")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("embedding_model");
+
+                    b.Property<DateTimeOffset>("IndexedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("indexed_at");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("DocumentId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("document_vector_indexes", (string)null);
+                });
+
+            modelBuilder.Entity("NexusAgent.Infrastructure.Persistence.Search.ProcessedDocumentIndexEvent", b =>
+                {
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<DateTimeOffset>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("processed_at");
+
+                    b.HasKey("EventId");
+
+                    b.ToTable("processed_document_index_events", (string)null);
+                });
+
             modelBuilder.Entity("NexusAgent.Domain.Documents.DocumentVersion", b =>
                 {
                     b.HasOne("NexusAgent.Domain.Documents.KnowledgeDocument", null)
@@ -369,6 +460,24 @@ namespace NexusAgent.Infrastructure.Persistence.Migrations
                     b.HasOne("NexusAgent.Domain.Workflows.Workflow", null)
                         .WithMany("Steps")
                         .HasForeignKey("WorkflowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("NexusAgent.Infrastructure.Persistence.Search.DocumentSearchIndex", b =>
+                {
+                    b.HasOne("NexusAgent.Domain.Documents.KnowledgeDocument", null)
+                        .WithMany()
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("NexusAgent.Infrastructure.Persistence.Search.DocumentVectorIndex", b =>
+                {
+                    b.HasOne("NexusAgent.Domain.Documents.KnowledgeDocument", null)
+                        .WithMany()
+                        .HasForeignKey("DocumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

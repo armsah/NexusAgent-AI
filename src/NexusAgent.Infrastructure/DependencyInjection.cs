@@ -1,3 +1,6 @@
+using NexusAgent.Infrastructure.Search;
+using NexusAgent.Application.Search;
+using NexusAgent.Infrastructure.Persistence.Search;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,8 +26,29 @@ public static class DependencyInjection
                 "Connection string 'NexusAgent' is not configured.");
 
         services.AddDbContext<NexusAgentDbContext>(
-            options => options.UseNpgsql(connectionString));
+            options => options.UseNpgsql(connectionString, npgsql => npgsql.UseVector()));
 
+        var embeddingProvider = configuration["Embeddings:Provider"];
+
+        if (string.Equals(
+            embeddingProvider,
+            "AzureOpenAI",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddHttpClient<ITextEmbeddingProvider, AzureOpenAiEmbeddingProvider>(
+                client => client.Timeout = TimeSpan.FromSeconds(30));
+        }
+        else if (!string.IsNullOrWhiteSpace(embeddingProvider) &&
+                 !string.Equals(
+                     embeddingProvider,
+                     "Disabled",
+                     StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Unsupported embedding provider: {embeddingProvider}");
+        }
+        services.AddScoped<DocumentContentIndexer>();
+        services.AddScoped<PublishedDocumentIndexProcessor>();
         services.AddScoped<IWorkflowRepository, WorkflowRepository>();
         services.AddScoped<IKnowledgeDocumentRepository, KnowledgeDocumentRepository>();
         services.AddScoped<IDocumentIngestionEventPublisher, PostgresDocumentIngestionEventPublisher>();

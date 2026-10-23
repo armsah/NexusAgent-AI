@@ -13,7 +13,7 @@ public sealed class KnowledgeDocumentPersistenceTests
     private static DbContextOptions<NexusAgentDbContext> CreateOptions()
     {
         return new DbContextOptionsBuilder<NexusAgentDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(ConnectionString, npgsql => npgsql.UseVector())
             .Options;
     }
 
