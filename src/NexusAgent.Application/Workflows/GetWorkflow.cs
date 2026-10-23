@@ -14,6 +14,7 @@ public sealed class GetWorkflowHandler
 
     public async Task<WorkflowDto?> HandleAsync(
         Guid workflowId,
+        WorkflowAccess access,
         CancellationToken cancellationToken = default)
     {
         if (workflowId == Guid.Empty)
@@ -27,7 +28,7 @@ public sealed class GetWorkflowHandler
             workflowId,
             cancellationToken);
 
-        return workflow is null
+        return workflow is null || !access.CanAccess(workflow)
             ? null
             : WorkflowDto.FromDomain(workflow);
     }

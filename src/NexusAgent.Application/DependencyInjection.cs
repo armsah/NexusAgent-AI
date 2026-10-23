@@ -1,3 +1,4 @@
+using NexusAgent.Application.Orchestration;
 using Microsoft.Extensions.DependencyInjection;
 using NexusAgent.Application.Workflows;
 using NexusAgent.Application.Documents;
@@ -19,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<GetWorkflowHandler>();
         services.AddScoped<StartWorkflowHandler>();
         services.AddScoped<CompleteWorkflowHandler>();
+        services.AddScoped<WorkflowOrchestrator>();
 
         return services;
     }

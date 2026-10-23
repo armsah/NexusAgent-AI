@@ -42,6 +42,26 @@ app.MapGet(
         status = "healthy"
     }));
 
+app.MapGet(
+    "/health/ready",
+    async (
+        NexusAgentDbContext dbContext,
+        CancellationToken cancellationToken) =>
+    {
+        var canConnect = await dbContext.Database.CanConnectAsync(
+            cancellationToken);
+
+        return canConnect
+            ? Results.Ok(new
+            {
+                status = "ready"
+            })
+            : Results.StatusCode(
+                StatusCodes.Status503ServiceUnavailable);
+    });
+
+if (app.Environment.IsDevelopment())
+{
 var workflows = app.MapGroup("/api/workflows");
 
 workflows.MapPost(
@@ -74,34 +94,19 @@ workflows.MapPost(
             workflow);
     });
 
-app.MapGet(
-    "/health/ready",
-    async (
-        NexusAgentDbContext dbContext,
-        CancellationToken cancellationToken) =>
-    {
-        var canConnect = await dbContext.Database.CanConnectAsync(
-            cancellationToken);
-
-        return canConnect
-            ? Results.Ok(new
-            {
-                status = "ready"
-            })
-            : Results.StatusCode(
-                StatusCodes.Status503ServiceUnavailable);
-    });
 
 workflows.MapGet(
     "/{id:guid}",
     async (
         Guid id,
         GetWorkflowHandler handler,
+        DevelopmentRequestIdentity identity,
         CancellationToken cancellationToken) =>
     {
         var workflow = await handler.HandleAsync(
-            id,
-            cancellationToken);
+                id,
+                new WorkflowAccess(identity.TenantId, identity.RequesterId),
+                cancellationToken);
 
         return workflow is null
             ? Results.NotFound()
@@ -113,12 +118,14 @@ workflows.MapPost(
     async (
         Guid id,
         StartWorkflowHandler handler,
+        DevelopmentRequestIdentity identity,
         CancellationToken cancellationToken) =>
     {
         try
         {
             var workflow = await handler.HandleAsync(
                 id,
+                new WorkflowAccess(identity.TenantId, identity.RequesterId),
                 cancellationToken);
 
             return workflow is null
@@ -139,12 +146,14 @@ workflows.MapPost(
     async (
         Guid id,
         CompleteWorkflowHandler handler,
+        DevelopmentRequestIdentity identity,
         CancellationToken cancellationToken) =>
     {
         try
         {
             var workflow = await handler.HandleAsync(
                 id,
+                new WorkflowAccess(identity.TenantId, identity.RequesterId),
                 cancellationToken);
 
             return workflow is null
@@ -160,6 +169,8 @@ workflows.MapPost(
         }
     });
 
+
+}
 app.Run();
 
 public sealed record CreateWorkflowRequest(string Request);

@@ -1,3 +1,4 @@
+using NexusAgent.Application.Workflows;
 using Microsoft.EntityFrameworkCore;
 using NexusAgent.Application.Abstractions;
 using NexusAgent.Domain.Workflows;
@@ -28,9 +29,16 @@ public sealed class WorkflowRepository(
                 cancellationToken);
     }
 
-    public Task SaveChangesAsync(
+    public async Task SaveChangesAsync(
         CancellationToken cancellationToken = default)
     {
-        return dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new WorkflowConcurrencyException(exception);
+        }
     }
 }
