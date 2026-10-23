@@ -1,3 +1,5 @@
+using NexusAgent.Infrastructure.Questions;
+using NexusAgent.Application.Questions;
 using NexusAgent.Infrastructure.Search;
 using NexusAgent.Application.Search;
 using NexusAgent.Infrastructure.Persistence.Search;
@@ -46,6 +48,28 @@ public static class DependencyInjection
         {
             throw new InvalidOperationException(
                 $"Unsupported embedding provider: {embeddingProvider}");
+        }
+        var groundedAnswerProvider =
+            configuration["GroundedAnswers:Provider"];
+
+        if (string.Equals(
+            groundedAnswerProvider,
+            "AzureOpenAI",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddHttpClient<
+                IGroundedAnswerGenerator,
+                AzureOpenAiGroundedAnswerGenerator>(
+                client => client.Timeout = TimeSpan.FromSeconds(30));
+        }
+        else if (!string.IsNullOrWhiteSpace(groundedAnswerProvider) &&
+                 !string.Equals(
+                     groundedAnswerProvider,
+                     "Disabled",
+                     StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Unsupported grounded-answer provider: {groundedAnswerProvider}");
         }
         services.AddScoped<DocumentContentIndexer>();
         services.AddScoped<PublishedDocumentIndexProcessor>();
