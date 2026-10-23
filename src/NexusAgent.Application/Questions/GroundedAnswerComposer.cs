@@ -25,7 +25,7 @@ public static class GroundedAnswerComposer
 
         if (generated is not null)
         {
-            if (!GroundedAnswerValidation.HasValidCitations(
+            if (!GroundedAnswerVerifier.IsSupported(
                 generated,
                 evidence))
             {
@@ -35,8 +35,8 @@ public static class GroundedAnswerComposer
                     []);
             }
 
-            // Citation references are validated, but this does not
-            // independently prove factual entailment.
+            // Deterministic lexical verification is conservative and
+            // does not independently establish semantic entailment.
             return new GroundedAnswerDecision(
                 generated.Answer,
                 false,

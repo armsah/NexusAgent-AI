@@ -61,8 +61,7 @@ public static class GroundedQuestionEndpoints
                     .Take(5)
                     .ToListAsync(cancellationToken);
 
-                var groundingEvidence = evidence
-                    .Select((item, position) => new GroundingEvidence(
+                var groundingEvidence = evidence.Select((item, position) => new GroundingEvidence(
                         $"S{position + 1}",
                         item.Id,
                         item.Title,
@@ -73,19 +72,22 @@ public static class GroundedQuestionEndpoints
                             : item.Content[..600]))
                     .ToArray();
 
+                var safeEvidence = PromptInjectionDefense.FilterEvidence(
+                    groundingEvidence);
+
                 GroundedGenerationResult? generated = null;
 
                 var generator = services.GetService(
                     typeof(IGroundedAnswerGenerator))
                     as IGroundedAnswerGenerator;
 
-                if (generator is not null && groundingEvidence.Length > 0)
+                if (generator is not null && safeEvidence.Count > 0)
                 {
                     try
                     {
                         generated = await generator.GenerateAsync(
                             question,
-                            groundingEvidence,
+                            safeEvidence,
                             cancellationToken);
                     }
                     catch (OperationCanceledException)
@@ -107,7 +109,7 @@ public static class GroundedQuestionEndpoints
 
                 var decision = GroundedAnswerComposer.Compose(
                     question,
-                    groundingEvidence,
+                    safeEvidence,
                     generated);
 
                 var citations = decision.Citations
