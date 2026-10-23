@@ -1059,3 +1059,17 @@ Phase 6 adds human-approval enforcement to the typed tool gateway.
 **Current limitations:** The approval store is in-memory and is not durable across process restarts or distributed instances. The approval decision API accepts a supplied approver identity; authenticated approver authorization and tenant-scoped approver permissions are not yet implemented. Production deployment requires persistent approval storage, authenticated decision authorization, and verified integration of the approval gateway at every tool-execution entry point.
 
 **Validation:** 188 tests passed (79 unit, 3 architecture, 106 integration).
+## P7 — Answer Verification and Prompt-Injection Defense
+
+**Status: Implemented and validated.**
+
+P7 adds defense-in-depth controls to the grounded question-answering pipeline:
+
+- **Generated-answer verification:** Citation IDs must reference authorized evidence, and generated claims must pass conservative lexical evidence checks. Unsupported generated answers cause abstention.
+- **Prompt-injection screening:** Retrieved titles and excerpts are checked for common instruction-override, role-spoofing, secret-disclosure, command-execution, and data-exfiltration patterns.
+- **Evidence quarantine:** Suspicious evidence is removed before it reaches the answer generator or answer composer. If no safe evidence remains, the endpoint abstains.
+- **Adversarial regression coverage:** Tests verify filtering, authorized-source preservation, invalid citations, unsupported claims, and fail-closed behavior.
+
+**Validation:** 211 tests passing — 102 unit, 3 architecture, and 106 integration.
+
+**Security limitations:** Pattern-based injection detection is heuristic and can miss obfuscated, encoded, multilingual, or novel attacks. Lexical answer verification does not establish semantic entailment and can reject legitimate paraphrases or miss contradictions. Retrieved content remains untrusted; P7 does not independently authorize tool execution or replace existing tenant, ACL, and approval controls.

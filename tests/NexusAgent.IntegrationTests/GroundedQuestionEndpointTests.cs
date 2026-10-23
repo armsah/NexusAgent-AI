@@ -299,7 +299,7 @@ public sealed class GroundedQuestionEndpointTests
             }
 
             return Task.FromResult(new GroundedGenerationResult(
-                "The authorized policy contains approved evidence [S1].",
+                evidence[0].Excerpt + " [S1]",
                 ["S1"]));
         }
     }
