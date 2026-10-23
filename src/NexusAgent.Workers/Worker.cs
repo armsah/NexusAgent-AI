@@ -13,7 +13,7 @@ public sealed class Worker(
         CancellationToken stoppingToken)
     {
         var batchSize = configuration.GetValue(
-            "Outbox:BatchSize", 50);
+            "Outbox:BatchSize", 1);
 
         var pollingMilliseconds = configuration.GetValue(
             "Outbox:PollingIntervalMilliseconds", 1000);
@@ -113,6 +113,13 @@ public sealed class Worker(
             var publisher = scope.ServiceProvider
                 .GetRequiredService<NexusAgent.Application.Abstractions.IDocumentIngestionEventPublisher>();
 
+            using var leaseTimeout = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken);
+
+            leaseTimeout.CancelAfter(
+                TimeSpan.FromSeconds(
+                    Math.Max(1, configuration.GetValue("Outbox:LeaseSeconds", 60) - 1)));
+
             await publisher.PublishAsync(
                 message.Id,
                 message.EventType,
@@ -120,7 +127,7 @@ public sealed class Worker(
                 message.DocumentId,
                 message.DocumentVersion,
                 message.Payload,
-                cancellationToken);
+                leaseTimeout.Token);
 
             var acknowledger = new PostgresOutboxAcknowledger(db);
 
@@ -156,9 +163,8 @@ public sealed class Worker(
                 var recorded = await recorder.RecordFailureAsync(
                     message.Id,
                     message.ClaimToken,
-                    exception.ToString().Length > 4000
-                        ? exception.ToString()[..4000]
-                        : exception.ToString(),
+                    "Outbox publication failed. ExceptionType=" +
+                    exception.GetType().Name,
                     CancellationToken.None);
 
                 if (!recorded)
