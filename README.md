@@ -10,7 +10,7 @@ The system is designed around a fundamental separation:
 
 ## Project Status
 
-**Current milestone:** P5 Typed Tool Gateway complete, validated, merged into `main`, and pushed to GitHub. P6 Approval Gates is next.
+**Current milestone:** P6 Approval Gates complete, validated (188 tests passed), merged into `main`, and pushed to GitHub. P7 is the next implementation phase.
 
 | Phase | Deliverable | Status |
 |---|---|---|
@@ -20,7 +20,7 @@ The system is designed around a fundamental separation:
 | P3 | Grounded Q&A, source citations, verification, abstention | Complete locally |
 | P4 | Application-owned bounded orchestration, durable workflow state, retries, cancellation, authorization, and concurrency protection | Complete — merged into main |
 | P5 | Allow-listed typed Tool Gateway | Complete — merged into main |
-| P6 | Risk decisions, human approvals, immutable action payloads | Planned |
+| P6 | Risk decisions, human approvals, immutable action payloads | Complete - merged into main |
 | P7 | Verifier, prompt-injection defense, adversarial retrieval | Planned |
 | P8 | Token spend, retrieval quality, OpenTelemetry traces | Planned |
 | P9 | Failure drills, load testing, recovery, release rollback | Planned |
@@ -1035,8 +1035,15 @@ Security and operational boundaries:
 - Gateway integration into orchestrated workflow steps is future work.
 - No Azure resources have been provisioned or deployed.
 
-Next milestone: P6 — Approval Gates.
-## Phase 6 - Approval Gates
+P6 Approval Gates: Complete; see the Phase 6 implementation evidence below.
+## P6 Implementation Evidence - Approval Gates
+
+**Status:** Complete locally; validated with 188 passing tests; merged into `main` and pushed to GitHub.
+
+**Feature commit:** `408182f`
+**Merge commit:** `35dfae3`
+
+### Approval security controls
 
 Phase 6 adds human-approval enforcement to the typed tool gateway.
 
