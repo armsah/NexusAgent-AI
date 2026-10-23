@@ -1003,3 +1003,36 @@ The local API uses development identity. No Azure resources were provisioned.
 
 **P5 — Typed Tool Gateway:** Introduce allow-listed tool contracts,
 deterministic authorization boundaries, and controlled tool execution.
+## P5 Implementation Evidence — Typed Tool Gateway
+
+P5 introduces an application-owned, in-process typed tool gateway.
+
+Implemented and locally validated:
+
+- Generic typed tool requests, results, and executor contracts.
+- Explicit tool registration with duplicate-name rejection.
+- Default-deny tool allow-list.
+- Per-invocation caller identity and authorization-policy checks.
+- Rejection of unregistered tools and incompatible input/output types.
+- Configurable execution timeouts with cancellation propagation.
+- Correlation IDs and structured audit-ready execution outcomes.
+- Containment of tool exceptions without exposing exception messages.
+- Unit tests for authorization, allow-list enforcement, registration,
+  type mismatches, successful execution, failures, cancellation,
+  timeouts, and audit outcomes.
+
+P5 validation: 179 tests passed, 0 failed, 0 skipped.
+
+Security and operational boundaries:
+
+- The gateway does not dynamically execute shell commands or arbitrary
+  model-generated code.
+- No production tools are registered by this milestone.
+- Authorization defaults to deny-all; a production authorization policy
+  must be explicitly implemented and configured.
+- The available null audit sink does not persist audit records.
+- Timeouts depend on tool implementations honoring cancellation.
+- Gateway integration into orchestrated workflow steps is future work.
+- No Azure resources have been provisioned or deployed.
+
+Next milestone: P6 — Approval Gates.
