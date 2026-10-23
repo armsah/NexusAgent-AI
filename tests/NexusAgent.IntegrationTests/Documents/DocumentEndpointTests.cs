@@ -640,6 +640,328 @@ public sealed class DocumentEndpointTests
         Assert.Equal(1, persisted.Version);
         Assert.Equal(1, versionCount);
     }
+    [Fact]
+    public async Task Delete_ValidRequest_CreatesTombstoneAndDeniesRetrieval()
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var documentId = await CreateTestDocumentAsync(factory);
+
+        using var deleteRequest = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"/api/documents/{documentId}")
+        {
+            Content = JsonContent.Create(new
+            {
+                expectedVersion = 1
+            })
+        };
+
+        using var deleteResponse = await client.SendAsync(deleteRequest);
+
+        Assert.Equal(HttpStatusCode.OK, deleteResponse.StatusCode);
+
+        using var metadataResponse = await client.GetAsync(
+            $"/api/documents/{documentId}");
+
+        Assert.Equal(HttpStatusCode.NotFound, metadataResponse.StatusCode);
+
+        using var contentResponse = await client.GetAsync(
+            $"/api/documents/{documentId}/content");
+
+        Assert.Equal(HttpStatusCode.NotFound, contentResponse.StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var db = scope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var document = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(d => d.Id == documentId);
+
+        var versions = await db.DocumentVersions
+            .AsNoTracking()
+            .Where(v => v.DocumentId == documentId)
+            .OrderBy(v => v.Version)
+            .ToListAsync();
+
+        Assert.Equal(
+            NexusAgent.Domain.Documents.DocumentStatus.Deleted,
+            document.Status);
+
+        Assert.Equal(2, document.Version);
+        Assert.Equal(1, document.ContentVersion);
+
+        Assert.Equal(2, versions.Count);
+
+        Assert.Equal(1, versions[0].Version);
+        Assert.False(versions[0].IsDeleted);
+
+        Assert.Equal(2, versions[1].Version);
+        Assert.True(versions[1].IsDeleted);
+
+        Assert.Equal(versions[0].Title, versions[1].Title);
+        Assert.Equal(versions[0].Classification, versions[1].Classification);
+    }
+    [Fact]
+    public async Task Delete_StaleVersion_ReturnsConflict()
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var documentId = await CreateTestDocumentAsync(factory);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"/api/documents/{documentId}")
+        {
+            Content = JsonContent.Create(new
+            {
+                expectedVersion = 2
+            })
+        };
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var db = scope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var document = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(d => d.Id == documentId);
+
+        var versionCount = await db.DocumentVersions
+            .AsNoTracking()
+            .CountAsync(v => v.DocumentId == documentId);
+
+        Assert.Equal(
+            NexusAgent.Domain.Documents.DocumentStatus.Active,
+            document.Status);
+
+        Assert.Equal(1, document.Version);
+        Assert.Equal(1, versionCount);
+    }
+    [Fact]
+    public async Task Delete_CrossTenantDocument_ReturnsNotFound()
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var documentId = await CreateTestDocumentAsync(
+            factory,
+            tenantId: "another-tenant",
+            allowedPrincipalIds: ["local-developer"]);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"/api/documents/{documentId}")
+        {
+            Content = JsonContent.Create(new
+            {
+                expectedVersion = 1
+            })
+        };
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var db = scope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var document = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(d => d.Id == documentId);
+
+        var versionCount = await db.DocumentVersions
+            .AsNoTracking()
+            .CountAsync(v => v.DocumentId == documentId);
+
+        Assert.Equal("another-tenant", document.TenantId);
+
+        Assert.Equal(
+            NexusAgent.Domain.Documents.DocumentStatus.Active,
+            document.Status);
+
+        Assert.Equal(1, document.Version);
+        Assert.Equal(1, versionCount);
+    }
+    [Fact]
+    public async Task Delete_NonOwnerWithReadAccess_ReturnsNotFound()
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var documentId = Guid.NewGuid();
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var repository = scope.ServiceProvider.GetRequiredService<
+                NexusAgent.Application.Abstractions.IKnowledgeDocumentRepository>();
+
+            var document = NexusAgent.Domain.Documents.KnowledgeDocument.Create(
+                documentId,
+                "local-development",
+                "Shared Document",
+                "internal",
+                "another-owner",
+                ["local-developer"],
+                DateTimeOffset.UtcNow);
+
+            await repository.AddAsync(
+                document,
+                NexusAgent.Domain.Documents.DocumentVersion.Capture(
+                    Guid.NewGuid(),
+                    document));
+        }
+
+        using var getResponse = await client.GetAsync(
+            $"/api/documents/{documentId}");
+
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
+        using var deleteRequest = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"/api/documents/{documentId}")
+        {
+            Content = JsonContent.Create(new
+            {
+                expectedVersion = 1
+            })
+        };
+
+        using var deleteResponse = await client.SendAsync(deleteRequest);
+
+        Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
+
+        await using var verificationScope = factory.Services.CreateAsyncScope();
+
+        var db = verificationScope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var persisted = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(d => d.Id == documentId);
+
+        var versionCount = await db.DocumentVersions
+            .AsNoTracking()
+            .CountAsync(v => v.DocumentId == documentId);
+
+        Assert.Equal(
+            NexusAgent.Domain.Documents.DocumentStatus.Active,
+            persisted.Status);
+
+        Assert.Equal("Shared Document", persisted.Title);
+        Assert.Equal(1, persisted.Version);
+        Assert.Equal(1, versionCount);
+    }
+    [Fact]
+    public async Task Delete_AlreadyDeletedDocument_ReturnsNotFound()
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var documentId = await CreateTestDocumentAsync(
+            factory,
+            deleted: true);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"/api/documents/{documentId}")
+        {
+            Content = JsonContent.Create(new
+            {
+                expectedVersion = 2
+            })
+        };
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var db = scope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var document = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(d => d.Id == documentId);
+
+        var versions = await db.DocumentVersions
+            .AsNoTracking()
+            .Where(v => v.DocumentId == documentId)
+            .OrderBy(v => v.Version)
+            .ToListAsync();
+
+        Assert.Equal(
+            NexusAgent.Domain.Documents.DocumentStatus.Deleted,
+            document.Status);
+
+        Assert.Equal(2, document.Version);
+        Assert.Equal(1, document.ContentVersion);
+
+        Assert.Equal(2, versions.Count);
+
+        Assert.Equal(1, versions[0].Version);
+        Assert.False(versions[0].IsDeleted);
+
+        Assert.Equal(2, versions[1].Version);
+        Assert.True(versions[1].IsDeleted);
+    }
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task Delete_InvalidExpectedVersion_ReturnsBadRequest(
+        int expectedVersion)
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var documentId = await CreateTestDocumentAsync(factory);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"/api/documents/{documentId}")
+        {
+            Content = JsonContent.Create(new
+            {
+                expectedVersion
+            })
+        };
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var db = scope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var document = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(d => d.Id == documentId);
+
+        var versionCount = await db.DocumentVersions
+            .AsNoTracking()
+            .CountAsync(v => v.DocumentId == documentId);
+
+        Assert.Equal(
+            NexusAgent.Domain.Documents.DocumentStatus.Active,
+            document.Status);
+
+        Assert.Equal(1, document.Version);
+        Assert.Equal(1, versionCount);
+    }
     private sealed record UpdateDocumentResponse(
         Guid DocumentId,
         int Version,

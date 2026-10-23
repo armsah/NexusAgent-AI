@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http.Features;
 using NexusAgent.Api.Identity;
@@ -175,6 +175,58 @@ public static class DocumentEndpoints
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status413PayloadTooLarge);
 
+        documents.MapDelete(
+            "/{documentId:guid}",
+            async (
+                Guid documentId,
+                [FromBody] DeleteDocumentRequest request,
+                DeleteDocumentHandler handler,
+                DevelopmentRequestIdentity identity,
+                CancellationToken cancellationToken) =>
+            {
+                if (request is null || request.ExpectedVersion < 1)
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = "A valid expectedVersion is required."
+                    });
+                }
+
+                try
+                {
+                    var result = await handler.HandleAsync(
+                        new DeleteDocumentCommand(
+                            TenantId: identity.TenantId,
+                            RequesterId: identity.RequesterId,
+                            DocumentId: documentId,
+                            ExpectedVersion: request.ExpectedVersion),
+                        cancellationToken);
+
+                    return result is null
+                        ? Results.NotFound()
+                        : Results.Ok(result);
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    return Results.Conflict(new
+                    {
+                        error = "Document version conflict."
+                    });
+                }
+                catch (DomainException exception)
+                    when (exception.Message == "Document version conflict.")
+                {
+                    return Results.Conflict(new
+                    {
+                        error = "Document version conflict."
+                    });
+                }
+            })
+            .WithName("DeleteDocument")
+            .Produces<DeleteDocumentResult>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
         documents.MapPut(
             "/{documentId:guid}",
             async (
@@ -308,3 +360,5 @@ public sealed record UpdateDocumentRequest(
     int ExpectedVersion,
     string Title,
     string Classification);
+
+public sealed record DeleteDocumentRequest(int ExpectedVersion);
