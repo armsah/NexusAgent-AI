@@ -1,3 +1,4 @@
+using NexusAgent.Api.Questions;
 using NexusAgent.Api.Search;
 using NexusAgent.Api.Documents;
 using NexusAgent.Application;
@@ -30,6 +31,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapDocumentEndpoints();
     app.MapDocumentSearchEndpoints();
+    app.MapGroundedQuestionEndpoints();
 }
 
 

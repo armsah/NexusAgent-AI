@@ -872,3 +872,37 @@ the revised implementation milestones are completed and deployment is explicitly
 Azure infrastructure was not deployed during P2. Deployment and runtime integration verification remain deferred until the revised implementation milestones are completed and deployment is explicitly approved.
 
 **Previous roadmap P2 status:** Infrastructure-as-Code complete; deployment deferred. Revised P2 retrieval implementation is complete locally.
+
+## P3 - Grounded Question Answering
+
+The development-only `POST /api/questions/answer` endpoint retrieves
+authorized, current-version evidence from PostgreSQL full-text indexes.
+
+The endpoint enforces tenant isolation, document ACLs, active document
+status, and content-version consistency. Responses include source IDs,
+document IDs, document versions, content versions, and excerpts.
+
+Without a model provider, answers are extractive. An optional Azure OpenAI
+chat-completions provider can generate answers from authorized evidence.
+Generated citation IDs are validated; invalid citations or model failures
+cause abstention.
+
+Example request:
+
+    POST /api/questions/answer
+    Content-Type: application/json
+
+    {"question":"What does the security policy require?"}
+
+Optional environment variables:
+
+    GroundedAnswers__Provider=AzureOpenAI
+    GroundedAnswers__AzureOpenAI__Endpoint=<HTTPS endpoint>
+    GroundedAnswers__AzureOpenAI__Deployment=<chat deployment>
+    GroundedAnswers__AzureOpenAI__ApiKey=<secret>
+
+No Azure resources are provisioned by P3.
+
+Security limitations: Citation-ID validation does not prove factual
+entailment. The endpoint currently uses a development identity and is
+not exposed as a production-authenticated endpoint.
