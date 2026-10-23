@@ -18,4 +18,14 @@ The implementation addresses tenant isolation, evidence-backed answer verificati
 
 ## How can I run or inspect the demo?
 
-The local implementation is organized in `NexusAgent.slnx`, with application code in `src`, automated tests in `tests`, Azure infrastructure definitions in `infra/terraform`, and recovery procedures in `docs/runbooks/production-operations.md`. The Development-only API can be explored using a configured local PostgreSQL database and document storage. The automated test projects provide an alternative way to inspect the system's behavior, authorization boundaries, and failure handling. Azure deployment and live operational drills remain outside the completed local portfolio scope.
+The local demo requires .NET 10, PostgreSQL 17 with pgvector, and configured Development database and document-storage settings. From the repository root, run these PowerShell commands:
+
+    dotnet restore NexusAgent.slnx
+    dotnet build NexusAgent.slnx
+    dotnet run --project src/NexusAgent.Api
+
+To run the complete automated test suite:
+
+    dotnet test NexusAgent.slnx
+
+The API exposes /health and /health/ready. Business endpoints are available only in Development. Application code is in src, automated tests in tests, Azure infrastructure definitions in infra/terraform, and operational procedures in docs/runbooks/production-operations.md. Azure deployment is not required for the local demo.
