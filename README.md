@@ -10,7 +10,7 @@ The system is designed around a fundamental separation:
 
 ## Project Status
 
-**Current milestone:** P8 Observability and Evaluation complete; 226 tests passed (117 unit, 3 architecture, 106 integration). Merged into `main` and pushed to GitHub.
+**Current milestone:** P0-P9 local portfolio implementation complete. Final Release build passed; 231 tests passed (117 unit, 3 architecture, 111 integration). Production deployment remains out of scope pending authentication, infrastructure provisioning, and operational validation.
 
 | Phase | Deliverable | Status |
 |---|---|---|
@@ -23,7 +23,7 @@ The system is designed around a fundamental separation:
 | P6 | Risk decisions, human approvals, immutable action payloads | Complete - merged into main |
 | P7 | Verifier, prompt-injection defense, adversarial retrieval | Complete - merged into main |
 | P8 | Observability, generation estimates, retrieval metrics, evaluation tests | Complete - merged into main |
-| P9 | Failure drills, load testing, recovery, release rollback | Planned |
+| P9 | Health refactoring, production route isolation, readiness failure tests, operational runbooks, Release validation | Complete - merged into main |
 
 ### Implemented Capabilities
 
@@ -625,8 +625,8 @@ The following P0–P9 roadmap supersedes the original P0–P19 roadmap.
 | P5 | Allow-listed knowledge actions through typed Tool Gateway | Container Apps / API | Tool contracts | Complete — merged into main |
 | P6 | Risk decisions, human approvals, immutable action payloads | Entra / Policy / PostgreSQL | Approval replay tests | Privileged changes require valid approval |
 | P7 | Verifier agent, prompt-injection defenses, adversarial retrieval | Foundry / AI Security | Red-team report | Malicious content cannot redirect actions |
-| P8 | Observability, generation estimates, retrieval metrics, evaluation tests | Complete - merged into main |
-| P9 | Load, model outages, index drift, recovery, release rollback | Terraform / GitHub Actions | Failure drills and runbooks | Reproducible portfolio demonstration |
+| P8 | ActivitySource tracing, operational metrics, token/cost estimates | .NET Diagnostics | 226 passing tests at P8 completion | Complete - merged into main |
+| P9 | Failure handling, recovery planning, release rollback procedures | .NET 10 / PostgreSQL / Git | 231 passing tests and operational runbook | Local implementation complete; live drills remain outstanding |
 
 ### Existing Foundation
 
@@ -1107,3 +1107,70 @@ P7 adds defense-in-depth controls to the grounded question-answering pipeline:
 - No provider-reported token accounting or billing reconciliation is implemented.
 - No labeled relevance dataset, retrieval precision/recall benchmark, or semantic answer-quality evaluator is implemented.
 - The P7 lexical verifier remains a heuristic rather than a semantic entailment model.
+
+## P9 — Production Hardening and Project Finalization
+
+**Status:** Local portfolio implementation complete.
+
+**Final validation:** .NET 10 Release build succeeded; 231 tests passed
+(117 unit, 3 architecture, 111 integration), with zero failures.
+
+### Final refactoring
+
+- Extracted liveness and database-readiness endpoints from the API
+  startup file into a dedicated `HealthEndpoints` extension.
+- Preserved the existing Development-only business API boundary.
+- Preserved existing workflow, retrieval, and grounded-answer behavior.
+
+### Production safeguards
+
+- `/health` remains a lightweight process-liveness endpoint.
+- `/health/ready` checks PostgreSQL connectivity and returns HTTP 503
+  when the database is unavailable or a connection attempt fails.
+- Readiness failures do not expose database credentials, connection
+  strings, or internal exception details.
+- Request cancellation continues to propagate.
+- Production and Staging do not expose development-identity business
+  endpoints under `/api/`.
+- Integration tests verify route isolation and database-outage behavior.
+
+### Operational readiness documentation
+
+See `docs/runbooks/production-operations.md` for:
+
+- PostgreSQL outage diagnosis and recovery.
+- Azure OpenAI model and embedding-provider failure procedures.
+- Retrieval/index consistency recovery.
+- Backup and database restoration guidance.
+- Load and performance testing methodology.
+- Release verification and rollback procedures.
+
+These procedures are documented; live Azure disaster-recovery and
+load-testing drills have not been performed.
+
+### Project validation
+
+The final local quality gate includes:
+
+- Successful Release configuration build.
+- 117 passing unit tests.
+- 3 passing architecture tests.
+- 111 passing integration tests.
+- Git whitespace validation.
+- Final merge into `main` and GitHub publication.
+
+### Completion boundary
+
+**Completed:** Local, test-validated .NET 10/PostgreSQL 17 + pgvector
+governed agentic RAG portfolio implementation covering P0-P9.
+
+**Not completed:** Production Azure deployment, production identity
+integration, real cloud secret management, telemetry export/dashboard
+configuration, provider-reported token billing, labeled retrieval-quality
+benchmarking, live load testing, and disaster-recovery exercises.
+
+Business API routes must remain disabled outside Development until
+production authentication and authorization are implemented.
+
+The repository demonstrates the local architecture and security
+controls; it must not be represented as a production-deployed service.
