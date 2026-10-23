@@ -12,6 +12,7 @@ public static class DependencyInjection
         services.AddScoped<CreateDocumentHandler>();
         services.AddScoped<GetDocumentHandler>();
         services.AddScoped<UpdateDocumentHandler>();
+        services.AddScoped<UpdateDocumentContentHandler>();
         services.AddScoped<DeleteDocumentHandler>();
         services.AddScoped<GetDocumentContentHandler>();
         services.AddScoped<CreateWorkflowHandler>();

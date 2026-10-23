@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using NexusAgent.Domain.Documents;
 
@@ -28,6 +28,10 @@ public sealed class DocumentVersionConfiguration
 
         builder.Property(version => version.Version)
             .HasColumnName("version")
+            .IsRequired();
+
+        builder.Property(version => version.ContentVersion)
+            .HasColumnName("content_version")
             .IsRequired();
 
         builder.Property(version => version.Title)

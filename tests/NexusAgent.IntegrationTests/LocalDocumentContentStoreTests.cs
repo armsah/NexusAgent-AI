@@ -131,9 +131,12 @@ public sealed class LocalDocumentContentStoreTests
             await using var replacement = new MemoryStream(
                 Encoding.UTF8.GetBytes("replacement"));
 
-            await Assert.ThrowsAsync<IOException>(
+            var exception = await Assert.ThrowsAsync<
+                NexusAgent.Application.Documents.DocumentContentVersionConflictException>(
                 () => store.PutAsync(
                     "tenant-a", documentId, 1, replacement));
+
+            Assert.IsType<IOException>(exception.InnerException);
 
             await using var output = await store.OpenReadAsync(
                 "tenant-a", documentId, 1);

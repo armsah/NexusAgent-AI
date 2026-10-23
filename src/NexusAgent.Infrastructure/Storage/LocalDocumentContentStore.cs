@@ -56,7 +56,15 @@ public sealed class LocalDocumentContentStore(string rootDirectory)
                     .ToLowerInvariant();
             }
 
-            File.Move(temporaryPath, path, overwrite: false);
+            try
+            {
+                File.Move(temporaryPath, path, overwrite: false);
+            }
+            catch (IOException exception) when (File.Exists(path))
+            {
+                throw new DocumentContentVersionConflictException(
+                    exception);
+            }
 
             return new StoredDocumentContent(
                 GetStorageKey(tenantId, documentId, version),

@@ -39,6 +39,10 @@ namespace NexusAgent.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("classification");
 
+                    b.Property<int>("ContentVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("content_version");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -137,6 +141,7 @@ namespace NexusAgent.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.Property<int>("Version")
+                        .IsConcurrencyToken()
                         .HasColumnType("integer")
                         .HasColumnName("version");
 

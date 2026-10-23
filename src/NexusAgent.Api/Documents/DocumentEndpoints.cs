@@ -295,6 +295,160 @@ public static class DocumentEndpoints
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status409Conflict);
+        documents.MapPut(
+            "/{documentId:guid}/content",
+            async (
+                Guid documentId,
+                HttpRequest request,
+                UpdateDocumentContentHandler handler,
+                DevelopmentRequestIdentity identity,
+                CancellationToken cancellationToken) =>
+            {
+                if (!request.HasFormContentType)
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = "Multipart form data is required."
+                    });
+                }
+
+                IFormCollection form;
+
+                try
+                {
+                    form = await request.ReadFormAsync(cancellationToken);
+                }
+                catch (BadHttpRequestException)
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = "Invalid multipart form data."
+                    });
+                }
+                catch (InvalidDataException)
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = "Invalid multipart form data."
+                    });
+                }
+
+                var files = form.Files.GetFiles("file");
+
+                if (files.Count != 1 || form.Files.Count != 1)
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = "Exactly one file is required."
+                    });
+                }
+
+                var file = files[0];
+
+                if (file.Length == 0)
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = "File cannot be empty."
+                    });
+                }
+
+                if (file.Length > MaxFileSize)
+                {
+                    return Results.StatusCode(
+                        StatusCodes.Status413PayloadTooLarge);
+                }
+
+                if (!AllowedContentTypes.Contains(file.ContentType))
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = "Unsupported content type."
+                    });
+                }
+
+                var expectedVersionValues = form["expectedVersion"];
+
+                if (expectedVersionValues.Count != 1 ||
+                    !int.TryParse(
+                        expectedVersionValues[0],
+                        out var expectedVersion) ||
+                    expectedVersion < 1)
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = "A valid expectedVersion is required."
+                    });
+                }
+
+                await using var stream = file.OpenReadStream();
+
+                if (!await DocumentContentValidator.IsValidAsync(
+                    stream,
+                    file.ContentType,
+                    cancellationToken))
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = "File content does not match its declared type."
+                    });
+                }
+
+                try
+                {
+                    var result = await handler.HandleAsync(
+                        new UpdateDocumentContentCommand(
+                            TenantId: identity.TenantId,
+                            RequesterId: identity.RequesterId,
+                            DocumentId: documentId,
+                            ExpectedVersion: expectedVersion,
+                            Content: stream),
+                        cancellationToken);
+
+                    return result is null
+                        ? Results.NotFound()
+                        : Results.Ok(result);
+                }
+                catch (DocumentContentVersionConflictException)
+                {
+                    return Results.Conflict(new
+                    {
+                        error = "Document content version conflict."
+                    });
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    return Results.Conflict(new
+                    {
+                        error = "Document version conflict."
+                    });
+                }
+                catch (DomainException exception)
+                    when (exception.Message == "Document version conflict.")
+                {
+                    return Results.Conflict(new
+                    {
+                        error = "Document version conflict."
+                    });
+                }
+            })
+            .DisableAntiforgery()
+            .WithMetadata(new RequestSizeLimitAttribute(11 * 1024 * 1024))
+            .WithMetadata(new RequestFormLimitsAttribute
+            {
+                MultipartBodyLengthLimit = 10 * 1024 * 1024,
+                ValueLengthLimit = 4096,
+                ValueCountLimit = 8,
+                MultipartHeadersLengthLimit = 4096
+            })
+            .WithName("UpdateDocumentContent")
+            .Accepts<IFormFile>("multipart/form-data")
+            .Produces<UpdateDocumentContentResult>(
+                StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict)
+            .Produces(StatusCodes.Status413PayloadTooLarge);
         documents.MapGet(
             "/{documentId:guid}",
             async (

@@ -1,4 +1,4 @@
-﻿using NexusAgent.Domain.Common;
+using NexusAgent.Domain.Common;
 
 namespace NexusAgent.Domain.Documents;
 
@@ -10,6 +10,7 @@ public sealed class DocumentVersion
     public Guid DocumentId { get; private set; }
     public string TenantId { get; private set; } = string.Empty;
     public int Version { get; private set; }
+    public int ContentVersion { get; private set; }
     public string Title { get; private set; } = string.Empty;
     public string Classification { get; private set; } = string.Empty;
     public string OwnerId { get; private set; } = string.Empty;
@@ -32,6 +33,7 @@ public sealed class DocumentVersion
             DocumentId = document.Id,
             TenantId = document.TenantId,
             Version = document.Version,
+            ContentVersion = document.ContentVersion,
             Title = document.Title,
             Classification = document.Classification,
             OwnerId = document.OwnerId,

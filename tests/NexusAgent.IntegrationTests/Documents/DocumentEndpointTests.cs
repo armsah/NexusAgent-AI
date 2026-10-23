@@ -962,6 +962,776 @@ public sealed class DocumentEndpointTests
         Assert.Equal(1, document.Version);
         Assert.Equal(1, versionCount);
     }
+    [Fact]
+    public async Task ContentUpdate_AfterMetadataUpdate_PreservesHistoricalContent()
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var originalBytes = Encoding.UTF8.GetBytes("Original document content");
+        var replacementBytes = Encoding.UTF8.GetBytes("Replacement document content");
+
+        using var uploadForm = CreateForm(
+            originalBytes,
+            "text/plain",
+            "original.txt");
+
+        using var uploadResponse = await client.PostAsync(
+            "/api/documents/",
+            uploadForm);
+
+        Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
+
+        var uploaded = await uploadResponse.Content.ReadFromJsonAsync<UploadResult>();
+        Assert.NotNull(uploaded);
+
+        using var metadataResponse = await client.PutAsJsonAsync(
+            $"/api/documents/{uploaded.DocumentId}",
+            new
+            {
+                expectedVersion = 1,
+                title = "Updated document title",
+                classification = "internal"
+            });
+
+        Assert.Equal(HttpStatusCode.OK, metadataResponse.StatusCode);
+
+        using var replacementForm = new MultipartFormDataContent();
+        replacementForm.Add(new StringContent("2"), "expectedVersion");
+
+        var replacementFile = new ByteArrayContent(replacementBytes);
+        replacementFile.Headers.ContentType =
+            new MediaTypeHeaderValue("text/plain");
+
+        replacementForm.Add(
+            replacementFile,
+            "file",
+            "replacement.txt");
+
+        using var replacementResponse = await client.PutAsync(
+            $"/api/documents/{uploaded.DocumentId}/content",
+            replacementForm);
+
+        Assert.Equal(HttpStatusCode.OK, replacementResponse.StatusCode);
+
+        var updated = await replacementResponse.Content
+            .ReadFromJsonAsync<ContentUpdateResponse>();
+
+        Assert.NotNull(updated);
+        Assert.Equal(uploaded.DocumentId, updated.DocumentId);
+        Assert.Equal(3, updated.Version);
+        Assert.Equal(2, updated.ContentVersion);
+        Assert.Equal(replacementBytes.Length, updated.Length);
+        Assert.Equal(
+            Convert.ToHexStringLower(SHA256.HashData(replacementBytes)),
+            updated.Sha256);
+
+        using var downloadResponse = await client.GetAsync(
+            $"/api/documents/{uploaded.DocumentId}/content");
+
+        Assert.Equal(HttpStatusCode.OK, downloadResponse.StatusCode);
+
+        var downloadedBytes = await downloadResponse.Content.ReadAsByteArrayAsync();
+        Assert.Equal(replacementBytes, downloadedBytes);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var db = scope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var document = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(x => x.Id == uploaded.DocumentId);
+
+        Assert.Equal(3, document.Version);
+        Assert.Equal(2, document.ContentVersion);
+
+        var snapshots = await db.DocumentVersions
+            .AsNoTracking()
+            .Where(x => x.DocumentId == uploaded.DocumentId)
+            .OrderBy(x => x.Version)
+            .ToListAsync();
+
+        Assert.Equal(3, snapshots.Count);
+        Assert.Equal([1, 2, 3], snapshots.Select(x => x.Version));
+        Assert.Equal([1, 1, 2], snapshots.Select(x => x.ContentVersion));
+
+        var store = scope.ServiceProvider.GetRequiredService<
+            NexusAgent.Application.Documents.IDocumentContentStore>();
+
+        await using var originalStream = await store.OpenReadAsync(
+            document.TenantId,
+            document.Id,
+            1);
+
+        using var originalOutput = new MemoryStream();
+        await originalStream.CopyToAsync(originalOutput);
+
+        Assert.Equal(originalBytes, originalOutput.ToArray());
+
+        await using var replacementStream = await store.OpenReadAsync(
+            document.TenantId,
+            document.Id,
+            2);
+
+        using var replacementOutput = new MemoryStream();
+        await replacementStream.CopyToAsync(replacementOutput);
+
+        Assert.Equal(replacementBytes, replacementOutput.ToArray());
+    }
+
+    [Fact]
+    public async Task ContentUpdate_StaleVersion_ReturnsConflictWithoutWritingContent()
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var originalBytes = Encoding.UTF8.GetBytes("Original content");
+
+        using var uploadForm = CreateForm(
+            originalBytes,
+            "text/plain",
+            "original.txt");
+
+        using var uploadResponse = await client.PostAsync(
+            "/api/documents/",
+            uploadForm);
+
+        Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
+
+        var uploaded = await uploadResponse.Content.ReadFromJsonAsync<UploadResult>();
+        Assert.NotNull(uploaded);
+
+        using var metadataResponse = await client.PutAsJsonAsync(
+            $"/api/documents/{uploaded.DocumentId}",
+            new
+            {
+                expectedVersion = 1,
+                title = "Updated title",
+                classification = "internal"
+            });
+
+        Assert.Equal(HttpStatusCode.OK, metadataResponse.StatusCode);
+
+        using var replacementForm = new MultipartFormDataContent();
+        replacementForm.Add(new StringContent("1"), "expectedVersion");
+
+        var replacementFile = new ByteArrayContent(
+            Encoding.UTF8.GetBytes("Rejected replacement"));
+
+        replacementFile.Headers.ContentType =
+            new MediaTypeHeaderValue("text/plain");
+
+        replacementForm.Add(
+            replacementFile,
+            "file",
+            "replacement.txt");
+
+        using var response = await client.PutAsync(
+            $"/api/documents/{uploaded.DocumentId}/content",
+            replacementForm);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var db = scope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var document = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(x => x.Id == uploaded.DocumentId);
+
+        Assert.Equal(2, document.Version);
+        Assert.Equal(1, document.ContentVersion);
+
+        var snapshots = await db.DocumentVersions
+            .AsNoTracking()
+            .Where(x => x.DocumentId == uploaded.DocumentId)
+            .OrderBy(x => x.Version)
+            .ToListAsync();
+
+        Assert.Equal(2, snapshots.Count);
+        Assert.Equal([1, 2], snapshots.Select(x => x.Version));
+        Assert.All(snapshots, x => Assert.Equal(1, x.ContentVersion));
+
+        var store = scope.ServiceProvider.GetRequiredService<
+            NexusAgent.Application.Documents.IDocumentContentStore>();
+
+        await using var originalStream = await store.OpenReadAsync(
+            document.TenantId,
+            document.Id,
+            1);
+
+        using var originalOutput = new MemoryStream();
+        await originalStream.CopyToAsync(originalOutput);
+
+        Assert.Equal(originalBytes, originalOutput.ToArray());
+
+        await Assert.ThrowsAsync<FileNotFoundException>(
+            async () =>
+            {
+                await using var unexpected = await store.OpenReadAsync(
+                    document.TenantId,
+                    document.Id,
+                    2);
+            });
+    }
+    [Fact]
+    public async Task ContentUpdate_CrossTenantDocument_ReturnsNotFound()
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var documentId = await CreateTestDocumentAsync(
+            factory,
+            tenantId: "another-tenant",
+            allowedPrincipalIds: ["local-developer"]);
+
+        using var form = new MultipartFormDataContent();
+        form.Add(new StringContent("1"), "expectedVersion");
+
+        var file = new ByteArrayContent(
+            Encoding.UTF8.GetBytes("Unauthorized replacement"));
+
+        file.Headers.ContentType =
+            new MediaTypeHeaderValue("text/plain");
+
+        form.Add(file, "file", "replacement.txt");
+
+        using var response = await client.PutAsync(
+            $"/api/documents/{documentId}/content",
+            form);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var db = scope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var document = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(x => x.Id == documentId);
+
+        Assert.Equal("another-tenant", document.TenantId);
+        Assert.Equal(1, document.Version);
+        Assert.Equal(1, document.ContentVersion);
+
+        var snapshots = await db.DocumentVersions
+            .AsNoTracking()
+            .Where(x => x.DocumentId == documentId)
+            .ToListAsync();
+
+        Assert.Single(snapshots);
+
+        var store = scope.ServiceProvider.GetRequiredService<
+            NexusAgent.Application.Documents.IDocumentContentStore>();
+
+        await Assert.ThrowsAsync<FileNotFoundException>(
+            async () =>
+            {
+                await using var unexpected = await store.OpenReadAsync(
+                    document.TenantId,
+                    document.Id,
+                    2);
+            });
+    }
+    [Fact]
+    public async Task ContentUpdate_NonOwnerWithReadAccess_ReturnsNotFound()
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        Guid documentId;
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var repository = scope.ServiceProvider.GetRequiredService<
+                NexusAgent.Application.Abstractions.IKnowledgeDocumentRepository>();
+
+            var document = NexusAgent.Domain.Documents.KnowledgeDocument.Create(
+                Guid.NewGuid(),
+                "local-development",
+                "Non-owner content update test",
+                "internal",
+                "another-owner",
+                ["local-developer", "another-owner"],
+                DateTimeOffset.UtcNow);
+
+            var snapshot = NexusAgent.Domain.Documents.DocumentVersion.Capture(
+                Guid.NewGuid(),
+                document);
+
+            await repository.AddAsync(document, snapshot);
+            documentId = document.Id;
+        }
+
+        using var form = new MultipartFormDataContent();
+        form.Add(new StringContent("1"), "expectedVersion");
+
+        var file = new ByteArrayContent(
+            Encoding.UTF8.GetBytes("Unauthorized content replacement"));
+
+        file.Headers.ContentType =
+            new MediaTypeHeaderValue("text/plain");
+
+        form.Add(file, "file", "replacement.txt");
+
+        using var response = await client.PutAsync(
+            $"/api/documents/{documentId}/content",
+            form);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        await using var verificationScope = factory.Services.CreateAsyncScope();
+
+        var db = verificationScope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var storedDocument = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(x => x.Id == documentId);
+
+        Assert.Equal("another-owner", storedDocument.OwnerId);
+        Assert.Contains("local-developer", storedDocument.AllowedPrincipalIds);
+        Assert.Equal(1, storedDocument.Version);
+        Assert.Equal(1, storedDocument.ContentVersion);
+
+        var snapshots = await db.DocumentVersions
+            .AsNoTracking()
+            .Where(x => x.DocumentId == documentId)
+            .ToListAsync();
+
+        Assert.Single(snapshots);
+
+        var store = verificationScope.ServiceProvider.GetRequiredService<
+            NexusAgent.Application.Documents.IDocumentContentStore>();
+
+        await Assert.ThrowsAsync<FileNotFoundException>(
+            async () =>
+            {
+                await using var unexpected = await store.OpenReadAsync(
+                    storedDocument.TenantId,
+                    storedDocument.Id,
+                    2);
+            });
+    }
+    [Fact]
+    public async Task ContentUpdate_DeletedDocument_ReturnsNotFound()
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var documentId = await CreateTestDocumentAsync(
+            factory,
+            deleted: true);
+
+        using var form = new MultipartFormDataContent();
+        form.Add(new StringContent("2"), "expectedVersion");
+
+        var file = new ByteArrayContent(
+            Encoding.UTF8.GetBytes("Replacement for deleted document"));
+
+        file.Headers.ContentType =
+            new MediaTypeHeaderValue("text/plain");
+
+        form.Add(file, "file", "replacement.txt");
+
+        using var response = await client.PutAsync(
+            $"/api/documents/{documentId}/content",
+            form);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var db = scope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var document = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(x => x.Id == documentId);
+
+        Assert.Equal(
+            NexusAgent.Domain.Documents.DocumentStatus.Deleted,
+            document.Status);
+
+        Assert.Equal(2, document.Version);
+        Assert.Equal(1, document.ContentVersion);
+
+        var snapshots = await db.DocumentVersions
+            .AsNoTracking()
+            .Where(x => x.DocumentId == documentId)
+            .OrderBy(x => x.Version)
+            .ToListAsync();
+
+        Assert.Equal(2, snapshots.Count);
+        Assert.Equal([1, 2], snapshots.Select(x => x.Version));
+        Assert.All(snapshots, x => Assert.Equal(1, x.ContentVersion));
+        Assert.True(snapshots[1].IsDeleted);
+
+        var store = scope.ServiceProvider.GetRequiredService<
+            NexusAgent.Application.Documents.IDocumentContentStore>();
+
+        await Assert.ThrowsAsync<FileNotFoundException>(
+            async () =>
+            {
+                await using var unexpected = await store.OpenReadAsync(
+                    document.TenantId,
+                    document.Id,
+                    2);
+            });
+    }
+    [Fact]
+    public async Task ContentUpdate_ExistingContentVersion_ReturnsConflictAndPreservesFile()
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var originalBytes = Encoding.UTF8.GetBytes("Original document content");
+        var winningBytes = Encoding.UTF8.GetBytes("Content written by another writer");
+        var rejectedBytes = Encoding.UTF8.GetBytes("Rejected concurrent replacement");
+
+        using var uploadForm = CreateForm(
+            originalBytes,
+            "text/plain",
+            "original.txt");
+
+        using var uploadResponse = await client.PostAsync(
+            "/api/documents/",
+            uploadForm);
+
+        Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
+
+        var uploaded = await uploadResponse.Content.ReadFromJsonAsync<UploadResult>();
+        Assert.NotNull(uploaded);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var store = scope.ServiceProvider.GetRequiredService<
+            NexusAgent.Application.Documents.IDocumentContentStore>();
+
+        await using (var winningStream = new MemoryStream(winningBytes))
+        {
+            await store.PutAsync(
+                "local-development",
+                uploaded.DocumentId,
+                2,
+                winningStream);
+        }
+
+        using var replacementForm = new MultipartFormDataContent();
+        replacementForm.Add(new StringContent("1"), "expectedVersion");
+
+        var replacementFile = new ByteArrayContent(rejectedBytes);
+        replacementFile.Headers.ContentType =
+            new MediaTypeHeaderValue("text/plain");
+
+        replacementForm.Add(
+            replacementFile,
+            "file",
+            "replacement.txt");
+
+        using var response = await client.PutAsync(
+            $"/api/documents/{uploaded.DocumentId}/content",
+            replacementForm);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        var db = scope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var document = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(x => x.Id == uploaded.DocumentId);
+
+        Assert.Equal(1, document.Version);
+        Assert.Equal(1, document.ContentVersion);
+
+        var snapshots = await db.DocumentVersions
+            .AsNoTracking()
+            .Where(x => x.DocumentId == uploaded.DocumentId)
+            .ToListAsync();
+
+        Assert.Single(snapshots);
+        Assert.Equal(1, snapshots[0].ContentVersion);
+
+        await using var winningStoredStream = await store.OpenReadAsync(
+            document.TenantId,
+            document.Id,
+            2);
+
+        using var winningOutput = new MemoryStream();
+        await winningStoredStream.CopyToAsync(winningOutput);
+
+        Assert.Equal(winningBytes, winningOutput.ToArray());
+
+        await using var originalStoredStream = await store.OpenReadAsync(
+            document.TenantId,
+            document.Id,
+            1);
+
+        using var originalOutput = new MemoryStream();
+        await originalStoredStream.CopyToAsync(originalOutput);
+
+        Assert.Equal(originalBytes, originalOutput.ToArray());
+    }
+    [Fact]
+    public async Task ContentUpdate_ConcurrentRequests_ExactlyOneSucceeds()
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var originalBytes = Encoding.UTF8.GetBytes("Original content");
+        var firstBytes = Encoding.UTF8.GetBytes("First replacement");
+        var secondBytes = Encoding.UTF8.GetBytes("Second replacement");
+
+        using var uploadForm = CreateForm(
+            originalBytes,
+            "text/plain",
+            "original.txt");
+
+        using var uploadResponse = await client.PostAsync(
+            "/api/documents/",
+            uploadForm);
+
+        Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
+
+        var uploaded = await uploadResponse.Content.ReadFromJsonAsync<UploadResult>();
+        Assert.NotNull(uploaded);
+
+        async Task<(HttpStatusCode Status, byte[] Bytes)> ReplaceAsync(
+            byte[] replacementBytes)
+        {
+            using var form = new MultipartFormDataContent();
+            form.Add(new StringContent("1"), "expectedVersion");
+
+            var file = new ByteArrayContent(replacementBytes);
+            file.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
+            form.Add(file, "file", "replacement.txt");
+
+            using var response = await client.PutAsync(
+                $"/api/documents/{uploaded.DocumentId}/content",
+                form);
+
+            return (response.StatusCode, replacementBytes);
+        }
+
+        var results = await Task.WhenAll(
+            ReplaceAsync(firstBytes),
+            ReplaceAsync(secondBytes));
+
+        Assert.Single(results, result => result.Status == HttpStatusCode.OK);
+        Assert.Single(
+            results,
+            result => result.Status == HttpStatusCode.Conflict);
+
+        var winningBytes = results.Single(
+            result => result.Status == HttpStatusCode.OK).Bytes;
+
+        using var downloadResponse = await client.GetAsync(
+            $"/api/documents/{uploaded.DocumentId}/content");
+
+        Assert.Equal(HttpStatusCode.OK, downloadResponse.StatusCode);
+        Assert.Equal(
+            winningBytes,
+            await downloadResponse.Content.ReadAsByteArrayAsync());
+
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var db = scope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var document = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(x => x.Id == uploaded.DocumentId);
+
+        Assert.Equal(2, document.Version);
+        Assert.Equal(2, document.ContentVersion);
+
+        var snapshots = await db.DocumentVersions
+            .AsNoTracking()
+            .Where(x => x.DocumentId == uploaded.DocumentId)
+            .OrderBy(x => x.Version)
+            .ToListAsync();
+
+        Assert.Equal(2, snapshots.Count);
+        Assert.Equal(1, snapshots[0].Version);
+        Assert.Equal(1, snapshots[0].ContentVersion);
+        Assert.Equal(2, snapshots[1].Version);
+        Assert.Equal(2, snapshots[1].ContentVersion);
+    }
+    [Theory]
+    [InlineData(null)]
+    [InlineData("0")]
+    [InlineData("abc")]
+    public async Task ContentUpdate_InvalidExpectedVersion_ReturnsBadRequest(
+        string? expectedVersion)
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var originalBytes = Encoding.UTF8.GetBytes("Original document content");
+
+        using var uploadForm = CreateForm(
+            originalBytes,
+            "text/plain",
+            "original.txt");
+
+        using var uploadResponse = await client.PostAsync(
+            "/api/documents/",
+            uploadForm);
+
+        Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
+
+        var uploaded = await uploadResponse.Content.ReadFromJsonAsync<UploadResult>();
+        Assert.NotNull(uploaded);
+
+        using var replacementForm = new MultipartFormDataContent();
+
+        if (expectedVersion is not null)
+        {
+            replacementForm.Add(
+                new StringContent(expectedVersion),
+                "expectedVersion");
+        }
+
+        var replacementFile = new ByteArrayContent(
+            Encoding.UTF8.GetBytes("Rejected replacement"));
+
+        replacementFile.Headers.ContentType =
+            new MediaTypeHeaderValue("text/plain");
+
+        replacementForm.Add(
+            replacementFile,
+            "file",
+            "replacement.txt");
+
+        using var response = await client.PutAsync(
+            $"/api/documents/{uploaded.DocumentId}/content",
+            replacementForm);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var db = scope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var document = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(x => x.Id == uploaded.DocumentId);
+
+        Assert.Equal(1, document.Version);
+        Assert.Equal(1, document.ContentVersion);
+
+        var snapshots = await db.DocumentVersions
+            .AsNoTracking()
+            .Where(x => x.DocumentId == uploaded.DocumentId)
+            .ToListAsync();
+
+        Assert.Single(snapshots);
+
+        using var downloadResponse = await client.GetAsync(
+            $"/api/documents/{uploaded.DocumentId}/content");
+
+        Assert.Equal(HttpStatusCode.OK, downloadResponse.StatusCode);
+
+        Assert.Equal(
+            originalBytes,
+            await downloadResponse.Content.ReadAsByteArrayAsync());
+    }
+    [Theory]
+    [InlineData("empty")]
+    [InlineData("unsupported")]
+    [InlineData("missing")]
+    public async Task ContentUpdate_InvalidFile_ReturnsBadRequest(
+        string scenario)
+    {
+        await using var factory = new DocumentApiFactory();
+        using var client = factory.CreateClient();
+
+        var originalBytes = Encoding.UTF8.GetBytes("Original document content");
+
+        using var uploadForm = CreateForm(
+            originalBytes,
+            "text/plain",
+            "original.txt");
+
+        using var uploadResponse = await client.PostAsync(
+            "/api/documents/",
+            uploadForm);
+
+        Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
+
+        var uploaded = await uploadResponse.Content.ReadFromJsonAsync<UploadResult>();
+        Assert.NotNull(uploaded);
+
+        using var replacementForm = new MultipartFormDataContent();
+        replacementForm.Add(new StringContent("1"), "expectedVersion");
+
+        if (scenario != "missing")
+        {
+            var replacementBytes = scenario == "empty"
+                ? Array.Empty<byte>()
+                : Encoding.UTF8.GetBytes("Rejected replacement");
+
+            var replacementFile = new ByteArrayContent(replacementBytes);
+
+            replacementFile.Headers.ContentType =
+                new MediaTypeHeaderValue(
+                    scenario == "unsupported"
+                        ? "application/octet-stream"
+                        : "text/plain");
+
+            replacementForm.Add(
+                replacementFile,
+                "file",
+                "replacement.txt");
+        }
+
+        using var response = await client.PutAsync(
+            $"/api/documents/{uploaded.DocumentId}/content",
+            replacementForm);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var db = scope.ServiceProvider
+            .GetRequiredService<NexusAgentDbContext>();
+
+        var document = await db.KnowledgeDocuments
+            .AsNoTracking()
+            .SingleAsync(x => x.Id == uploaded.DocumentId);
+
+        Assert.Equal(1, document.Version);
+        Assert.Equal(1, document.ContentVersion);
+
+        var snapshots = await db.DocumentVersions
+            .AsNoTracking()
+            .Where(x => x.DocumentId == uploaded.DocumentId)
+            .ToListAsync();
+
+        Assert.Single(snapshots);
+
+        using var downloadResponse = await client.GetAsync(
+            $"/api/documents/{uploaded.DocumentId}/content");
+
+        Assert.Equal(HttpStatusCode.OK, downloadResponse.StatusCode);
+
+        Assert.Equal(
+            originalBytes,
+            await downloadResponse.Content.ReadAsByteArrayAsync());
+    }
+    private sealed record ContentUpdateResponse(
+        Guid DocumentId,
+        int Version,
+        int ContentVersion,
+        string StorageKey,
+        string Sha256,
+        long Length);
     private sealed record UpdateDocumentResponse(
         Guid DocumentId,
         int Version,

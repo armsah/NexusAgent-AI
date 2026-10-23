@@ -81,6 +81,15 @@ public sealed class KnowledgeDocument
         UpdatedAt = now;
     }
 
+    public void UpdateContent(string tenantId, DateTimeOffset now)
+    {
+        EnsureTenant(tenantId);
+        EnsureActive();
+
+        Version++;
+        ContentVersion++;
+        UpdatedAt = now;
+    }
     public void Delete(string tenantId, DateTimeOffset now)
     {
         EnsureTenant(tenantId);
