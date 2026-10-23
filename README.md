@@ -10,7 +10,7 @@ The system is designed around a fundamental separation:
 
 ## Project Status
 
-**Current milestone:** P4 application-owned workflow orchestration implemented and validated locally on `feat/p4-agent-orchestration`; P5 typed Tool Gateway is next.
+**Current milestone:** P5 Typed Tool Gateway complete, validated, merged into `main`, and pushed to GitHub. P6 Approval Gates is next.
 
 | Phase | Deliverable | Status |
 |---|---|---|
@@ -18,8 +18,8 @@ The system is designed around a fundamental separation:
 | P1 | Versioned document ingestion, transactional outbox, durable event processing | Complete |
 | P2 | Tenant-aware ACL-filtered lexical and hybrid vector retrieval | Complete locally |
 | P3 | Grounded Q&A, source citations, verification, abstention | Complete locally |
-| P4 | Application-owned bounded orchestration, durable workflow state, retries, cancellation, authorization, and concurrency protection | Complete locally |
-| P5 | Allow-listed typed Tool Gateway | Planned |
+| P4 | Application-owned bounded orchestration, durable workflow state, retries, cancellation, authorization, and concurrency protection | Complete — merged into main |
+| P5 | Allow-listed typed Tool Gateway | Complete — merged into main |
 | P6 | Risk decisions, human approvals, immutable action payloads | Planned |
 | P7 | Verifier, prompt-injection defense, adversarial retrieval | Planned |
 | P8 | Token spend, retrieval quality, OpenTelemetry traces | Planned |
@@ -621,8 +621,8 @@ The following P0–P9 roadmap supersedes the original P0–P19 roadmap.
 | P1 | Ingestion API, Blob document versioning, ingestion events | ASP.NET Core / Blob / Service Bus | Ingestion replay tests | Updates and deletions propagate safely |
 | P2 | ACL-filtered hybrid/vector indexes and tenant metadata | Azure AI Search | Cross-tenant denial tests | Only authorized passages retrieved |
 | P3 | Grounded Q&A, citation verification, abstention | Azure OpenAI / Foundry | Grounding benchmark | Unsupported claims rejected |
-| P4 | Supervisor, Knowledge and Policy agents with durable task state | Orchestration / PostgreSQL | Workflow traces | Interrupted tasks resume |
-| P5 | Allow-listed knowledge actions through typed Tool Gateway | Container Apps / API | Tool contracts | No arbitrary tool execution |
+| P4 | Supervisor, Knowledge and Policy agents with durable task state | Orchestration / PostgreSQL | Workflow traces | Complete — merged into main |
+| P5 | Allow-listed knowledge actions through typed Tool Gateway | Container Apps / API | Tool contracts | Complete — merged into main |
 | P6 | Risk decisions, human approvals, immutable action payloads | Entra / Policy / PostgreSQL | Approval replay tests | Privileged changes require valid approval |
 | P7 | Verifier agent, prompt-injection defenses, adversarial retrieval | Foundry / AI Security | Red-team report | Malicious content cannot redirect actions |
 | P8 | Token spend, retrieval quality, end-to-end traces | OpenTelemetry / Monitor | Quality-cost dashboard | Every answer traceable to evidence |
@@ -953,7 +953,7 @@ provisioned.
 
 ### Next milestone
 
-**P4 — Agent Orchestration:** Implemented locally. See the
+**P4 — Agent Orchestration:** Complete; merged into `main`. See the
 P4 Implementation Evidence section below for verified capabilities,
 security boundaries, and remaining limitations.
 
@@ -961,7 +961,7 @@ security boundaries, and remaining limitations.
 
 ## P4 Implementation Evidence
 
-**Status:** Implemented and validated locally on `feat/p4-agent-orchestration`; merge pending.
+**Status:** Complete; validated, merged into `main`, and pushed to GitHub.
 
 P4 introduces deterministic, application-owned orchestration over persisted
 workflow state. Execution is controlled by application code rather than
@@ -1001,7 +1001,7 @@ The local API uses development identity. No Azure resources were provisioned.
 
 ### Next milestone
 
-**P5 — Typed Tool Gateway:** Introduce allow-listed tool contracts,
+**P5 — Typed Tool Gateway:** Implemented allow-listed tool contracts,
 deterministic authorization boundaries, and controlled tool execution.
 ## P5 Implementation Evidence — Typed Tool Gateway
 
