@@ -1036,3 +1036,19 @@ Security and operational boundaries:
 - No Azure resources have been provisioned or deployed.
 
 Next milestone: P6 — Approval Gates.
+## Phase 6 - Approval Gates
+
+Phase 6 adds human-approval enforcement to the typed tool gateway.
+
+- **Risk classification:** Tools are classified as Low, Medium, High, or Critical. Unknown tools default to Critical.
+- **Approval requirements:** High- and Critical-risk actions require approval before execution.
+- **Action binding:** Approval requests bind the tenant, requester, tool name, and serialized input digest.
+- **Separation of duties:** A requester cannot approve their own action.
+- **Lifecycle controls:** Approvals support pending, approved, denied, expired, and consumed states.
+- **Replay prevention:** Approved actions are consumed atomically and cannot be reused.
+- **Fail-closed execution:** Missing, invalid, expired, denied, or mismatched approvals prevent high-risk tool execution.
+- **Regression coverage:** Tests cover missing approval, self-approval, tenant/requester isolation, payload tampering, denial, expiration, replay prevention, and unknown-risk classification.
+
+**Current limitations:** The approval store is in-memory and is not durable across process restarts or distributed instances. The approval decision API accepts a supplied approver identity; authenticated approver authorization and tenant-scoped approver permissions are not yet implemented. Production deployment requires persistent approval storage, authenticated decision authorization, and verified integration of the approval gateway at every tool-execution entry point.
+
+**Validation:** 188 tests passed (79 unit, 3 architecture, 106 integration).

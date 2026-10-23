@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using NexusAgent.Application.Approvals;
 
 namespace NexusAgent.Application.Tools;
 
@@ -6,13 +7,16 @@ public sealed class TypedToolGateway(
     ToolRegistry registry,
     ToolAllowList allowList,
     IToolAuthorizationPolicy authorization,
-    IToolAuditSink auditSink)
+    IToolAuditSink auditSink,
+    IActionRiskPolicy? riskPolicy = null,
+    IApprovalStore? approvalStore = null)
 {
     public async Task<ToolExecutionResponse<TOutput>> ExecuteAsync<TInput, TOutput>(
         ToolRequest<TInput> request,
         ToolCaller caller,
         ToolExecutionLimits? limits = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Guid? approvalId = null)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(caller);
@@ -52,7 +56,55 @@ public sealed class TypedToolGateway(
             }
             else
             {
-                using var timeout =
+                var risk = riskPolicy?.Classify(request.ToolName)
+                    ?? ActionRisk.Critical;
+
+                var requiresApproval = riskPolicy?.RequiresApproval(risk)
+                    ?? true;
+
+                var approvalGranted = !requiresApproval;
+
+                if (requiresApproval &&
+                    approvalId.HasValue &&
+                    approvalStore is not null)
+                {
+                    try
+                    {
+                        var action = ApprovalActionFactory.Create(
+                            request,
+                            caller);
+
+                        approvalGranted = await approvalStore.ConsumeAsync(
+                            approvalId.Value,
+                            action,
+                            DateTimeOffset.UtcNow,
+                            cancellationToken);
+                    }
+                    catch (OperationCanceledException)
+                        when (cancellationToken.IsCancellationRequested)
+                    {
+                        outcome = "tool_cancelled";
+                    }
+                    catch (Exception)
+                    {
+                        outcome = "approval_validation_failed";
+                    }
+                }
+
+                if (!approvalGranted)
+                {
+                    outcome = outcome == "rejected"
+                        ? "approval_required"
+                        : outcome;
+
+                    result = new ToolResult<TOutput>(
+                        false,
+                        default,
+                        outcome);
+                }
+                else
+                {
+                    using var timeout =
                     CancellationTokenSource.CreateLinkedTokenSource(
                         cancellationToken);
 
@@ -88,6 +140,7 @@ public sealed class TypedToolGateway(
                         false,
                         default,
                         outcome);
+                }
                 }
             }
 

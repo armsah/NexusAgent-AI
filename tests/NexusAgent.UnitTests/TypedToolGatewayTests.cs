@@ -1,3 +1,4 @@
+using NexusAgent.Application.Approvals;
 using NexusAgent.Application.Tools;
 using Xunit;
 
@@ -246,7 +247,12 @@ public sealed class TypedToolGatewayTests
                 registry,
                 new ToolAllowList(allowed),
                 new TestAuthorizationPolicy(authorized),
-                audit),
+                audit,
+                new ExplicitActionRiskPolicy(
+                    new Dictionary<string, ActionRisk>
+                    {
+                        [tool.Name] = ActionRisk.Low
+                    })),
             audit);
     }
 
