@@ -1,3 +1,4 @@
+using NexusAgent.Api.Health;
 using NexusAgent.Api.Questions;
 using NexusAgent.Api.Search;
 using NexusAgent.Api.Documents;
@@ -35,30 +36,7 @@ if (app.Environment.IsDevelopment())
 }
 
 
-app.MapGet(
-    "/health",
-    () => Results.Ok(new
-    {
-        status = "healthy"
-    }));
-
-app.MapGet(
-    "/health/ready",
-    async (
-        NexusAgentDbContext dbContext,
-        CancellationToken cancellationToken) =>
-    {
-        var canConnect = await dbContext.Database.CanConnectAsync(
-            cancellationToken);
-
-        return canConnect
-            ? Results.Ok(new
-            {
-                status = "ready"
-            })
-            : Results.StatusCode(
-                StatusCodes.Status503ServiceUnavailable);
-    });
+app.MapNexusAgentHealthEndpoints();
 
 if (app.Environment.IsDevelopment())
 {
