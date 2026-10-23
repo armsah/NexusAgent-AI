@@ -10,7 +10,7 @@ The system is designed around a fundamental separation:
 
 ## Project Status
 
-**Current milestone:** P6 Approval Gates complete, validated (188 tests passed), merged into `main`, and pushed to GitHub. P7 is the next implementation phase.
+**Current milestone:** P7 Answer Verification and Prompt-Injection Defense complete; 211 tests passed (102 unit, 3 architecture, 106 integration). Merged into `main` and pushed to GitHub. P8 Observability and Evaluation is next.
 
 | Phase | Deliverable | Status |
 |---|---|---|
@@ -21,7 +21,7 @@ The system is designed around a fundamental separation:
 | P4 | Application-owned bounded orchestration, durable workflow state, retries, cancellation, authorization, and concurrency protection | Complete — merged into main |
 | P5 | Allow-listed typed Tool Gateway | Complete — merged into main |
 | P6 | Risk decisions, human approvals, immutable action payloads | Complete - merged into main |
-| P7 | Verifier, prompt-injection defense, adversarial retrieval | Planned |
+| P7 | Verifier, prompt-injection defense, adversarial retrieval | Complete - merged into main |
 | P8 | Token spend, retrieval quality, OpenTelemetry traces | Planned |
 | P9 | Failure drills, load testing, recovery, release rollback | Planned |
 
