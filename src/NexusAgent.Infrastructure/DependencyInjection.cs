@@ -40,6 +40,25 @@ public static class DependencyInjection
             services.AddHttpClient<ITextEmbeddingProvider, AzureOpenAiEmbeddingProvider>(
                 client => client.Timeout = TimeSpan.FromSeconds(30));
         }
+        else if (string.Equals(
+            embeddingProvider,
+            "LocalPython",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddHttpClient<
+                ITextEmbeddingProvider,
+                LocalPythonEmbeddingProvider>(client =>
+                {
+                    client.BaseAddress = new Uri("http://127.0.0.1:8001/");
+                    client.Timeout = TimeSpan.FromSeconds(135);
+                })
+                .ConfigurePrimaryHttpMessageHandler(() =>
+                    new HttpClientHandler
+                    {
+                        UseProxy = false,
+                        AllowAutoRedirect = false
+                    });
+        }
         else if (!string.IsNullOrWhiteSpace(embeddingProvider) &&
                  !string.Equals(
                      embeddingProvider,
@@ -61,6 +80,25 @@ public static class DependencyInjection
                 IGroundedAnswerGenerator,
                 AzureOpenAiGroundedAnswerGenerator>(
                 client => client.Timeout = TimeSpan.FromSeconds(30));
+        }
+        else if (string.Equals(
+            groundedAnswerProvider,
+            "LocalPython",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddHttpClient<
+                IGroundedAnswerGenerator,
+                LocalGroundedAnswerGenerator>(client =>
+                {
+                    client.BaseAddress = new Uri("http://127.0.0.1:8001/");
+                    client.Timeout = TimeSpan.FromSeconds(135);
+                })
+                .ConfigurePrimaryHttpMessageHandler(() =>
+                    new HttpClientHandler
+                    {
+                        UseProxy = false,
+                        AllowAutoRedirect = false
+                    });
         }
         else if (!string.IsNullOrWhiteSpace(groundedAnswerProvider) &&
                  !string.Equals(
