@@ -12,6 +12,8 @@ NexusAgent AI uses .NET 10, PostgreSQL 17, and pgvector. Its layered architectur
 
 ## What senior engineering problems were solved?
 
+Validated 231 regression tests and PostgreSQL outbox isolation, including initialization-failure cleanup.
+
 The implementation addresses tenant isolation, evidence-backed answer verification, prompt-injection defenses, transactional outbox reliability, durable workflow state, bounded execution, and approval-controlled actions. Production and Staging do not expose development-identity business endpoints, while database-readiness failures return HTTP 503 without leaking connection details. The final Release build passed all 231 automated tests: 117 unit, 3 architecture, and 111 integration.
 
 ![End-to-end governed workflow](docs/images/end-to-end-workflow.png)
