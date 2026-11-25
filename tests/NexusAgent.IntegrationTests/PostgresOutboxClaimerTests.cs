@@ -5,13 +5,70 @@ using Xunit;
 
 namespace NexusAgent.IntegrationTests;
 
-public sealed class PostgresOutboxClaimerTests
+public sealed class PostgresOutboxClaimerTests : IAsyncLifetime
 {
-    private const string ConnectionString =
+    private const string BaseConnectionString =
         "Host=127.0.0.1;Port=15432;Database=nexusagent;" +
         "Username=nexusagent;Password=nexusagent_dev_only";
 
-    private static NexusAgentDbContext CreateContext()
+    private readonly string _databaseName =
+        "nexusagent_outbox_test_" + Guid.NewGuid().ToString("N");
+
+    private string ConnectionString =>
+        new Npgsql.NpgsqlConnectionStringBuilder(BaseConnectionString)
+        {
+            Database = _databaseName,
+            Pooling = false
+        }.ConnectionString;
+
+    public async Task InitializeAsync()
+    {
+        try
+        {
+            await ExecuteAdminAsync($"CREATE DATABASE \"{_databaseName}\"");
+
+            await using var db = CreateContext();
+
+            await db.Database.ExecuteSqlRawAsync(
+                "CREATE EXTENSION IF NOT EXISTS vector;");
+
+            await db.Database.MigrateAsync();
+        }
+        catch (Exception initializationError)
+        {
+            try
+            {
+                await DisposeAsync();
+            }
+            catch (Exception cleanupError)
+            {
+                throw new AggregateException(initializationError, cleanupError);
+            }
+
+            throw;
+        }
+    }
+
+    public Task DisposeAsync() =>
+        ExecuteAdminAsync($"DROP DATABASE IF EXISTS \"{_databaseName}\"");
+
+    private async Task ExecuteAdminAsync(string sql)
+    {
+        var connectionString =
+            new Npgsql.NpgsqlConnectionStringBuilder(ConnectionString)
+            {
+                Database = "postgres"
+            }.ConnectionString;
+
+        await using var connection = new Npgsql.NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        await command.ExecuteNonQueryAsync();
+    }
+
+    private NexusAgentDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<NexusAgentDbContext>()
             .UseNpgsql(ConnectionString, npgsql => npgsql.UseVector())
