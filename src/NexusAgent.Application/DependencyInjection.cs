@@ -1,3 +1,5 @@
+using NexusAgent.Application.Agents;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using NexusAgent.Application.Orchestration;
 using Microsoft.Extensions.DependencyInjection;
 using NexusAgent.Application.Workflows;
@@ -21,6 +23,13 @@ public static class DependencyInjection
         services.AddScoped<StartWorkflowHandler>();
         services.AddScoped<CompleteWorkflowHandler>();
         services.AddScoped<WorkflowOrchestrator>();
+
+        services.TryAddScoped<IAgentAuthorizationPolicy,
+            DenyAllAgentAuthorizationPolicy>();
+
+        services.AddScoped<AgentRegistry>();
+        services.AddScoped<AgentHarness>();
+        services.AddScoped<AuthorizedAgentExecutor>();
 
         return services;
     }
