@@ -12,6 +12,15 @@ NexusAgent AI uses .NET 10, PostgreSQL 17, and pgvector. Its layered architectur
 
 ## What senior engineering problems were solved?
 
+**E2 - Offline AI inference:** Python/FastAPI and Ollama provide local
+generation, grounded answers and 1536-dimensional semantic embeddings
+through C# REST adapters without requiring Azure inference services.
+
+Validated 19 Python tests, the existing 250-test .NET regression suite,
+and live C#-Python-Ollama communication.
+See [E2 architecture and local setup](docs/architecture/e2-offline-llm.md).
+
+
 **E1 - Governed agent harness:** Typed execution contracts, bounded retries,
 cooperative cancellation, workflow ownership verification, deny-by-default
 authorization, scoped dependency injection and execution telemetry.
