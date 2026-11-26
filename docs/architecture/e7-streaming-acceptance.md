@@ -41,7 +41,7 @@ Cloud expenditure: EUR 0
 | E738-02 | Missing-predecessor age monitoring | CLOSED |
 | E738-03 | Auditable missing-predecessor reconciliation | CLOSED |
 | E738-04 | Persistent state retention and rebuild policy | OPEN |
-| E738-05 | Isolated synthetic acceptance input and output topics | OPEN |
+| E738-05 | Isolated synthetic acceptance input and output topics | CLOSED |
 | E738-06 | Safe reconciliation of existing synthetic snapshots | OPEN |
 
 ## Required closure evidence

@@ -190,6 +190,18 @@ candidates among 50 observed tenant snapshots.
 Historical migration verification and authorized reconciliation
 remain open.
 
+
+### Streaming acceptance isolation closure
+
+E738-05 is formally closed following successful isolated
+dead-letter, broker recovery and separate-JVM crash tests.
+
+Historical source boundaries and authoritative tenant
+references have been inspected and recorded.
+
+E738-04 and E738-06 remain gated by authoritative historical
+completeness and verified synthetic provenance respectively.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
