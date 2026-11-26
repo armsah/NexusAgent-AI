@@ -691,6 +691,258 @@ public sealed class MultiAgentAcceptanceTests
         }
     }
 
+    [Fact]
+    [Trait("Category", "LiveLocalAI")]
+    public async Task ActualApiHostCrashDuringExecutionRecoversWorkflow()
+    {
+        await using var factory = new AgentFactory("Development", false);
+        using var fixtureClient = factory.CreateClient();
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<NexusAgentDbContext>();
+
+        const string question =
+            "NexusAgent PostgreSQL database";
+
+        const string sentence = "NexusAgent uses PostgreSQL as its database.";
+
+        var ids = new List<Guid>();
+
+        var workflow = Workflow.Create(
+            Guid.NewGuid(), Principal, Tenant,
+            question, DateTimeOffset.UtcNow);
+
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (root is not null &&
+               !File.Exists(Path.Combine(root.FullName, "NexusAgent.slnx")))
+            root = root.Parent;
+
+        Assert.NotNull(root);
+
+        var api = Path.Combine(root.FullName, "src", "NexusAgent.Api",
+            "bin", "Release", "net10.0", "NexusAgent.Api.dll");
+
+        Assert.True(File.Exists(api), api);
+
+        var storage = Path.Combine(
+            Path.GetTempPath(), "nexus-host-crash",
+            Guid.NewGuid().ToString("N"));
+
+        Directory.CreateDirectory(storage);
+
+        var listener = new System.Net.Sockets.TcpListener(
+            IPAddress.Loopback, 0);
+
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+
+        var address = $"http://127.0.0.1:{port}";
+
+        using var client = new HttpClient
+        {
+            BaseAddress = new Uri(address),
+            Timeout = TimeSpan.FromMinutes(6)
+        };
+
+        System.Diagnostics.Process? process = null;
+
+        async Task StartHost()
+        {
+            var start = new System.Diagnostics.ProcessStartInfo("dotnet")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = Path.GetDirectoryName(api)!
+            };
+
+            start.ArgumentList.Add(api);
+
+            start.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
+            start.Environment["DOTNET_ENVIRONMENT"] = "Development";
+            start.Environment["ASPNETCORE_URLS"] = address;
+            start.Environment["ConnectionStrings__NexusAgent"] =
+                ConnectionString;
+            start.Environment["Agents__EnableDevelopmentExecution"] = "true";
+            start.Environment["DocumentStorage__RootPath"] = storage;
+            start.Environment["Embeddings__Provider"] = "Disabled";
+            start.Environment["GroundedAnswers__Provider"] = "LocalPython";
+
+            process = System.Diagnostics.Process.Start(start)!;
+
+            using var budget = new CancellationTokenSource(
+                TimeSpan.FromSeconds(30));
+
+            while (!budget.IsCancellationRequested)
+            {
+                Assert.False(process.HasExited);
+
+                try
+                {
+                    using var response = await client.GetAsync(
+                        "/health/ready", budget.Token);
+
+                    if (response.IsSuccessStatusCode)
+                        return;
+                }
+                catch (HttpRequestException) { }
+
+                await Task.Delay(200, budget.Token);
+            }
+
+            throw new TimeoutException("API host startup failed.");
+        }
+
+        async Task StopHost()
+        {
+            if (process is null)
+                return;
+
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+                await process.WaitForExitAsync();
+            }
+
+            process.Dispose();
+            process = null;
+        }
+
+        try
+        {
+            db.Workflows.Add(workflow);
+
+            var document = AddDocument(
+                db, ids, Tenant, Principal, "Crash recovery evidence");
+
+            await db.SaveChangesAsync();
+
+            AddIndex(db, document, sentence, false);
+            await db.SaveChangesAsync();
+
+            await StartHost();
+
+            var url = $"/api/workflows/{workflow.Id}/agents/execute";
+
+            // Hold evidence retrieval so the actual host remains
+            // inside the knowledge stage when it is terminated.
+            await using var holder =
+                new Npgsql.NpgsqlConnection(ConnectionString);
+
+            await holder.OpenAsync();
+
+            await using var transaction =
+                await holder.BeginTransactionAsync();
+
+            await using var command = holder.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText =
+                "LOCK TABLE knowledge_documents IN ACCESS EXCLUSIVE MODE";
+
+            await command.ExecuteNonQueryAsync();
+
+            var interrupted = client.PostAsync(url, null);
+
+            using var stageBudget = new CancellationTokenSource(
+                TimeSpan.FromSeconds(30));
+
+            while (true)
+            {
+                var state = await db.AgentExecutions.AsNoTracking()
+                    .SingleOrDefaultAsync(
+                        x => x.Id == workflow.Id, stageBudget.Token);
+
+                if (state is not null &&
+                    state.Status == "Running" &&
+                    state.NextStage == 2)
+                    break;
+
+                await Task.Delay(100, stageBudget.Token);
+            }
+
+            var before = await db.AgentExecutionCheckpoints
+                .AsNoTracking()
+                .Where(x => x.ExecutionId == workflow.Id)
+                .OrderBy(x => x.StageNumber)
+                .Select(x => x.InvocationId)
+                .ToArrayAsync();
+
+            Assert.Equal(2, before.Length);
+
+            await StopHost();
+
+            try
+            {
+                using var unexpected = await interrupted;
+                Assert.False(unexpected.IsSuccessStatusCode);
+            }
+            catch (HttpRequestException) { }
+
+            await transaction.RollbackAsync();
+
+            // Accelerate the real lease-expiry mechanism for testing.
+            await db.AgentExecutions
+                .Where(x => x.Id == workflow.Id)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    x => x.LeaseExpiresAt,
+                    DateTimeOffset.UtcNow.AddSeconds(2)));
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            await StartHost();
+
+            using var recovered = await client.PostAsync(url, null);
+
+            Assert.Equal(HttpStatusCode.OK, recovered.StatusCode);
+
+            var result = await recovered.Content
+                .ReadFromJsonAsync<MultiAgentResult>();
+
+            Assert.NotNull(result);
+            if (!result.Succeeded)
+            {
+                var failure = await db.AgentExecutions.AsNoTracking()
+                    .SingleAsync(x => x.Id == workflow.Id);
+
+                var checkpoints = await db.AgentExecutionCheckpoints
+                    .AsNoTracking()
+                    .Where(x => x.ExecutionId == workflow.Id)
+                    .OrderBy(x => x.StageNumber)
+                    .ToListAsync();
+
+                Assert.Fail(System.Text.Json.JsonSerializer.Serialize(
+                    new { failure, checkpoints, result }));
+            }
+            Assert.Contains("PostgreSQL", result.Answer);
+            Assert.Equal(4, result.Stages.Count);
+
+            var after = await db.AgentExecutionCheckpoints
+                .AsNoTracking()
+                .Where(x => x.ExecutionId == workflow.Id)
+                .OrderBy(x => x.StageNumber)
+                .Select(x => x.InvocationId)
+                .ToArrayAsync();
+
+            Assert.Equal(4, after.Length);
+            Assert.Equal(before, after.Take(2).ToArray());
+            Assert.Equal(4, after.Distinct().Count());
+
+            var completed = await db.AgentExecutions.AsNoTracking()
+                .SingleAsync(x => x.Id == workflow.Id);
+
+            Assert.Equal("Completed", completed.Status);
+        }
+        finally
+        {
+            await StopHost();
+            await CleanupAsync(db, ids, workflow.Id);
+
+            if (Directory.Exists(storage))
+                Directory.Delete(storage, recursive: true);
+        }
+    }
+
     private static KnowledgeDocument AddDocument(
         NexusAgentDbContext db,
         List<Guid> ids,

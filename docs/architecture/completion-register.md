@@ -52,9 +52,9 @@ No required feature may remain a placeholder.
 | CR-034 | Hybrid retrieval relevance and citation integrity | E3/E5 | OPEN |
 | CR-035 | Production request-size enforcement verification | E10/E15 | OPEN |
 | CR-036 | Agent invocation authorization boundary verification | E3 | CLOSED |
-| CR-037 | Actual process-crash recovery acceptance | E15 | OPEN |
-| CR-038 | Strict lease expiry under database lock contention | E15 | OPEN |
-| CR-039 | Replay verification budget enforcement | E5 | OPEN |
+| CR-037 | Actual process-crash recovery acceptance | E4 | OPEN |
+| CR-038 | Strict lease expiry under database lock contention | E4 | OPEN |
+| CR-039 | Replay verification budget enforcement | E4 | OPEN |
 | CR-040 | Trusted approver identity and tenant authorization | E10 | OPEN |
 | CR-041 | Trusted requester binding in evidence retrieval | E10 | OPEN |
 
@@ -185,3 +185,27 @@ under CR-014 for E5.
 
 Formal closure requires corrective PR merge and acceptance
 scope verification.
+
+
+## E4 consolidated final acceptance
+
+- CR-037: Actual API-host termination during knowledge retrieval,
+  restart, successful grounded completion and preservation of
+  checkpoint invocation identifiers.
+- CR-038: PostgreSQL clock-based lease fencing, lock-contention
+  verification and rollback of delayed checkpoint transactions.
+- CR-039: Replay memory and verifier retrieval budgets, with
+  cancellation checks before returning the final answer.
+- Release build: passed.
+- .NET tests: 321 passed.
+- Python tests: 27 passed.
+- Total regression: 348 passed, zero failed or skipped.
+- Cloud expenditure: EUR 0.
+
+The crash test uses accelerated lease expiry and real local
+inference after restart. Lease validity is checked immediately
+before transaction commit. Absolute physical commit timing is
+not guaranteed.
+
+The Python dependency warning remains tracked under CR-014.
+Earlier E4 residual assignments are superseded by this evidence.
