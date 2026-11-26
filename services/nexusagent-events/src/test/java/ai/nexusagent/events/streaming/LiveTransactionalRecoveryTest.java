@@ -399,6 +399,7 @@ class LiveTransactionalRecoveryTest {
             JsonNode finalMetrics = awaitMetrics(
                     observer, tenant, projections,
                     failure, 6, 0, 0, 1);
+            awaitResolvedGaps(streams);
 
             assertEquals(1,
                     finalMetrics.path("documentsCreated").asLong());
@@ -626,6 +627,51 @@ class LiveTransactionalRecoveryTest {
 
                             var previous = verifiedPendingObservations
                                     .putIfAbsent(eventId.toString(), observed);
+
+                            try (var monitor = new PendingGapMonitor(
+                                    streams,
+                                    java.time.Clock.fixed(
+                                            observed.plusSeconds(301),
+                                            java.time.ZoneOffset.UTC),
+                                    java.time.Duration.ofSeconds(1),
+                                    java.time.Duration.ofMinutes(5),
+                                    1)) {
+
+                                monitor.start();
+
+                                long monitorDeadline =
+                                        System.nanoTime()
+                                                + java.util.concurrent.TimeUnit
+                                                        .SECONDS.toNanos(20);
+
+                                while (!monitor.snapshot().complete()
+                                        && System.nanoTime() < monitorDeadline) {
+
+                                    java.util.concurrent.locks.LockSupport
+                                            .parkNanos(
+                                                    java.util.concurrent.TimeUnit
+                                                            .MILLISECONDS.toNanos(100));
+                                }
+
+                                var snapshot = monitor.snapshot();
+
+                                org.junit.jupiter.api.Assertions.assertTrue(
+                                        snapshot.complete(),
+                                        "Pending-store traversal incomplete");
+
+                                org.junit.jupiter.api.Assertions.assertTrue(
+                                        snapshot.pendingEvents() >= 1,
+                                        "Expected pending event was not counted");
+
+                                org.junit.jupiter.api.Assertions.assertTrue(
+                                        snapshot.overdueEvents() >= 1,
+                                        "Expected overdue event was not detected");
+
+                                org.junit.jupiter.api.Assertions.assertTrue(
+                                        snapshot.oldestAgeMillis() >= 301000,
+                                        "Persisted observation age was not preserved");
+                            }
+
 
                             if (previous != null) {
                                 org.junit.jupiter.api.Assertions.assertEquals(
@@ -1162,6 +1208,45 @@ class LiveTransactionalRecoveryTest {
                             || group.groupId().equals(
                                     appId + "-observer")),
                     "Acceptance consumer groups remain");
+        }
+    }
+
+    private static void awaitResolvedGaps(
+            org.apache.kafka.streams.KafkaStreams streams) {
+
+        try (var monitor = new PendingGapMonitor(
+                streams,
+                java.time.Clock.systemUTC(),
+                java.time.Duration.ofMillis(200),
+                java.time.Duration.ofMinutes(5),
+                1)) {
+
+            monitor.start();
+
+            long deadline = System.nanoTime()
+                    + java.util.concurrent.TimeUnit.SECONDS.toNanos(30);
+
+            while (System.nanoTime() < deadline) {
+
+                var snapshot = monitor.snapshot();
+
+                if (snapshot.complete()
+                        && snapshot.pendingEvents() == 0
+                        && snapshot.overdueEvents() == 0
+                        && snapshot.unknownAgeEvents() == 0
+                        && snapshot.oldestAgeMillis() == 0) {
+
+                    return;
+                }
+
+                java.util.concurrent.locks.LockSupport.parkNanos(
+                        java.util.concurrent.TimeUnit.MILLISECONDS
+                                .toNanos(100));
+            }
+
+            org.junit.jupiter.api.Assertions.fail(
+                    "Resolved gaps remained visible: "
+                            + monitor.snapshot());
         }
     }
 }

@@ -149,7 +149,7 @@ acceptance requirements remain mandatory in E5 and E15.
 
 Pending-event observation timestamps survive Kafka Streams state restoration.
 Targeted topology, observation and live recovery tests passed.
-Direct monitoring acceptance remains in progress.
+Live scheduled monitoring, overdue detection and resolved-gap acceptance passed. E738-02 is closed for instance-local monitoring.
 
 See [E738 monitoring evidence](docs/architecture/e738-gap-monitoring-evidence.md).
 

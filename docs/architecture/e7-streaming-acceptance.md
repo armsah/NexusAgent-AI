@@ -38,7 +38,7 @@ Cloud expenditure: EUR 0
 | ID | Requirement | Status |
 |---|---|---|
 | E738-01 | Abrupt Streams process termination during an open transaction | CLOSED |
-| E738-02 | Missing-predecessor age monitoring | OPEN |
+| E738-02 | Missing-predecessor age monitoring | CLOSED |
 | E738-03 | Auditable missing-predecessor reconciliation | OPEN |
 | E738-04 | Persistent state retention and rebuild policy | OPEN |
 | E738-05 | Isolated synthetic acceptance input and output topics | OPEN |
