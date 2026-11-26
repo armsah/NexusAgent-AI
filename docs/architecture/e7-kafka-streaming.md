@@ -642,3 +642,25 @@ E7.3.7 broker recovery and changelog restoration acceptance: CLOSED.
   docs/architecture/e7-streaming-acceptance.md.
 - Six outstanding operational gates remain OPEN.
 - Cloud expenditure: EUR 0.
+
+## E738-01 closure evidence
+
+- Separate JVM executed the production Kafka Streams topology.
+- Producer interceptor blocked acknowledged analytics output
+  before transaction completion.
+- Read-uncommitted observer verified the physical output record.
+- Read-committed observer verified isolation.
+- Probe JVM forcibly terminated without orderly shutdown.
+- Same application ID restarted with fresh local state.
+- Uncommitted processing recovered through Kafka replay.
+- Exactly one committed projection per accepted event verified.
+- Duplicate input replay did not increment tenant metrics.
+- Valid successor processing and cumulative counters verified.
+- Acceptance internal topics and consumer groups removed.
+- Full Java regression: 134 passed.
+- Failures, errors and skips: zero.
+- Cloud expenditure: EUR 0.
+
+E738-01: CLOSED.
+
+Remaining mandatory E7.3.8 gates: E738-02 through E738-06.

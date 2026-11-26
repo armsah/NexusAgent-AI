@@ -37,7 +37,7 @@ Cloud expenditure: EUR 0
 
 | ID | Requirement | Status |
 |---|---|---|
-| E738-01 | Abrupt Streams process termination during an open transaction | OPEN |
+| E738-01 | Abrupt Streams process termination during an open transaction | CLOSED |
 | E738-02 | Missing-predecessor age monitoring | OPEN |
 | E738-03 | Auditable missing-predecessor reconciliation | OPEN |
 | E738-04 | Persistent state retention and rebuild policy | OPEN |
@@ -76,3 +76,25 @@ E7.3.8 remains OPEN until every mandatory gate is implemented,
 tested and documented.
 
 E7.4 must not begin before E7.3.8 formally closes.
+
+## E738-01 closure evidence
+
+- Separate JVM executed the production Kafka Streams topology.
+- Producer interceptor blocked acknowledged analytics output
+  before transaction completion.
+- Read-uncommitted observer verified the physical output record.
+- Read-committed observer verified isolation.
+- Probe JVM forcibly terminated without orderly shutdown.
+- Same application ID restarted with fresh local state.
+- Uncommitted processing recovered through Kafka replay.
+- Exactly one committed projection per accepted event verified.
+- Duplicate input replay did not increment tenant metrics.
+- Valid successor processing and cumulative counters verified.
+- Acceptance internal topics and consumer groups removed.
+- Full Java regression: 134 passed.
+- Failures, errors and skips: zero.
+- Cloud expenditure: EUR 0.
+
+E738-01: CLOSED.
+
+Remaining mandatory E7.3.8 gates: E738-02 through E738-06.

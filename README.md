@@ -143,6 +143,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.3.8 checkpoint: 133 passing Java tests; consolidated streaming regression passed; six mandatory operational acceptance gates remain open.
 
+- E738-01 CLOSED: forced JVM termination during an uncommitted Kafka Streams transaction, committed replay, duplicate suppression and restored tenant counters; 134 passing Java tests.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
