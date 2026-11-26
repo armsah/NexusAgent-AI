@@ -16,11 +16,11 @@ No required feature may remain a placeholder.
 
 | ID | Requirement | Target | Status |
 |---|---|---|---|
-| CR-001 | Permanent C# inference adapter tests | E3 | OPEN |
-| CR-002 | Live PostgreSQL local embedding indexing and retrieval | E3 | OPEN |
-| CR-003 | Four concrete agents and governed coordination | E3 | OPEN |
+| CR-001 | Permanent C# inference adapter tests | E3 | CLOSED |
+| CR-002 | Live PostgreSQL local embedding indexing and retrieval | E3 | CLOSED |
+| CR-003 | Four concrete agents and governed coordination | E3 | CLOSED |
 | CR-004 | Trusted identity and agent authorization integration | E3/E10 | OPEN |
-| CR-005 | Typed evidence handoffs and citation verification | E3 | OPEN |
+| CR-005 | Typed evidence handoffs and citation verification | E3 | CLOSED |
 | CR-006 | Durable agent execution state and recovery | E4 | OPEN |
 | CR-007 | Agent memory and bounded planning | E4 | OPEN |
 | CR-008 | Retry idempotency and cancellation verification | E4 | OPEN |
@@ -48,7 +48,7 @@ No required feature may remain a placeholder.
 | CR-030 | Full regression and documentation audit | E15 | OPEN |
 | CR-031 | Four-language architecture coverage verification | E15 | OPEN |
 | CR-032 | Final cloud resource and cost cleanup verification | E15 | OPEN |
-| CR-033 | Governed multi-agent endpoint acceptance and isolation | E3 | OPEN |
+| CR-033 | Governed multi-agent endpoint acceptance and isolation | E3 | CLOSED |
 | CR-034 | Hybrid retrieval relevance and citation integrity | E3/E5 | OPEN |
 | CR-035 | Production request-size enforcement verification | E10/E15 | OPEN |
 | CR-036 | Agent invocation authorization boundary verification | E3 | OPEN |
@@ -79,7 +79,24 @@ Final acceptance requires zero OPEN or BLOCKED required items.
 - Production and Staging endpoint isolation passed.
 - No required acceptance tests were intentionally skipped.
 - Azure expenditure: EUR 0.
-- E3 closure requires the GitHub merge reference.
+- E3 merged through PR #6; feature bfafc7d; merge 6ca45f3.
 
 CR-004, CR-034 and CR-035 retain their later-stage requirements.
 CR-014 remains open for dependency deprecation remediation.
+
+
+### E3 closure references
+
+| Requirement | Acceptance evidence |
+|---|---|
+| CR-001 | Permanent local inference adapter tests |
+| CR-002 | Live embedding, content indexer and PostgreSQL retrieval |
+| CR-003 | Four-stage governed coordinator acceptance |
+| CR-005 | Typed handoff and extractive citation verification |
+| CR-033 | Endpoint ownership and environment isolation tests |
+
+All closures reference PR #6 and merge commit 6ca45f3.
+
+CR-036 remains OPEN pending complete invocation-boundary verification.
+CR-004, CR-034 and CR-035 retain outstanding requirements.
+GitHub automated checks remain pending E13 CI/CD implementation.
