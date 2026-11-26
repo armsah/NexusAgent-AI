@@ -293,3 +293,18 @@ This closes the bounded terminal approved-action continuation requirement.
 Recovery deliberately does not replay ambiguous external side effects.
 The test invokes the production recovery function directly; hosted worker
 scheduling and arbitrary multi-step plan resumption are separate concerns.
+
+### E7.2 - Domain rejection lifecycle: CLOSED
+
+- 18 dedicated domain rejection acceptance cases passed.
+- Rejection permitted only from WaitingForApproval.
+- Rejected workflows cannot resume, restart, complete, fail,
+  cancel, request approval again or execute another step.
+- Backwards rejection timestamps rejected without state mutation.
+- Active steps prevent entry into approval waiting state.
+- Completed steps permit approval waiting and rejection.
+- Other terminal states cannot transition to Rejected.
+- PostgreSQL rejection lifecycle and journal acceptance passed.
+- Related unit and integration regressions passed.
+- xUnit2031 analyzer warning corrected.
+- Cloud expenditure: EUR 0.

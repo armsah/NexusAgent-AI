@@ -70,8 +70,7 @@ public sealed class E7OutboxOrderingTests
             var batch = await claimer.ClaimAsync(
                 1000, TimeSpan.FromMinutes(5));
 
-            var predecessor = Assert.Single(
-                batch.Where(item => item.Id == first));
+            var predecessor = Assert.Single(batch, item => item.Id == first);
 
             Assert.DoesNotContain(batch, item => item.Id == second);
 

@@ -121,6 +121,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.2 workflow-bound execution and continuation CLOSED: actual .NET process interruption, durable recovery and replay rejection verified.
 
+- E7.2 domain rejection lifecycle CLOSED: 18 dedicated domain acceptance cases, PostgreSQL lifecycle acceptance and related regressions passed.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
