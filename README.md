@@ -259,6 +259,17 @@ Prospective cross-language rebuild acceptance is verified.
 Production baseline migration and synthetic reconciliation remain
 unauthorized until their independent evidence gates are satisfied.
 
+
+### Production streaming recovery safeguards
+
+Production startup validates committed source checkpoints and
+durable changelog presence. Unverified application-ID changes
+and automatic production offset resets are prohibited.
+
+Historical malformed records and unverified synthetic snapshots
+receive explicit preservation dispositions. Destructive
+reconciliation and unverified historical migration remain denied.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

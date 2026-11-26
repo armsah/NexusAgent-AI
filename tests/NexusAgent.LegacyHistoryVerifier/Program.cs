@@ -93,6 +93,7 @@ var bounds = partitions.ToDictionary(
 var records = new List<BrokerRecord>();
 var completed = new HashSet<TopicPartition>();
 var malformed = 0;
+var malformedInventory = new List<object>();
 
 consumer.Assign(partitions.Select(partition =>
     new TopicPartitionOffset(
@@ -151,6 +152,50 @@ while (completed.Count < partitions.Length)
         ArgumentNullException)
     {
         malformed++;
+
+        var classification = "UNPARSEABLE_EVENT_IDENTITY";
+
+        if (result.Message.Value is null)
+        {
+            classification = "NULL_PAYLOAD";
+        }
+        else
+        {
+            try
+            {
+                using var invalid = JsonDocument.Parse(
+                    result.Message.Value);
+
+                var root = invalid.RootElement;
+
+                classification =
+                    root.ValueKind != JsonValueKind.Object
+                        ? "NON_OBJECT_JSON"
+                        : !root.TryGetProperty("eventId", out var id)
+                            ? "MISSING_EVENT_ID"
+                            : id.ValueKind != JsonValueKind.String
+                                ? "INVALID_EVENT_ID_TYPE"
+                                : "INVALID_EVENT_ID_VALUE";
+            }
+            catch (JsonException)
+            {
+                classification = "INVALID_JSON";
+            }
+        }
+
+        malformedInventory.Add(new
+        {
+            partition = partition.Partition.Value,
+            offset = result.Offset.Value,
+            classification,
+            payloadSha256 = result.Message.Value is null
+                ? null
+                : Convert.ToHexString(
+                    System.Security.Cryptography.SHA256.HashData(
+                        System.Text.Encoding.UTF8.GetBytes(
+                            result.Message.Value)))
+                    .ToLowerInvariant()
+        });
     }
 
     if (consumer.Position(partition).Value >= end)
@@ -252,6 +297,7 @@ var report = new
     readableKafkaRecords = records.Count + malformed,
     parsedKafkaRecords = records.Count,
     malformedKafkaRecords = malformed,
+    malformedInventory,
     matchingCandidates = matched.Count,
     missingPublications = missing.Count,
     conflictingPublications = conflicting.Count,

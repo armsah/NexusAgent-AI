@@ -48,9 +48,20 @@ public final class StreamRuntime implements SmartLifecycle {
                 applicationId,
                 StreamTopics.production());
 
+        ProductionRecoveryGuard.verify(
+                bootstrap,
+                applicationId,
+                StreamTopics.production());
+
+        var settings = StreamSettings.create(
+                bootstrap, applicationId, state);
+
+        // Never silently replay or skip missing production history.
+        settings.put("auto.offset.reset", "none");
+
         streams = new KafkaStreams(
                 EventStreamTopology.build(),
-                StreamSettings.create(bootstrap, applicationId, state));
+                settings);
 
         streams.setUncaughtExceptionHandler(exception ->
                 StreamsUncaughtExceptionHandler

@@ -1,0 +1,222 @@
+{
+    "schemaVersion":  1,
+    "candidateCount":  20,
+    "inspectedTables":  [
+                            "document_search_indexes",
+                            "document_vector_indexes",
+                            "document_versions",
+                            "kafka_document_publications",
+                            "kafka_workflow_events",
+                            "knowledge_documents",
+                            "outbox_messages",
+                            "published_document_events",
+                            "workflow_tool_executions",
+                            "workflows"
+                        ],
+    "candidates":  [
+                       {
+                           "tenantId":  "e736-tenant-46db4c55c3b14f99aae8bc3901521561",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e736-tenant-670fcc90bc4e41dbae5240ff929c6d9b",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e736-tenant-a30041d2c15f4f378cfec93a2fee883b",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e736-tenant-a936d5f7e9ff4d4ea3353f022cff1a61",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e736-tenant-cad8edf191bc4794b44e79c2ac296fd6",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e736-tenant-cf9a575ededd4e718499587991d3e325",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e736-tenant-d5e05a73e1b5477098c3e629dc90b6fc",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e737-tenant-0587e5d4bcbf4e76b81c3c5713a7a25b",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e737-tenant-1fa60d607d3843358666e06e7323f243",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e737-tenant-4127d61273b34eca8a3b0d8b7b9ae26d",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e737-tenant-51a8545d9c6d408c871e2a74e7b56048",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e737-tenant-9f3c5d6e33cf4a068d262b92f8dde581",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e737-tenant-b76833945b8740e293947da7585e0d59",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e737-tenant-be245eea539848d78b920a8a21b33bb0",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e737-tenant-dfffaa84cbe3454c8d5bdbecee60efe5",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e737-tenant-e5f2d9f490984f1190694b3e9e485355",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e737-tenant-fd755d6ea02440b78888beea2249e4a3",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e738-crash-10147162b79a4b968daa1e115f0e5bce",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e738-crash-699f049a9bae4fd1a14343a12b1b1e0f",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       },
+                       {
+                           "tenantId":  "e738-crash-ad763b8134404a77b63f70295e703b04",
+                           "authoritativeReferences":  [
+
+                                                       ],
+                           "provenanceVerified":  false,
+                           "disposition":  "PRESERVE",
+                           "reason":  "SYNTHETIC_PROVENANCE_NOT_PROVEN",
+                           "tombstoneAuthorized":  false
+                       }
+                   ],
+    "syntheticProvenanceVerified":  false,
+    "reconciliationAuthorized":  false,
+    "tombstonesPublished":  0,
+    "preservationPolicy":  "PRESERVE_UNVERIFIED"
+}

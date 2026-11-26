@@ -1,0 +1,249 @@
+{
+    "schemaVersion":  1,
+    "readableKafkaRecords":  219,
+    "malformedKafkaRecords":  38,
+    "categories":  [
+                       {
+                           "category":  "INVALID_JSON",
+                           "count":  31
+                       },
+                       {
+                           "category":  "NULL_PAYLOAD",
+                           "count":  7
+                       }
+                   ],
+    "records":  [
+                    {
+                        "partition":  0,
+                        "offset":  4,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "986c5f4fd9077d3a691aa2a1ac5c73949845462f7ba0e4f8cca391656906a6da"
+                    },
+                    {
+                        "partition":  0,
+                        "offset":  5,
+                        "classification":  "NULL_PAYLOAD",
+                        "payloadSha256":  null
+                    },
+                    {
+                        "partition":  0,
+                        "offset":  6,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "0aad7da77d2ed59c396c99a74e49f3a4524dcdbcb5163251b1433d640247aeb4"
+                    },
+                    {
+                        "partition":  0,
+                        "offset":  7,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "c66173b2d2e0dc0ef4dd9170c9db37fceb93fdfa6de96cd5c4e8f5b6bf334803"
+                    },
+                    {
+                        "partition":  0,
+                        "offset":  17,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "3a897b8b49170e84d56c89b95a03fdba06aa5cc5bf41c0abacdcaebc19ac940a"
+                    },
+                    {
+                        "partition":  0,
+                        "offset":  29,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "7a8afe3ac87e6a8aa2b4a325bb659fad5b24463eac8db816a7bad6cd4a4d4fb3"
+                    },
+                    {
+                        "partition":  0,
+                        "offset":  30,
+                        "classification":  "NULL_PAYLOAD",
+                        "payloadSha256":  null
+                    },
+                    {
+                        "partition":  0,
+                        "offset":  31,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "0aad7da77d2ed59c396c99a74e49f3a4524dcdbcb5163251b1433d640247aeb4"
+                    },
+                    {
+                        "partition":  0,
+                        "offset":  32,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "fdc31eabd9c5eb18997287887219813f26726e4aeab42348dcfbf60624897c34"
+                    },
+                    {
+                        "partition":  0,
+                        "offset":  46,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "3a897b8b49170e84d56c89b95a03fdba06aa5cc5bf41c0abacdcaebc19ac940a"
+                    },
+                    {
+                        "partition":  0,
+                        "offset":  50,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "3a897b8b49170e84d56c89b95a03fdba06aa5cc5bf41c0abacdcaebc19ac940a"
+                    },
+                    {
+                        "partition":  0,
+                        "offset":  68,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "3a897b8b49170e84d56c89b95a03fdba06aa5cc5bf41c0abacdcaebc19ac940a"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  8,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "905d43af19ffbb1c060c051369f23763d9ea06649715419c1d7671935df4bd4b"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  9,
+                        "classification":  "NULL_PAYLOAD",
+                        "payloadSha256":  null
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  10,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "0aad7da77d2ed59c396c99a74e49f3a4524dcdbcb5163251b1433d640247aeb4"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  11,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "cd5e79e0531f25370b6cdab6bd00468032810a7d75168bcd84245136962640a9"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  19,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "2f978b96200dbb62e5462b7b549789cf87bd187fe9972d5a0122e03750e988f8"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  20,
+                        "classification":  "NULL_PAYLOAD",
+                        "payloadSha256":  null
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  21,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "0aad7da77d2ed59c396c99a74e49f3a4524dcdbcb5163251b1433d640247aeb4"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  22,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "59e49627ca3d802d4680bfd40ffda6d369c322aea32327e43e4db0c5c2ecd32e"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  31,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "dd62a175ed099df25de822df40f3850e53dd54f48e2ae42cba9faa3887df9c4e"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  32,
+                        "classification":  "NULL_PAYLOAD",
+                        "payloadSha256":  null
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  33,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "0aad7da77d2ed59c396c99a74e49f3a4524dcdbcb5163251b1433d640247aeb4"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  34,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "51578fbcbe83041f437315b59d6cd3bc2c2a973e32f19240d3f92c67705ebdee"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  44,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "3a897b8b49170e84d56c89b95a03fdba06aa5cc5bf41c0abacdcaebc19ac940a"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  52,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "3a897b8b49170e84d56c89b95a03fdba06aa5cc5bf41c0abacdcaebc19ac940a"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  65,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "cf1fb2a18b40c7b6b51245f712b6391cf093efdf115d3b1259b4a0d756bb8adb"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  66,
+                        "classification":  "NULL_PAYLOAD",
+                        "payloadSha256":  null
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  67,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "0aad7da77d2ed59c396c99a74e49f3a4524dcdbcb5163251b1433d640247aeb4"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  68,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "bdc74f4986a728a47f19e8cddf1b5cdcb566d8bb4164a7c668ef653aab259b58"
+                    },
+                    {
+                        "partition":  1,
+                        "offset":  80,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "3a897b8b49170e84d56c89b95a03fdba06aa5cc5bf41c0abacdcaebc19ac940a"
+                    },
+                    {
+                        "partition":  2,
+                        "offset":  19,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "46d9e90257479a0142cba6f64d84cc01b7ff7beba0766074878c1179e70291f7"
+                    },
+                    {
+                        "partition":  2,
+                        "offset":  20,
+                        "classification":  "NULL_PAYLOAD",
+                        "payloadSha256":  null
+                    },
+                    {
+                        "partition":  2,
+                        "offset":  21,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "0aad7da77d2ed59c396c99a74e49f3a4524dcdbcb5163251b1433d640247aeb4"
+                    },
+                    {
+                        "partition":  2,
+                        "offset":  22,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "d725b06737a2d69841bf95652e60289269c5323c1e03ee7bd54fd46114a49c05"
+                    },
+                    {
+                        "partition":  2,
+                        "offset":  40,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "3a897b8b49170e84d56c89b95a03fdba06aa5cc5bf41c0abacdcaebc19ac940a"
+                    },
+                    {
+                        "partition":  2,
+                        "offset":  56,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "3a897b8b49170e84d56c89b95a03fdba06aa5cc5bf41c0abacdcaebc19ac940a"
+                    },
+                    {
+                        "partition":  2,
+                        "offset":  66,
+                        "classification":  "INVALID_JSON",
+                        "payloadSha256":  "3a897b8b49170e84d56c89b95a03fdba06aa5cc5bf41c0abacdcaebc19ac940a"
+                    }
+                ],
+    "classificationComplete":  true,
+    "syntheticProvenanceVerified":  false,
+    "deletionAuthorized":  false,
+    "disposition":  "PRESERVE"
+}

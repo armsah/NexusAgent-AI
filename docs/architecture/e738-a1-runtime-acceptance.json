@@ -1,0 +1,22 @@
+{
+    "schemaVersion":  1,
+    "runtimeContinuationGuardIntegrated":  true,
+    "unverifiedApplicationMigrationDenied":  true,
+    "automaticProductionOffsetResetDisabled":  true,
+    "committedCheckpointValidationImplemented":  true,
+    "durableChangelogPresenceValidationImplemented":  true,
+    "productionContinuationInspection":  "DENIED: Durable state history is incomplete",
+    "malformedRecordStructuralClassificationComplete":  true,
+    "malformedRecords":  38,
+    "legacyPublications":  122,
+    "legacyMissingPublications":  122,
+    "syntheticCandidates":  20,
+    "syntheticProvenanceVerified":  false,
+    "syntheticRecordsPreserved":  true,
+    "tombstonesPublished":  0,
+    "materializedBaselineVerified":  false,
+    "historicalMigrationAuthorized":  false,
+    "javaTargetedTestsPassed":  61,
+    "productionApplicationDataWrites":  0,
+    "cloudExpenditureEur":  0
+}
