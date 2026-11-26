@@ -68,3 +68,23 @@ Database-context restart testing is not equivalent to process-crash testing.
 - Actual agent-process termination remains unverified.
 - Dedicated replay timeout acceptance remains outstanding.
 - Azure expenditure: EUR 0.
+
+### E4 corrective acceptance
+
+- CR-037: Separate .NET execution process forcibly terminated;
+  persisted checkpoint recovered and expired lease reacquired.
+- CR-038: PostgreSQL clock-based claim, checkpoint and retry
+  fencing, including database row-lock contention tests.
+- CR-039: Replay request-budget enforcement tested during
+  persisted-memory retrieval and verifier evidence retrieval.
+- Release build succeeded.
+- Regression: 346 passed, zero failed, zero skipped.
+- Cloud expenditure: EUR 0.
+
+The crash probe uses a shortened lease and the production
+execution store, rather than terminating the complete API host.
+The Python dependency deprecation warning remains tracked
+under CR-014 for E5.
+
+Formal closure requires corrective PR merge and acceptance
+scope verification.

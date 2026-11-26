@@ -504,6 +504,193 @@ public sealed class MultiAgentAcceptanceTests
         }
     }
 
+    [Fact]
+    public async Task DurableReplayHonorsRequestTimeout()
+    {
+        await using var factory = new AgentFactory("Development", false);
+        using var client = factory.CreateClient();
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<NexusAgentDbContext>();
+
+        var keyword = "timeoutprobe" + Guid.NewGuid().ToString("N");
+        var ids = new List<Guid>();
+
+        var workflow = Workflow.Create(
+            Guid.NewGuid(), Principal, Tenant,
+            keyword, DateTimeOffset.UtcNow);
+
+        try
+        {
+            db.Workflows.Add(workflow);
+
+            var document = AddDocument(
+                db, ids, Tenant, Principal, "Timeout evidence");
+
+            await db.SaveChangesAsync();
+
+            AddIndex(db, document, $"{keyword} uses PostgreSQL.", false);
+            await db.SaveChangesAsync();
+
+            using var first = await client.PostAsync(
+                $"/api/workflows/{workflow.Id}/agents/execute", null);
+
+            Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+            var initial = await first.Content
+                .ReadFromJsonAsync<MultiAgentResult>();
+
+            Assert.NotNull(initial);
+            Assert.True(initial.Succeeded);
+
+            await using var holder = new Npgsql.NpgsqlConnection(
+                ConnectionString);
+
+            await holder.OpenAsync();
+
+            await using var transaction =
+                await holder.BeginTransactionAsync();
+
+            await using var command = holder.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText =
+                "LOCK TABLE agent_execution_checkpoints IN ACCESS EXCLUSIVE MODE";
+
+            await command.ExecuteNonQueryAsync();
+
+            await using var replayScope =
+                factory.Services.CreateAsyncScope();
+
+            var coordinator = replayScope.ServiceProvider
+                .GetRequiredService<DurableMultiAgentCoordinator>();
+
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => coordinator.ExecuteAsync(
+                    new AgentRequest(
+                        workflow.Id, workflow.Id, Tenant, keyword),
+                    new NexusAgent.Application.Workflows.WorkflowAccess(
+                        Tenant, Principal),
+                    TimeSpan.FromSeconds(1)));
+
+            Assert.True(watch.Elapsed < TimeSpan.FromSeconds(5));
+
+            await transaction.RollbackAsync();
+
+            using var recovered = await client.PostAsync(
+                $"/api/workflows/{workflow.Id}/agents/execute", null);
+
+            Assert.Equal(HttpStatusCode.OK, recovered.StatusCode);
+
+            var result = await recovered.Content
+                .ReadFromJsonAsync<MultiAgentResult>();
+
+            Assert.NotNull(result);
+            Assert.True(result.Succeeded);
+            Assert.Equal(initial.Answer, result.Answer);
+        }
+        finally
+        {
+            await CleanupAsync(db, ids, workflow.Id);
+        }
+    }
+
+    [Fact]
+    public async Task DurableReplayVerifierHonorsRequestBudget()
+    {
+        await using var factory = new AgentFactory("Development", false);
+        using var client = factory.CreateClient();
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<NexusAgentDbContext>();
+
+        var keyword = "verifierbudget" + Guid.NewGuid().ToString("N");
+        var ids = new List<Guid>();
+
+        var workflow = Workflow.Create(
+            Guid.NewGuid(), Principal, Tenant,
+            keyword, DateTimeOffset.UtcNow);
+
+        try
+        {
+            db.Workflows.Add(workflow);
+
+            var document = AddDocument(
+                db, ids, Tenant, Principal, "Verifier budget evidence");
+
+            await db.SaveChangesAsync();
+
+            AddIndex(db, document, $"{keyword} uses PostgreSQL.", false);
+            await db.SaveChangesAsync();
+
+            using var first = await client.PostAsync(
+                $"/api/workflows/{workflow.Id}/agents/execute", null);
+
+            Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+            var initial = await first.Content
+                .ReadFromJsonAsync<MultiAgentResult>();
+
+            Assert.NotNull(initial);
+            Assert.True(initial.Succeeded);
+
+            await using var holder =
+                new Npgsql.NpgsqlConnection(ConnectionString);
+
+            await holder.OpenAsync();
+
+            await using var transaction =
+                await holder.BeginTransactionAsync();
+
+            await using var command = holder.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText =
+                "LOCK TABLE knowledge_documents IN ACCESS EXCLUSIVE MODE";
+
+            await command.ExecuteNonQueryAsync();
+
+            await using var replayScope =
+                factory.Services.CreateAsyncScope();
+
+            var coordinator = replayScope.ServiceProvider
+                .GetRequiredService<DurableMultiAgentCoordinator>();
+
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => coordinator.ExecuteAsync(
+                    new AgentRequest(
+                        workflow.Id, workflow.Id, Tenant, keyword),
+                    new NexusAgent.Application.Workflows.WorkflowAccess(
+                        Tenant, Principal),
+                    TimeSpan.FromSeconds(2)));
+
+            Assert.True(watch.Elapsed < TimeSpan.FromSeconds(8));
+
+            await transaction.RollbackAsync();
+
+            using var recovered = await client.PostAsync(
+                $"/api/workflows/{workflow.Id}/agents/execute", null);
+
+            Assert.Equal(HttpStatusCode.OK, recovered.StatusCode);
+
+            var result = await recovered.Content
+                .ReadFromJsonAsync<MultiAgentResult>();
+
+            Assert.NotNull(result);
+            Assert.True(result.Succeeded);
+            Assert.Equal(initial.Answer, result.Answer);
+
+            Assert.Equal(4, await db.AgentExecutionCheckpoints.CountAsync(
+                x => x.ExecutionId == workflow.Id));
+        }
+        finally
+        {
+            await CleanupAsync(db, ids, workflow.Id);
+        }
+    }
+
     private static KnowledgeDocument AddDocument(
         NexusAgentDbContext db,
         List<Guid> ids,

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -24,4 +24,14 @@
     <ProjectReference Include="..\..\src\NexusAgent.Infrastructure\NexusAgent.Infrastructure.csproj" />
   </ItemGroup>
 
+  <Target Name="BuildCrashProbe" AfterTargets="Build">
+    <MSBuild Projects="../NexusAgent.CrashProbe/NexusAgent.CrashProbe.csproj"
+             Targets="Restore;Build"
+             Properties="Configuration=$(Configuration)" />
+    <ItemGroup>
+      <CrashProbeFiles Include="../NexusAgent.CrashProbe/bin/$(Configuration)/net10.0/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CrashProbeFiles)"
+          DestinationFiles="@(CrashProbeFiles->'$(OutDir)CrashProbe/%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
 </Project>

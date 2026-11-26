@@ -58,6 +58,8 @@ Durable execution, checkpoint memory, bounded planning, retries,
 cancellation and persistent approvals are implemented. Residual
 acceptance requirements remain mandatory in E5 and E15.
 
+**E4 corrective acceptance:** 346 regression tests passed, including database-clock lease fencing, process-crash persistence recovery and replay timeout acceptance. Formal closure follows corrective PR verification.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

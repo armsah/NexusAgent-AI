@@ -85,16 +85,30 @@ public sealed class PostgresAgentExecutionStore(
         Guid executionId, WorkflowAccess caller,
         CancellationToken cancellationToken)
     {
-        var now = DateTimeOffset.UtcNow;
+        await using var transaction =
+            await db.Database.BeginTransactionAsync(cancellationToken);
+
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            SELECT "Id" FROM agent_executions
+            WHERE "Id" = {executionId}
+              AND "TenantId" = {caller.TenantId}
+              AND "RequesterId" = {caller.RequesterId}
+            FOR UPDATE
+            """, cancellationToken);
+
+        var now = (await db.Database
+            .SqlQueryRaw<DateTimeOffset>(
+                """SELECT clock_timestamp() AS "Value" """)
+            .ToListAsync(cancellationToken)).Single();
         var token = Guid.NewGuid();
 
         var query = Owned(caller).Where(x =>
             x.Id == executionId &&
             (x.Status == "Pending" ||
-             (x.Status == "Running" && x.LeaseExpiresAt <= DateTimeOffset.UtcNow)));
+             (x.Status == "Running" && x.LeaseExpiresAt <= now)));
 
         await query.Where(x =>
-                x.DeadlineAt <= DateTimeOffset.UtcNow ||
+                x.DeadlineAt <= now ||
                 x.AttemptCount >= BoundedAgentPlan.MaxAttemptsPerStage)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(x => x.Status, "Failed")
@@ -106,7 +120,7 @@ public sealed class PostgresAgentExecutionStore(
         var expires = now.Add(BoundedAgentPlan.MaximumLease);
 
         var count = await query.Where(x =>
-                x.DeadlineAt > DateTimeOffset.UtcNow &&
+                x.DeadlineAt > now &&
                 x.NextStage < BoundedAgentPlan.StageCount &&
                 x.AttemptCount < BoundedAgentPlan.MaxAttemptsPerStage &&
                 x.PlanVersion == BoundedAgentPlan.Version)
@@ -119,12 +133,17 @@ public sealed class PostgresAgentExecutionStore(
                 .SetProperty(x => x.UpdatedAt, now), cancellationToken);
 
         if (count != 1)
+        {
+            await transaction.CommitAsync(cancellationToken);
             return null;
+        }
 
         var state = await Owned(caller).AsNoTracking()
             .SingleOrDefaultAsync(x =>
                 x.Id == executionId && x.LeaseToken == token,
                 cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
 
         return state is null ? null : new AgentExecutionLease(
             state.Id, token, state.NextStage, state.AttemptCount,
@@ -188,7 +207,10 @@ public sealed class PostgresAgentExecutionStore(
             FOR UPDATE
             """, cancellationToken);
 
-        var checkedAt = DateTimeOffset.UtcNow;
+        var checkedAt = (await db.Database
+            .SqlQueryRaw<DateTimeOffset>(
+                """SELECT clock_timestamp() AS "Value" """)
+            .ToListAsync(cancellationToken)).Single();
 
         var count = await Fenced(lease, caller)
             .Where(x =>
@@ -243,7 +265,10 @@ public sealed class PostgresAgentExecutionStore(
             FOR UPDATE
             """, cancellationToken);
 
-        var checkedAt = DateTimeOffset.UtcNow;
+        var checkedAt = (await db.Database
+            .SqlQueryRaw<DateTimeOffset>(
+                """SELECT clock_timestamp() AS "Value" """)
+            .ToListAsync(cancellationToken)).Single();
 
         var released = await Fenced(lease, caller)
             .Where(x =>
