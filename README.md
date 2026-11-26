@@ -286,6 +286,21 @@ The document publication crash probe provisions the database-local
 pgvector extension before applying EF Core migrations. Fresh database
 initialization verifies both pgvector and the durable publication journal.
 
+
+### Verified prospective recovery baseline
+
+The isolated recovery baseline exercises actual .NET publication
+failure, durable recovery, exact Kafka history verification and
+independent Java streaming materializations.
+
+Fresh recovery databases provision pgvector before migrations.
+
+Production publication inventory counts and Kafka boundaries are
+preserved. Unverified historical migration remains prohibited.
+
+The verified synthetic acceptance history is retained for
+reproducible cross-language regression.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

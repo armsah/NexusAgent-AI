@@ -1,0 +1,62 @@
+[
+    {
+        "topic":  "nexus-acceptance-152d2f86f7f043e080130d7427b04441.documents",
+        "relatedTopics":  [
+                              "nexus-acceptance-152d2f86f7f043e080130d7427b04441.documents"
+                          ],
+        "beginningOffsets":  [
+                                 "nexus-acceptance-152d2f86f7f043e080130d7427b04441.documents:0:0",
+                                 "nexus-acceptance-152d2f86f7f043e080130d7427b04441.documents:1:0",
+                                 "nexus-acceptance-152d2f86f7f043e080130d7427b04441.documents:2:0"
+                             ],
+        "endOffsets":  [
+                           "nexus-acceptance-152d2f86f7f043e080130d7427b04441.documents:0:0",
+                           "nexus-acceptance-152d2f86f7f043e080130d7427b04441.documents:1:0",
+                           "nexus-acceptance-152d2f86f7f043e080130d7427b04441.documents:2:0"
+                       ],
+        "pristineOffsetsVerified":  true,
+        "ownershipVerified":  false,
+        "disposition":  "PRESERVE_PENDING_OWNERSHIP",
+        "deletionPerformed":  false
+    },
+    {
+        "topic":  "nexus-acceptance-3050c511dc47415c901ddfe0569ae71a.documents",
+        "relatedTopics":  [
+                              "nexus-acceptance-3050c511dc47415c901ddfe0569ae71a.documents"
+                          ],
+        "beginningOffsets":  [
+                                 "nexus-acceptance-3050c511dc47415c901ddfe0569ae71a.documents:0:0",
+                                 "nexus-acceptance-3050c511dc47415c901ddfe0569ae71a.documents:1:0",
+                                 "nexus-acceptance-3050c511dc47415c901ddfe0569ae71a.documents:2:0"
+                             ],
+        "endOffsets":  [
+                           "nexus-acceptance-3050c511dc47415c901ddfe0569ae71a.documents:0:0",
+                           "nexus-acceptance-3050c511dc47415c901ddfe0569ae71a.documents:1:0",
+                           "nexus-acceptance-3050c511dc47415c901ddfe0569ae71a.documents:2:0"
+                       ],
+        "pristineOffsetsVerified":  true,
+        "ownershipVerified":  false,
+        "disposition":  "PRESERVE_PENDING_OWNERSHIP",
+        "deletionPerformed":  false
+    },
+    {
+        "topic":  "nexus-acceptance-55cc8dbcea534bdb8308aa24770a5410.documents",
+        "relatedTopics":  [
+                              "nexus-acceptance-55cc8dbcea534bdb8308aa24770a5410.documents"
+                          ],
+        "beginningOffsets":  [
+                                 "nexus-acceptance-55cc8dbcea534bdb8308aa24770a5410.documents:0:0",
+                                 "nexus-acceptance-55cc8dbcea534bdb8308aa24770a5410.documents:1:0",
+                                 "nexus-acceptance-55cc8dbcea534bdb8308aa24770a5410.documents:2:0"
+                             ],
+        "endOffsets":  [
+                           "nexus-acceptance-55cc8dbcea534bdb8308aa24770a5410.documents:0:0",
+                           "nexus-acceptance-55cc8dbcea534bdb8308aa24770a5410.documents:1:0",
+                           "nexus-acceptance-55cc8dbcea534bdb8308aa24770a5410.documents:2:0"
+                       ],
+        "pristineOffsetsVerified":  true,
+        "ownershipVerified":  false,
+        "disposition":  "PRESERVE_PENDING_OWNERSHIP",
+        "deletionPerformed":  false
+    }
+]

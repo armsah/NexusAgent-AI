@@ -1,0 +1,22 @@
+{
+    "schemaVersion":  1,
+    "isolatedProspectiveBaseline":  "VERIFIED",
+    "actualCrashRecovery":  "VERIFIED",
+    "crossLanguageMaterialization":  "VERIFIED",
+    "productionBoundaryPreservation":  "VERIFIED",
+    "legacyHistoricalCompleteness":  "UNVERIFIED",
+    "productionBaselineMigration":  "DENIED",
+    "historicalSyntheticProvenance":  "UNVERIFIED",
+    "syntheticDisposition":  "PRESERVE",
+    "residualTopicsAwaitingOwnership":  3,
+    "gates":  {
+                  "E738-01":  "CLOSED",
+                  "E738-02":  "CLOSED",
+                  "E738-03":  "CLOSED",
+                  "E738-04":  "PARTIAL",
+                  "E738-05":  "CLOSED",
+                  "E738-06":  "OPEN"
+              },
+    "formalClosureAuthorized":  false,
+    "cloudExpenditureEur":  0
+}
