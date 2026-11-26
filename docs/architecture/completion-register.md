@@ -21,10 +21,10 @@ No required feature may remain a placeholder.
 | CR-003 | Four concrete agents and governed coordination | E3 | CLOSED |
 | CR-004 | Trusted identity and agent authorization integration | E3/E10 | OPEN |
 | CR-005 | Typed evidence handoffs and citation verification | E3 | CLOSED |
-| CR-006 | Durable agent execution state and recovery | E4 | OPEN |
-| CR-007 | Agent memory and bounded planning | E4 | OPEN |
-| CR-008 | Retry idempotency and cancellation verification | E4 | OPEN |
-| CR-009 | Durable human approval state | E4 | OPEN |
+| CR-006 | Durable agent execution state and recovery | E4 | CLOSED |
+| CR-007 | Agent memory and bounded planning | E4 | CLOSED |
+| CR-008 | Retry idempotency and cancellation verification | E4 | CLOSED |
+| CR-009 | Durable human approval state | E4 | CLOSED |
 | CR-010 | Versioned evaluation datasets and benchmarks | E5 | OPEN |
 | CR-011 | Adversarial prompt-injection and grounding tests | E5 | OPEN |
 | CR-012 | Inference authentication and concurrency controls | E5 | OPEN |
@@ -52,9 +52,9 @@ No required feature may remain a placeholder.
 | CR-034 | Hybrid retrieval relevance and citation integrity | E3/E5 | OPEN |
 | CR-035 | Production request-size enforcement verification | E10/E15 | OPEN |
 | CR-036 | Agent invocation authorization boundary verification | E3 | CLOSED |
-| CR-037 | Actual process-crash recovery acceptance | E4/E15 | OPEN |
-| CR-038 | Strict lease expiry under database lock contention | E4 | OPEN |
-| CR-039 | Replay verification budget enforcement | E4/E5 | OPEN |
+| CR-037 | Actual process-crash recovery acceptance | E15 | OPEN |
+| CR-038 | Strict lease expiry under database lock contention | E15 | OPEN |
+| CR-039 | Replay verification budget enforcement | E5 | OPEN |
 | CR-040 | Trusted approver identity and tenant authorization | E10 | OPEN |
 | CR-041 | Trusted requester binding in evidence retrieval | E10 | OPEN |
 
@@ -139,7 +139,7 @@ Production authentication remains tracked under CR-004 and CR-020.
 - Cumulative distinct test coverage: 342 tests.
 - Database migration consistency passed.
 - Azure expenditure: EUR 0.
-- CR-006 through CR-009 remain open pending final closure verification.
+- CR-006 through CR-009 closed for verified implementation; residual acceptance requirements remain separately tracked.
 - CR-037 through CR-041 record outstanding verification requirements.
 ## E4 corrective acceptance
 
@@ -150,4 +150,18 @@ Production authentication remains tracked under CR-004 and CR-020.
 - Full cumulative regression: 342 tests passed.
 - Actual agent-process termination remains unverified.
 - Dedicated replay timeout acceptance remains outstanding.
+- Azure expenditure: EUR 0.
+
+## E4 delivery closure
+
+- Pull request: #8, merged.
+- Implementation commit: 2939964.
+- Corrective commit: 608cfed.
+- Merge commit: d4cebb8.
+- Regression: 342 passed, zero failed, zero skipped.
+- Local and remote main synchronized.
+- CR-006 through CR-009: verified implementation closed.
+- CR-037 and CR-038: mandatory residual recovery and fencing acceptance in E15.
+- CR-039: mandatory replay budget acceptance in E5.
+- These outstanding requirements block final project acceptance.
 - Azure expenditure: EUR 0.

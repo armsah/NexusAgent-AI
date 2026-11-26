@@ -53,6 +53,11 @@ Outstanding verification is tracked in the completion register.
 
 See [E4 architecture and acceptance evidence](docs/architecture/e4-durable-agent-execution.md).
 
+**E4 delivery:** PR #8 merged into main with 342 passing regression tests.
+Durable execution, checkpoint memory, bounded planning, retries,
+cancellation and persistent approvals are implemented. Residual
+acceptance requirements remain mandatory in E5 and E15.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
