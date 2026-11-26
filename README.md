@@ -338,6 +338,18 @@ required before operational cutover.
 - Nonempty restoration and Spring lifecycle acceptance remain outstanding.
 - Cloud expenditure: EUR 0.
 
+### E7 Spring operational recovery
+
+- Actual Spring-managed streaming lifecycle verified.
+- Nonempty tenant state restored using a fresh local directory.
+- Duplicate event replay preserved restored tenant counters.
+- Current-generation snapshot export verified.
+- Legacy Kafka partition boundaries preserved.
+- Targeted Java regression: 41 passed, zero failed or skipped.
+- Operational probe records retained in the prospective namespace.
+- Historical migration and producer cutover not performed.
+- Cloud expenditure: EUR 0.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

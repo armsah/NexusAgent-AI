@@ -1,0 +1,20 @@
+{
+    "schemaVersion":  1,
+    "sourceCommit":  "b2963d49fa9ac78c3429201df79b140436847b8e",
+    "capturedAtUtc":  "2026-11-26T23:33:09.4154231Z",
+    "springLifecycleStartup":  "PASSED",
+    "nonemptyOperationalStateRestoration":  "PASSED",
+    "freshLocalStateDirectory":  true,
+    "restoredDuplicateSuppression":  "PASSED",
+    "currentGenerationExport":  "PASSED",
+    "legacyBoundariesPreserved":  true,
+    "targetedJavaTests":  41,
+    "failures":  0,
+    "errors":  0,
+    "skipped":  0,
+    "historicalMigrationPerformed":  false,
+    "productionProducerCutoverPerformed":  false,
+    "operationalProbeRecordsRetained":  true,
+    "formalE7Closure":  false,
+    "cloudExpenditureEUR":  0
+}

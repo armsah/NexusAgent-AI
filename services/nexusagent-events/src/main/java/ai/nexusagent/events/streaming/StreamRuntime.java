@@ -13,13 +13,44 @@ import org.springframework.stereotype.Component;
 @Component
 public final class StreamRuntime implements SmartLifecycle {
     private final AtomicBoolean running = new AtomicBoolean();
+    private final java.util.Map<String, String> configuration;
+
+    public StreamRuntime() {
+        this(System.getenv());
+    }
+
+    StreamRuntime(java.util.Map<String, String> configuration) {
+        this.configuration = java.util.Map.copyOf(configuration);
+    }
+
+    synchronized KafkaStreams.State runtimeState() {
+        return streams == null
+                ? KafkaStreams.State.NOT_RUNNING
+                : streams.state();
+    }
+
+    synchronized String tenantSnapshot(String tenant) {
+        if (streams == null) {
+            throw new IllegalStateException("Runtime not started");
+        }
+
+        return streams.store(
+                org.apache.kafka.streams.StoreQueryParameters
+                        .fromNameAndType(
+                                TenantAnalyticsProcessor.METRICS_STORE,
+                                org.apache.kafka.streams.state
+                                        .QueryableStoreTypes
+                                        .<String, String>keyValueStore()))
+                .get(tenant);
+    }
+
     private KafkaStreams streams;
     private PendingGapMonitor gapMonitor;
 
     @Override
     public boolean isAutoStartup() {
         return "true".equalsIgnoreCase(
-                System.getenv("NEXUS_STREAM_ENABLED"));
+                configuration.get("NEXUS_STREAM_ENABLED"));
     }
 
     @Override
@@ -28,16 +59,16 @@ public final class StreamRuntime implements SmartLifecycle {
             return;
         }
 
-        String bootstrap = System.getenv().getOrDefault(
+        String bootstrap = configuration.getOrDefault(
                 "NEXUS_KAFKA_BOOTSTRAP_SERVERS", "localhost:19092");
 
         var generation = StreamGeneration.resolve(
-                System.getenv().getOrDefault(
+                configuration.getOrDefault(
                         "NEXUS_STREAM_GENERATION", "v1"));
 
         var topics = generation.topics();
 
-        String applicationId = System.getenv().getOrDefault(
+        String applicationId = configuration.getOrDefault(
                 "NEXUS_STREAM_APPLICATION_ID",
                 generation.applicationId());
 
@@ -47,7 +78,7 @@ public final class StreamRuntime implements SmartLifecycle {
             throw new IllegalArgumentException("Invalid application ID");
         }
 
-        Path state = Path.of(System.getenv().getOrDefault(
+        Path state = Path.of(configuration.getOrDefault(
                 "NEXUS_STREAM_STATE_DIR",
                 Path.of(System.getProperty("java.io.tmpdir"),
                         "nexusagent-streams").toString()));
@@ -58,7 +89,7 @@ public final class StreamRuntime implements SmartLifecycle {
                 topics);
 
         boolean initializationApproved = "true".equalsIgnoreCase(
-                System.getenv("NEXUS_STREAM_INITIALIZE_EMPTY"));
+                configuration.get("NEXUS_STREAM_INITIALIZE_EMPTY"));
 
         boolean localStateEmpty = false;
 
