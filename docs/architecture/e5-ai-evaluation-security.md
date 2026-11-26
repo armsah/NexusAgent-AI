@@ -20,7 +20,7 @@
 | E5.6 | Inference authentication | CLOSED |
 | E5.7 | Concurrency, request limits and timeouts | CLOSED |
 | E5.8 | Dependency warning remediation | CLOSED |
-| E5.9 | Full regression and live acceptance | OPEN |
+| E5.9 | Full regression and live acceptance | CLOSED |
 | E5.10 | Documentation, PR merge and formal closure | OPEN |
 
 ## E5.1 audit findings
@@ -209,3 +209,28 @@ Operational limitations:
 - Dedicated retrieval cutoff and candidate backfill regression
   remains required before unconditional E5 closure.
 - Cloud expenditure: EUR 0.
+
+## E5.9 - Dedicated retrieval regression closure
+
+- Full regression baseline: 3605141, 486 passing tests.
+- Additional PostgreSQL retrieval regression: 4/4 passed.
+- Cosine distance 0.54: accepted without lexical overlap.
+- Cosine distance 0.56: rejected without lexical overlap.
+- Lexical candidate backfill: passed.
+- Hybrid candidate backfill: passed.
+- Six suspicious candidates precede safe candidates.
+- Title and content injection filtering verified.
+- Five safe, unique, deterministically ordered citations returned.
+- Repeated retrieval produces the same document ordering.
+- Release build passed after adding the regression.
+- Evaluation artifact hashes verified again.
+- No production source changed after the full regression baseline.
+- Cumulative acceptance: 490 passing tests, zero failed or skipped.
+- Python: 151; unit: 188; architecture: 3; integration: 148.
+- Benchmark: 12/12 cases, eight metric gates passed.
+- Security holdout: 8/8 passed.
+- Earlier retrieval regression blocker is resolved.
+- Cloud expenditure: EUR 0.
+
+The cumulative count combines the full baseline regression and
+four additional tests. It is not represented as a single 490-test run.

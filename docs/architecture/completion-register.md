@@ -235,3 +235,15 @@ Later-stage cross-cutting requirements remain tracked separately.
 - E5 final closure remains gated by dedicated retrieval cutoff
   and candidate backfill regression.
 - Cloud expenditure: EUR 0.
+
+## E5 retrieval regression blocker resolved
+
+Four additional PostgreSQL integration cases passed after the
+486-test full regression baseline at commit 3605141.
+
+The tests establish semantic cutoff behavior on both sides of
+the configured threshold and safe candidate backfill in lexical
+and hybrid retrieval. Cumulative verified acceptance is 490 tests.
+
+CR-010 through CR-014 and CR-034 are ready for delivery closure,
+subject to successful GitHub merge and final synchronization.
