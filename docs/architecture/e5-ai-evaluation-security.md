@@ -16,7 +16,7 @@
 | E5.2 | Versioned evaluation datasets | CLOSED |
 | E5.3 | Automated evaluation framework | CLOSED |
 | E5.4 | Hybrid retrieval and citation metrics | CLOSED |
-| E5.5 | Adversarial and prompt-injection testing | OPEN |
+| E5.5 | Adversarial and prompt-injection testing | CLOSED |
 | E5.6 | Inference authentication | OPEN |
 | E5.7 | Concurrency, request limits and timeouts | OPEN |
 | E5.8 | Dependency warning remediation | OPEN |
@@ -114,3 +114,23 @@ Limitations:
 - Independent adversarial and holdout acceptance remains required in E5.5/E5.9.
 - Diagnostic ML packages installed locally are not application dependencies.
 - CR034 remains open until final E5 integration and merge.
+
+## E5.5 - Adversarial security acceptance
+
+- Unicode compatibility normalization and format-character removal.
+- Multiline and obfuscated injection detection.
+- Independent Python question and evidence screening.
+- Unsafe grounded questions rejected at the inference API.
+- Poisoned sources rejected by citation normalization.
+- Truncated extraction and verification responses fail closed.
+- Python regression: 127 passed.
+- C# unit regression: 188 passed.
+- Release build passed.
+- Live previously unused security holdout: 8/8 passed.
+- Holdout dataset and measured results retained in evaluation.
+- No acceptance threshold was weakened.
+- Cloud expenditure: EUR 0.
+
+The holdout is small and component-level. Pattern-based screening
+does not guarantee detection of arbitrary prompt injections.
+Full authenticated API and hybrid regression follow in E5.9.

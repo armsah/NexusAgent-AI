@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
 from app.ollama import InferenceError
+from app.security import is_suspicious
 from app.retrieval import (
     EmbeddingRequest,
     EmbeddingResponse,
@@ -29,6 +30,9 @@ async def embed(request: EmbeddingRequest):
 async def grounded(request: GroundedRequest):
     if not request.question.strip():
         raise HTTPException(422, "Question cannot be blank")
+
+    if is_suspicious(request.question):
+        raise HTTPException(400, "Unsafe grounded question")
 
     try:
         return await retrieval.grounded(request)

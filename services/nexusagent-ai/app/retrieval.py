@@ -6,6 +6,7 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.ollama import InferenceError
+from app.security import is_suspicious
 
 
 class EmbeddingRequest(BaseModel):
@@ -139,7 +140,7 @@ class RetrievalClient:
         )
 
         try:
-            if data.get("done") is not True:
+            if data.get("done") is not True or data.get("done_reason") == "length":
                 raise ValueError("Incomplete extraction")
 
             result = json.loads(data["response"])
@@ -228,7 +229,7 @@ class RetrievalClient:
         )
 
         try:
-            if data.get("done") is not True:
+            if data.get("done") is not True or data.get("done_reason") == "length":
                 raise ValueError("Incomplete verification")
 
             result = json.loads(data["response"])
@@ -316,7 +317,7 @@ class RetrievalClient:
         )
 
         try:
-            if data.get("done") is not True:
+            if data.get("done") is not True or data.get("done_reason") == "length":
                 raise ValueError("Incomplete constraint audit")
 
             if data.get("done_reason") == "length":
@@ -344,6 +345,12 @@ class RetrievalClient:
     async def grounded(self, request: GroundedRequest) -> GroundedResponse:
         import re
 
+        if is_suspicious(request.question):
+            return GroundedResponse(
+                answer="Insufficient evidence.",
+                cited_source_ids=[],
+            )
+
         allowed = {item.source_id for item in request.evidence}
 
         if len(allowed) != len(request.evidence):
@@ -353,6 +360,8 @@ class RetrievalClient:
             async with asyncio.timeout(115):
 
                 for item in request.evidence:
+                    if is_suspicious(item.excerpt):
+                        continue
                     for sentence in re.split(
                         r"(?<=[.!?])\s+|\r?\n", item.excerpt
                     ):
@@ -445,13 +454,16 @@ def normalize_grounded_answer(
             text = normalize(line)
             candidates = declared
 
-        if not text:
+        if not text or is_suspicious(text):
             return abstain()
 
         matches = []
 
         for source_id in candidates:
             if source_id not in declared:
+                return abstain()
+
+            if is_suspicious(sources[source_id]):
                 return abstain()
 
             sentences = re.split(
