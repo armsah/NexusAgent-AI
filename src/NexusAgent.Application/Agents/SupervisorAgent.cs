@@ -8,6 +8,7 @@ public sealed class SupervisorAgent : IAgent
         AgentRequest request,
         CancellationToken cancellationToken)
     {
+        request.RequireAuthorization(Name);
         ArgumentNullException.ThrowIfNull(request);
         cancellationToken.ThrowIfCancellationRequested();
 

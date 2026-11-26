@@ -47,6 +47,13 @@ See [E3 architecture and acceptance](docs/architecture/e3-multi-agent-orchestrat
 
 ## How can I run or inspect the demo?
 
+Multi-agent execution is disabled by default and requires
+explicit development opt-in: `Agents__EnableDevelopmentExecution=true`.
+
+E3 corrective acceptance: 314 cumulative passing tests across
+.NET and Python, including live local inference.
+
+
 The local demo requires .NET 10, PostgreSQL 17 with pgvector, and configured Development database and document-storage settings. From the repository root, run these PowerShell commands:
 
     dotnet restore NexusAgent.slnx

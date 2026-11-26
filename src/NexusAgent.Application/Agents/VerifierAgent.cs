@@ -12,6 +12,7 @@ internal sealed class VerifierAgent(
         AgentRequest request,
         CancellationToken cancellationToken)
     {
+        request.RequireAuthorization(Name);
         cancellationToken.ThrowIfCancellationRequested();
 
         if (string.IsNullOrWhiteSpace(request.Input) ||

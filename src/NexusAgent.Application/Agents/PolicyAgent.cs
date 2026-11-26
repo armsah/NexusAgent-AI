@@ -10,6 +10,7 @@ public sealed class PolicyAgent : IAgent
         AgentRequest request,
         CancellationToken cancellationToken)
     {
+        request.RequireAuthorization(Name);
         ArgumentNullException.ThrowIfNull(request);
         cancellationToken.ThrowIfCancellationRequested();
 

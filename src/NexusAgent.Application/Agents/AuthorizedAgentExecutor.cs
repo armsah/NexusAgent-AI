@@ -34,7 +34,10 @@ public sealed class AuthorizedAgentExecutor(
             throw new UnauthorizedAccessException("Agent access denied.");
 
         return await harness.ExecuteAsync(
-            name, request, limits, cancellationToken);
+            name,
+            request with { AuthorizedAgentName = name },
+            limits,
+            cancellationToken);
     }
 
     public Task<AgentResult> ExecuteAsync(

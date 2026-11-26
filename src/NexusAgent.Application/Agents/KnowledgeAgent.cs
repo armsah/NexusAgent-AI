@@ -13,6 +13,7 @@ internal sealed class KnowledgeAgent(
         AgentRequest request,
         CancellationToken cancellationToken)
     {
+        request.RequireAuthorization(Name);
         if (string.IsNullOrWhiteSpace(request.Input) ||
             request.Input.Length > 2000 ||
             PromptInjectionDefense.IsSuspicious(request.Input))

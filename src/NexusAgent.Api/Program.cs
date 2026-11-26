@@ -27,7 +27,12 @@ builder.Services.AddInfrastructure(
     builder.Configuration);
 builder.Services.AddSingleton<DevelopmentRequestIdentity>();
 
-if (builder.Environment.IsDevelopment())
+var enableDevelopmentAgents =
+    builder.Environment.IsDevelopment() &&
+    builder.Configuration.GetValue<bool>(
+        "Agents:EnableDevelopmentExecution");
+
+if (enableDevelopmentAgents)
 {
     builder.Services.AddScoped<
         IAgentAuthorizationPolicy,
@@ -42,7 +47,8 @@ if (app.Environment.IsDevelopment())
     app.MapDocumentEndpoints();
     app.MapDocumentSearchEndpoints();
     app.MapGroundedQuestionEndpoints();
-    app.MapMultiAgentEndpoints();
+    if (enableDevelopmentAgents)
+        app.MapMultiAgentEndpoints();
 }
 
 
