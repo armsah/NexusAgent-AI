@@ -31,8 +31,17 @@ public final class StreamRuntime implements SmartLifecycle {
         String bootstrap = System.getenv().getOrDefault(
                 "NEXUS_KAFKA_BOOTSTRAP_SERVERS", "localhost:19092");
 
+        var generation = StreamGeneration.resolve(
+                System.getenv().getOrDefault(
+                        "NEXUS_STREAM_GENERATION", "v1"));
+
+        var topics = generation.topics();
+
         String applicationId = System.getenv().getOrDefault(
-                "NEXUS_STREAM_APPLICATION_ID", "nexusagent-events-v1");
+                "NEXUS_STREAM_APPLICATION_ID",
+                generation.applicationId());
+
+        generation.requireBinding(applicationId, topics);
 
         if (!applicationId.matches("[A-Za-z0-9._-]{1,128}")) {
             throw new IllegalArgumentException("Invalid application ID");
@@ -46,7 +55,7 @@ public final class StreamRuntime implements SmartLifecycle {
         BrokerRetentionGuard.verify(
                 bootstrap,
                 applicationId,
-                StreamTopics.production());
+                topics);
 
         boolean initializationApproved = "true".equalsIgnoreCase(
                 System.getenv("NEXUS_STREAM_INITIALIZE_EMPTY"));
@@ -73,7 +82,7 @@ public final class StreamRuntime implements SmartLifecycle {
         var startupMode = ProductionRecoveryGuard.verifyStartup(
                 bootstrap,
                 applicationId,
-                StreamTopics.production(),
+                topics,
                 initializationApproved,
                 localStateEmpty);
 
@@ -85,7 +94,7 @@ public final class StreamRuntime implements SmartLifecycle {
                 StreamInitializationPolicy.offsetReset(startupMode));
 
         streams = new KafkaStreams(
-                EventStreamTopology.build(),
+                EventStreamTopology.build(topics),
                 settings);
 
         streams.setUncaughtExceptionHandler(exception ->

@@ -88,12 +88,7 @@ public final class ProductionRecoveryGuard {
             boolean initializationApproved,
             boolean localStateEmpty) {
 
-        requireApplication(applicationId);
-
-        if (!StreamTopics.production().equals(topics)) {
-            throw new IllegalArgumentException(
-                    "Production guard requires production topics");
-        }
+        StreamGeneration.requireBindingFor(applicationId, topics);
 
         try (var admin = Admin.create(Map.of(
                 "bootstrap.servers", bootstrap,
@@ -109,13 +104,18 @@ public final class ProductionRecoveryGuard {
                                     applicationId + "-" +
                                     store + "-changelog"));
 
-            var descriptions = admin.describeTopics(
-                    List.of(
-                            topics.documents(),
-                            topics.workflows(),
-                            topics.analytics(),
-                            topics.deadLetters(),
-                            topics.tenantAnalytics()))
+            var inspectedTopics = new ArrayList<>(topics.all());
+
+            var repartitionTopics = names.stream()
+                    .filter(name -> name.startsWith(
+                            applicationId + "-"))
+                    .filter(name -> name.endsWith("-repartition"))
+                    .sorted()
+                    .toList();
+
+            inspectedTopics.addAll(repartitionTopics);
+
+            var descriptions = admin.describeTopics(inspectedTopics)
                     .allTopicNames().get(30, TimeUnit.SECONDS);
 
             var partitions = new HashSet<TopicPartition>();
@@ -151,7 +151,8 @@ public final class ProductionRecoveryGuard {
                 var checkpoint = committed.get(partition);
 
                 if (!partition.topic().equals(topics.documents()) &&
-                        !partition.topic().equals(topics.workflows())) {
+                        !partition.topic().equals(topics.workflows()) &&
+                        !repartitionTopics.contains(partition.topic())) {
                     continue;
                 }
 

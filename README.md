@@ -301,6 +301,20 @@ preserved. Unverified historical migration remains prohibited.
 The verified synthetic acceptance history is retained for
 reproducible cross-language regression.
 
+
+### Versioned streaming recovery generations
+
+The Java streaming runtime supports explicitly bound legacy and
+prospective generations with separate application identities and
+Kafka topics.
+
+Cross-generation topic bindings are rejected. Historical records
+remain preserved, and automatic production cutover is prohibited.
+
+The prospective namespace has a dedicated provisioning script.
+Live runtime restoration and producer-routing integration remain
+required before operational cutover.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
