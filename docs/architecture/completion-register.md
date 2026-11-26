@@ -30,7 +30,7 @@ No required feature may remain a placeholder.
 | CR-012 | Inference authentication and concurrency controls | E5 | CLOSED |
 | CR-013 | Request limits and inference timeout enforcement | E5 | CLOSED |
 | CR-014 | Python dependency deprecation remediation | E5 | CLOSED |
-| CR-015 | Java functional event processing service | E6 | OPEN |
+| CR-015 | Java functional event processing service | E6 | CLOSED |
 | CR-016 | Kafka and Kafka Streams integration | E7 | OPEN |
 | CR-017 | NoSQL agent artifact persistence | E8 | OPEN |
 | CR-018 | Angular monitoring and approval interface | E9 | OPEN |
@@ -269,3 +269,11 @@ subject to successful GitHub merge and final synchronization.
 All later-stage production identity, infrastructure security,
 distributed admission control, CI/CD and load acceptance
 requirements remain mandatory.
+
+### CR015 closure evidence
+
+- Java functional event processing completed.
+- 576 regression tests passed across three languages.
+- Ten reproducible cross-language event fixtures.
+- PR #12 merged at 4125f07a8d708cf0a3c595f53b92d9eb3cc03a65.
+- Kafka transport and NoSQL persistence remain separately tracked.

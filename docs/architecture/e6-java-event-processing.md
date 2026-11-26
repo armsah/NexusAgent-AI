@@ -16,7 +16,7 @@ the authoritative C# orchestration and PostgreSQL persistence layers.
 | E6.5 | Functional transformations and analytics | CLOSED |
 | E6.6 | Deduplication and ordering semantics | CLOSED |
 | E6.7 | Cross-language contract acceptance | CLOSED |
-| E6.8 | Regression, documentation and GitHub merge | READY FOR MERGE |
+| E6.8 | Regression, documentation and GitHub merge | CLOSED |
 
 ## E6.1 acceptance
 
@@ -173,3 +173,14 @@ verification during E6.7.
 - PostgreSQL remains authoritative.
 - Durable event production, transactional sequencing and Kafka delivery remain E7 scope.
 - Durable NoSQL projections remain E8 scope.
+
+### Formal E6 closure
+
+- Status: CLOSED (8/8).
+- GitHub PR: #12.
+- Feature commit: 601d0b1fb138fb9a0d0b40da1e590789387b6609.
+- Merge commit: 4125f07a8d708cf0a3c595f53b92d9eb3cc03a65.
+- Combined regression: 576 passed.
+- No GitHub checks reported; local acceptance verified. CI implementation remains E13.
+- E7 and E8 remain open implementation stages.
+- Cloud expenditure: EUR 0.
