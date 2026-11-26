@@ -12,6 +12,9 @@ NexusAgent AI uses .NET 10, PostgreSQL 17, and pgvector. Its layered architectur
 
 ## What senior engineering problems were solved?
 
+[Mandatory completion register](docs/architecture/completion-register.md).
+
+
 **E2 - Offline AI inference:** Python/FastAPI and Ollama provide local
 generation, grounded answers and 1536-dimensional semantic embeddings
 through C# REST adapters without requiring Azure inference services.
@@ -34,6 +37,13 @@ Validated 231 regression tests and PostgreSQL outbox isolation, including initia
 The implementation addresses tenant isolation, evidence-backed answer verification, prompt-injection defenses, transactional outbox reliability, durable workflow state, bounded execution, and approval-controlled actions. Production and Staging do not expose development-identity business endpoints, while database-readiness failures return HTTP 503 without leaking connection details. The final Release build passed all 231 automated tests: 117 unit, 3 architecture, and 111 integration.
 
 ![End-to-end governed workflow](docs/images/end-to-end-workflow.png)
+
+**E3 - Governed multi-agent orchestration:** Supervisor, Policy,
+Knowledge and Verifier agents execute through a bounded coordinator
+with workflow ownership checks, hybrid PostgreSQL retrieval,
+local Ollama inference and independent extractive citation verification.
+
+See [E3 architecture and acceptance](docs/architecture/e3-multi-agent-orchestration.md).
 
 ## How can I run or inspect the demo?
 

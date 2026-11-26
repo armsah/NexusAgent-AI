@@ -19,7 +19,7 @@ public sealed class AgentRegistry
         }
     }
 
-    public IAgent Resolve(string name)
+    internal IAgent Resolve(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 

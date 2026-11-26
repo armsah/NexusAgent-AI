@@ -63,8 +63,14 @@ public sealed class LocalGroundedAnswerGenerator(
                 "Insufficient evidence.", Array.Empty<string>());
         }
 
-        return new GroundedGenerationResult(
-            result.Answer,
+        var candidate = new GroundedGenerationResult(
+            result.Answer, result.CitedSourceIds);
+
+        if (!GroundedAnswerValidation.HasValidCitations(candidate, evidence))
+            return new GroundedGenerationResult(
+                "Insufficient evidence.", Array.Empty<string>());
+
+        return new GroundedGenerationResult(result.Answer,
             result.CitedSourceIds.Distinct(StringComparer.Ordinal).ToArray());
     }
 

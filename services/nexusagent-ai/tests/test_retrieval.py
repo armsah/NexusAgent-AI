@@ -58,7 +58,7 @@ async def test_grounded_citations(monkeypatch, citations, valid):
         return {
             "done": True,
             "response": json.dumps({
-                "answer": "Test answer",
+                "answer": "Test evidence",
                 "cited_source_ids": citations,
             }),
         }

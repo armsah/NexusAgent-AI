@@ -110,6 +110,7 @@ public static class DependencyInjection
                 $"Unsupported grounded-answer provider: {groundedAnswerProvider}");
         }
         services.AddScoped<DocumentContentIndexer>();
+        services.AddScoped<NexusAgent.Application.Agents.IAuthorizedEvidenceRetriever, PostgresEvidenceRetriever>();
         services.AddScoped<PublishedDocumentIndexProcessor>();
         services.AddScoped<IWorkflowRepository, WorkflowRepository>();
         services.AddScoped<IKnowledgeDocumentRepository, KnowledgeDocumentRepository>();

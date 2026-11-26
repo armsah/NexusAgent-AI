@@ -31,6 +31,8 @@ public sealed class AgentRegistrationTests
     public void HarnessUsesScopedLifetime()
     {
         var services = new ServiceCollection();
+        services.AddScoped<IAuthorizedEvidenceRetriever, TestEvidenceRetriever>();
+        services.AddScoped<IAuthorizedEvidenceRetriever, TestEvidenceRetriever>();
         services.AddApplication();
 
         using var provider = services.BuildServiceProvider(
