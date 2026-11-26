@@ -1,0 +1,19 @@
+{
+    "schemaVersion":  1,
+    "sourceCommit":  "0f7ba87fc14c6751d45e393860f0e7bcccdf3496",
+    "capturedAtUtc":  "2026-11-26T23:27:39.6915845Z",
+    "previousAcceptance":  "FAILED_INCOMPLETE_CHECKPOINTS",
+    "correctedAcceptance":  "PASSED",
+    "pristineCheckpointInitialization":  true,
+    "existingCheckpointsPreserved":  true,
+    "nonemptyMissingCheckpointRejected":  true,
+    "guardedTopologyRestart":  "PASSED",
+    "currentGenerationSnapshotReader":  "PASSED",
+    "legacySnapshotReadDenied":  true,
+    "historicalMigrationPerformed":  false,
+    "productionCutoverPerformed":  false,
+    "nonemptyOperationalRestorationVerified":  false,
+    "springLifecycleAcceptanceVerified":  false,
+    "formalE7Closure":  false,
+    "cloudExpenditureEUR":  0
+}

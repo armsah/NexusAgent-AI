@@ -327,6 +327,17 @@ required before operational cutover.
 - Live operational recovery and formal E7 acceptance remain outstanding.
 - Cloud expenditure: EUR 0.
 
+### E7 prospective checkpoint initialization
+
+- Missing checkpoints initialized only for pristine partitions.
+- Active consumer groups and nonempty missing checkpoints rejected.
+- Existing committed offsets preserved.
+- Guarded prospective topology restart passed.
+- Current-generation snapshot reader rejects legacy snapshot sources.
+- Historical migration and production producer cutover not performed.
+- Nonempty restoration and Spring lifecycle acceptance remain outstanding.
+- Cloud expenditure: EUR 0.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
