@@ -52,9 +52,9 @@ No required feature may remain a placeholder.
 | CR-034 | Hybrid retrieval relevance and citation integrity | E3/E5 | OPEN |
 | CR-035 | Production request-size enforcement verification | E10/E15 | OPEN |
 | CR-036 | Agent invocation authorization boundary verification | E3 | CLOSED |
-| CR-037 | Actual process-crash recovery acceptance | E4 | OPEN |
-| CR-038 | Strict lease expiry under database lock contention | E4 | OPEN |
-| CR-039 | Replay verification budget enforcement | E4 | OPEN |
+| CR-037 | Actual process-crash recovery acceptance | E4 | CLOSED |
+| CR-038 | Strict lease expiry under database lock contention | E4 | CLOSED |
+| CR-039 | Replay verification budget enforcement | E4 | CLOSED |
 | CR-040 | Trusted approver identity and tenant authorization | E10 | OPEN |
 | CR-041 | Trusted requester binding in evidence retrieval | E10 | OPEN |
 
@@ -209,3 +209,19 @@ not guaranteed.
 
 The Python dependency warning remains tracked under CR-014.
 Earlier E4 residual assignments are superseded by this evidence.
+
+
+## E4 formal closure
+
+- Corrective PR: #10, MERGED.
+- Implementation commit: 80b3c2a8a8f14c2576c3807227327c39e046aa0a
+- Merge commit: 0d07768a3b71db9ec19b3848597e0706afe4be5a
+- Full regression: 348 passed, zero failed or skipped.
+- CR-037, CR-038 and CR-039: CLOSED.
+- Project register: 13 CLOSED, 28 OPEN.
+- Remote CI checks configured for corrective PR: 0.
+- Azure expenditure: EUR 0.
+
+E4 acceptance is completed within the documented validation
+scope. Earlier E4 outstanding-status statements are superseded.
+Later-stage cross-cutting requirements remain tracked separately.

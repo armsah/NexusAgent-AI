@@ -59,7 +59,7 @@ cancellation and persistent approvals are implemented. Residual
 acceptance requirements remain mandatory in E5 and E15.
 
 
-**E4 final acceptance:** 348 passing tests, actual API-host crash recovery, delayed checkpoint rollback and replay cancellation verified. Cloud expenditure EUR 0.
+**E4 completed (PR #10):** 348 passing tests, actual API-host crash recovery, delayed checkpoint rollback and replay cancellation verified. Cloud expenditure EUR 0.
 
 ## How can I run or inspect the demo?
 

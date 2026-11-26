@@ -112,3 +112,19 @@ not guaranteed.
 
 The Python dependency warning remains tracked under CR-014.
 Earlier E4 residual assignments are superseded by this evidence.
+
+
+## E4 formal closure
+
+- Corrective PR: #10, MERGED.
+- Implementation commit: 80b3c2a8a8f14c2576c3807227327c39e046aa0a
+- Merge commit: 0d07768a3b71db9ec19b3848597e0706afe4be5a
+- Full regression: 348 passed, zero failed or skipped.
+- CR-037, CR-038 and CR-039: CLOSED.
+- Project register: 13 CLOSED, 28 OPEN.
+- Remote CI checks configured for corrective PR: 0.
+- Azure expenditure: EUR 0.
+
+E4 acceptance is completed within the documented validation
+scope. Earlier E4 outstanding-status statements are superseded.
+Later-stage cross-cutting requirements remain tracked separately.
