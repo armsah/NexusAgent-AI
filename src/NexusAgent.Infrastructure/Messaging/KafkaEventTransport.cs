@@ -34,7 +34,7 @@ public sealed class KafkaEventTransport : IDisposable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
 
-        if (tenantId.Length > 200 ||
+        if (tenantId.Length > 256 ||
             tenantId != tenantId.Trim() ||
             tenantId.Any(char.IsControl))
             throw new ArgumentException("Invalid tenant identifier.");

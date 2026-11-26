@@ -130,3 +130,9 @@ No cloud resources have been provisioned.
 - Temporary database cleanup verified.
 - Delivery remains at-least-once.
 - Cloud expenditure: EUR 0.
+
+### E7.2 tenant compatibility
+
+- Event tenant capacity aligned to 256 characters across C#, Java and PostgreSQL.
+- Targeted C# and Java regression passed.
+- Remaining producer acceptance stays OPEN.

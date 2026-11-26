@@ -2,7 +2,7 @@ BEGIN;
 
 CREATE TABLE IF NOT EXISTS kafka_workflow_events (
     event_id uuid PRIMARY KEY,
-    tenant_id varchar(200) NOT NULL,
+    tenant_id varchar(256) NOT NULL,
     workflow_id uuid NOT NULL,
     sequence bigint NOT NULL CHECK (sequence > 0),
     payload jsonb NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS kafka_workflow_events (
     published_at timestamptz NULL,
     attempts integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
     next_attempt_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-    last_error varchar(200) NULL,
+    last_error varchar(256) NULL,
 
     CONSTRAINT uq_kafka_workflow_sequence
         UNIQUE (tenant_id, workflow_id, sequence),

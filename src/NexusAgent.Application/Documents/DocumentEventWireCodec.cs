@@ -11,7 +11,7 @@ public static class DocumentEventWireCodec
         if (value.EventId == Guid.Empty ||
             value.DocumentId == Guid.Empty ||
             string.IsNullOrWhiteSpace(value.TenantId) ||
-            value.TenantId.Length > 200 ||
+            value.TenantId.Length > 256 ||
             value.TenantId != value.TenantId.Trim() ||
             value.TenantId.Any(char.IsControl) ||
             value.DocumentVersion < 1 ||

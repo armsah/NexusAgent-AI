@@ -38,7 +38,7 @@ public static class WorkflowEventWireCodec
             value.WorkflowId == Guid.Empty ||
             value.Sequence < 1 ||
             string.IsNullOrWhiteSpace(value.TenantId) ||
-            value.TenantId.Length > 200 ||
+            value.TenantId.Length > 256 ||
             value.TenantId != value.TenantId.Trim() ||
             value.TenantId.Any(char.IsControl) ||
             (terminal && (value.DurationMillis is null or < 0)) ||

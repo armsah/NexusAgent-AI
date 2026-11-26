@@ -13,7 +13,7 @@ final class EventRules {
 
     static void tenant(String value) {
         if (value == null || value.isBlank()
-                || value.length() > 200
+                || value.length() > 256
                 || !value.equals(value.strip())
                 || value.codePoints().anyMatch(Character::isISOControl)) {
             throw new IllegalArgumentException("Invalid tenant identifier");

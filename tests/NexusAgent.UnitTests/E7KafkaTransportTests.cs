@@ -57,7 +57,7 @@ public sealed class E7KafkaTransportTests
     {
         Assert.Throws<ArgumentException>(() =>
             KafkaEventTransport.PartitionKey(
-                new string('a', 201), Guid.NewGuid()));
+                new string('a', 257), Guid.NewGuid()));
     }
 
     [Fact]

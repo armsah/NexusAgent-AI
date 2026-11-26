@@ -105,6 +105,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.2 progress: durable ordered workflow dispatch and broker failure recovery verified.
 
+- E7.2: Event tenant capacity aligned across C#, Java and PostgreSQL.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
