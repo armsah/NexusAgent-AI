@@ -19,7 +19,7 @@
 | E5.5 | Adversarial and prompt-injection testing | CLOSED |
 | E5.6 | Inference authentication | CLOSED |
 | E5.7 | Concurrency, request limits and timeouts | CLOSED |
-| E5.8 | Dependency warning remediation | OPEN |
+| E5.8 | Dependency warning remediation | CLOSED |
 | E5.9 | Full regression and live acceptance | OPEN |
 | E5.10 | Documentation, PR merge and formal closure | OPEN |
 
@@ -163,4 +163,16 @@ Full authenticated API and hybrid regression follow in E5.9.
 - Permanent resource-limit tests and Python regression passed.
 - Limits are process-local; distributed admission control is not implied.
 - Backend Ollama cancellation after HTTP disconnect is not guaranteed.
+- Cloud expenditure: EUR 0.
+
+## E5.8 acceptance
+
+- Deprecated Starlette TestClient replaced with asynchronous HTTPX ASGITransport.
+- Existing API assertions preserved.
+- Clean temporary virtual environment created from requirements.txt.
+- Dependency consistency check passed.
+- Full Python regression passed with warnings treated as errors.
+- Diagnostic ML dependencies excluded from clean acceptance.
+- Temporary environment removed.
+- No warning suppression or additional application dependency required.
 - Cloud expenditure: EUR 0.
