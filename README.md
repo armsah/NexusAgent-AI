@@ -117,7 +117,9 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.2: Durable approved-action continuation, transactional execution receipts and fail-closed recovery implemented; four database acceptance scenarios passed.
 
-- E7.2: Unused approval expiration and durable claim interruption recovery verified; external tool process interruption acceptance remains open.
+- E7.2: Unused approval expiration and durable claim interruption recovery verified; external tool process interruption acceptance subsequently passed.
+
+- E7.2 workflow-bound execution and continuation CLOSED: actual .NET process interruption, durable recovery and replay rejection verified.
 
 ## How can I run or inspect the demo?
 

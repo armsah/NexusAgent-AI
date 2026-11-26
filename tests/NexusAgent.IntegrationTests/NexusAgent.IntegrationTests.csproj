@@ -34,4 +34,14 @@
     <Copy SourceFiles="@(CrashProbeFiles)"
           DestinationFiles="@(CrashProbeFiles->'$(OutDir)CrashProbe/%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
+  <Target Name="BuildToolCrashProbe" AfterTargets="Build">
+    <MSBuild Projects="../NexusAgent.ToolCrashProbe/NexusAgent.ToolCrashProbe.csproj"
+             Targets="Restore;Build"
+             Properties="Configuration=$(Configuration)" />
+    <ItemGroup>
+      <ToolCrashProbeFiles Include="../NexusAgent.ToolCrashProbe/bin/$(Configuration)/net10.0/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ToolCrashProbeFiles)"
+          DestinationFiles="@(ToolCrashProbeFiles->'$(OutDir)ToolCrashProbe/%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
 </Project>

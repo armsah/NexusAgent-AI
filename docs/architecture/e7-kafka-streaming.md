@@ -271,3 +271,25 @@ remain subject to additional verification.
 The interruption test exercises a PostgreSQL client, not a running
 external tool process. Full external tool interruption acceptance
 remains outstanding.
+
+### E7.2 - Workflow-bound execution and continuation: CLOSED
+
+Acceptance evidence:
+
+- Actual isolated .NET process launched through the typed tool gateway.
+- Workflow-bound approval consumed and durable execution receipt observed.
+- Tool invocation confirmed through a persistent invocation marker.
+- Executing process forcibly terminated before outcome persistence.
+- Recovery deadline accelerated using database timestamps.
+- Interrupted receipt recovered as Uncertain.
+- Workflow transitioned to Failed with reconciliation reason.
+- A second process attempted the same approved action.
+- Replay rejected without another tool invocation.
+- Repeated recovery produced no duplicate terminal lifecycle events.
+- Approval, gateway and orchestration regressions passed.
+- Cloud expenditure: EUR 0.
+
+This closes the bounded terminal approved-action continuation requirement.
+Recovery deliberately does not replay ambiguous external side effects.
+The test invokes the production recovery function directly; hosted worker
+scheduling and arbitrary multi-step plan resumption are separate concerns.
