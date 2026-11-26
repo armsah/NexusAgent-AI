@@ -51,6 +51,7 @@ public static class DependencyInjection
                 {
                     client.BaseAddress = new Uri("http://127.0.0.1:8001/");
                     client.Timeout = TimeSpan.FromSeconds(135);
+                    LocalInferenceAuthentication.Configure(client);
                 })
                 .ConfigurePrimaryHttpMessageHandler(() =>
                     new HttpClientHandler
@@ -92,6 +93,7 @@ public static class DependencyInjection
                 {
                     client.BaseAddress = new Uri("http://127.0.0.1:8001/");
                     client.Timeout = TimeSpan.FromSeconds(135);
+                    LocalInferenceAuthentication.Configure(client);
                 })
                 .ConfigurePrimaryHttpMessageHandler(() =>
                     new HttpClientHandler

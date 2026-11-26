@@ -7,6 +7,13 @@ from app.ollama import InferenceError
 
 
 client = TestClient(app)
+TEST_KEY = "test-only-inference-key-" + "a" * 32
+
+
+@pytest.fixture(autouse=True)
+def configure_test_auth(monkeypatch):
+    monkeypatch.setenv("NEXUS_INFERENCE_API_KEY", TEST_KEY)
+    client.headers["X-Inference-Key"] = TEST_KEY
 
 
 def test_liveness():

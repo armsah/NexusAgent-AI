@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from app.inference_auth import require_inference_auth
 
 from app.ollama import InferenceError
 from app.security import is_suspicious
@@ -11,7 +12,7 @@ from app.retrieval import (
 )
 
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_inference_auth)])
 retrieval = RetrievalClient()
 
 

@@ -17,7 +17,7 @@
 | E5.3 | Automated evaluation framework | CLOSED |
 | E5.4 | Hybrid retrieval and citation metrics | CLOSED |
 | E5.5 | Adversarial and prompt-injection testing | CLOSED |
-| E5.6 | Inference authentication | OPEN |
+| E5.6 | Inference authentication | CLOSED |
 | E5.7 | Concurrency, request limits and timeouts | OPEN |
 | E5.8 | Dependency warning remediation | OPEN |
 | E5.9 | Full regression and live acceptance | OPEN |
@@ -134,3 +134,16 @@ Limitations:
 The holdout is small and component-level. Pattern-based screening
 does not guarantee detection of arbitrary prompt injections.
 Full authenticated API and hybrid regression follow in E5.9.
+
+## E5.6 acceptance
+
+- Shared-secret authentication protects all three inference endpoints.
+- Constant-time credential comparison.
+- Missing server secret fails closed.
+- Missing, incorrect and duplicate credentials rejected.
+- C# local inference clients attach the configured credential.
+- Public liveness remains available.
+- Python regression, Release build and C# unit regression passed.
+- Secret generated for the current shell only; not committed.
+- Live authenticated cross-service acceptance remains mandatory in E5.9.
+- Cloud expenditure: EUR 0.

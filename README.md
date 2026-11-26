@@ -63,6 +63,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 **E5 progress:** Baseline audit, versioned evaluation dataset and automated evaluation framework and live hybrid retrieval benchmark and adversarial security acceptance completed (12 cases, 8 documents, 8 categories). AI evaluation, grounding and inference security implementation tracked in [E5 acceptance register](docs/architecture/e5-ai-evaluation-security.md).
 
+**E5.6 completed:** Inference authentication verified. See the E5 acceptance register.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
