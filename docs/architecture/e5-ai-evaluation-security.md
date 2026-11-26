@@ -13,7 +13,7 @@
 | Step | Requirement | Status |
 |---|---|---|
 | E5.1 | Baseline and source audit | CLOSED |
-| E5.2 | Versioned evaluation datasets | OPEN |
+| E5.2 | Versioned evaluation datasets | CLOSED |
 | E5.3 | Automated evaluation framework | OPEN |
 | E5.4 | Hybrid retrieval and citation metrics | OPEN |
 | E5.5 | Adversarial and prompt-injection testing | OPEN |
@@ -49,3 +49,18 @@ Stage-level closure additionally requires a merged pull request,
 synchronized main and completion-register updates.
 
 No required implementation may be silently deferred.
+
+
+## E5.2 acceptance evidence
+
+- Dataset version: 1.0.0.
+- Schema version: 1.
+- Eight synthetic documents and twelve evaluation cases.
+- Eight evaluation categories.
+- Dataset SHA256: 98456EE772A28C9A0B6C2843885C96E2B0EB5B37236CBDD92FD4257386D50B84.
+- Twenty-three dataset contract tests.
+- Existing Python regression preserved.
+- Expected outcomes and authorization labels validated.
+- Dataset integrity verified; actual model performance is not
+  measured by these contract tests.
+- Cloud expenditure: EUR 0.
