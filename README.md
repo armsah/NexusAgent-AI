@@ -84,6 +84,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E6.4 CLOSED: Immutable versioned event contracts. 26 Java tests passed.
 
+- E6.5 CLOSED: Functional transformations and analytics. 40 Java tests passed.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

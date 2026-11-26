@@ -13,7 +13,7 @@ the authoritative C# orchestration and PostgreSQL persistence layers.
 | E6.2 | Reproducible Java and Maven foundation | CLOSED |
 | E6.3 | Spring Boot service foundation | CLOSED |
 | E6.4 | Immutable versioned event contracts | CLOSED |
-| E6.5 | Functional transformations and analytics | OPEN |
+| E6.5 | Functional transformations and analytics | CLOSED |
 | E6.6 | Deduplication and ordering semantics | OPEN |
 | E6.7 | Cross-language contract acceptance | OPEN |
 | E6.8 | Regression, documentation and GitHub merge | OPEN |
@@ -79,5 +79,26 @@ Document schema version is a new transport-contract field.
 Actual C# producer adaptation and serialization acceptance remain E6.7.
 
 - Java regression: 26 passed.
+- Failed, errors and skipped: zero.
+- Cloud expenditure: EUR 0.
+
+## E6.5 acceptance
+
+Pure windowed transformations implemented with Java Stream API,
+immutable records, grouping collectors and deterministic latest-state
+selection. Document lifecycle counts, workflow terminal outcomes,
+approval counts, completion rate and average duration implemented.
+
+Window semantics: from-inclusive and to-exclusive. Metrics describe
+events and latest observed entities inside the selected window, not
+the complete authoritative system state.
+
+Duration totals use BigInteger to avoid long overflow.
+
+Duplicate delivery, conflicting identities and sequence validation
+remain mandatory E6.6 acceptance requirements. These batch functions
+must not yet be connected directly to an at-least-once transport.
+
+- Java regression: 40 passed.
 - Failed, errors and skipped: zero.
 - Cloud expenditure: EUR 0.
