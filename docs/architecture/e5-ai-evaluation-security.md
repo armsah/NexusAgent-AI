@@ -234,3 +234,12 @@ Operational limitations:
 
 The cumulative count combines the full baseline regression and
 four additional tests. It is not represented as a single 490-test run.
+
+## E5.10 - Delivery readiness
+
+- E5.1 through E5.9 formally closed.
+- Acceptance commit: 038c414b5b717751bbc1f8ebed7e80e883bc6a65
+- All mandatory E5 acceptance gates passed.
+- Cumulative regression: 490 passing tests.
+- No remaining E5 implementation or acceptance blockers identified.
+- Final closure requires confirmed GitHub merge.
