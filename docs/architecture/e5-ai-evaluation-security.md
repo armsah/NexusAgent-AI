@@ -21,7 +21,7 @@
 | E5.7 | Concurrency, request limits and timeouts | CLOSED |
 | E5.8 | Dependency warning remediation | CLOSED |
 | E5.9 | Full regression and live acceptance | CLOSED |
-| E5.10 | Documentation, PR merge and formal closure | OPEN |
+| E5.10 | Documentation, PR merge and formal closure | CLOSED |
 
 ## E5.1 audit findings
 
@@ -243,3 +243,14 @@ four additional tests. It is not represented as a single 490-test run.
 - Cumulative regression: 490 passing tests.
 - No remaining E5 implementation or acceptance blockers identified.
 - Final closure requires confirmed GitHub merge.
+
+## E5.10 - Formal delivery closure
+
+- E5.1 through E5.10: CLOSED.
+- GitHub PR #11 merged.
+- Feature commit: 080946000ecd111c75ac98804ec1c7aac3dfe837
+- Merge commit: e038775a9c54e6bbb4069b4bdeccc5d2af069396
+- Cumulative acceptance: 490 passing tests.
+- All six E5 completion-register requirements closed.
+- Previous PR-discovery scripting error resolved.
+- Cloud expenditure: EUR 0.

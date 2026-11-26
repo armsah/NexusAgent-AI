@@ -25,11 +25,11 @@ No required feature may remain a placeholder.
 | CR-007 | Agent memory and bounded planning | E4 | CLOSED |
 | CR-008 | Retry idempotency and cancellation verification | E4 | CLOSED |
 | CR-009 | Durable human approval state | E4 | CLOSED |
-| CR-010 | Versioned evaluation datasets and benchmarks | E5 | OPEN |
-| CR-011 | Adversarial prompt-injection and grounding tests | E5 | OPEN |
-| CR-012 | Inference authentication and concurrency controls | E5 | OPEN |
-| CR-013 | Request limits and inference timeout enforcement | E5 | OPEN |
-| CR-014 | Python dependency deprecation remediation | E5 | OPEN |
+| CR-010 | Versioned evaluation datasets and benchmarks | E5 | CLOSED |
+| CR-011 | Adversarial prompt-injection and grounding tests | E5 | CLOSED |
+| CR-012 | Inference authentication and concurrency controls | E5 | CLOSED |
+| CR-013 | Request limits and inference timeout enforcement | E5 | CLOSED |
+| CR-014 | Python dependency deprecation remediation | E5 | CLOSED |
 | CR-015 | Java functional event processing service | E6 | OPEN |
 | CR-016 | Kafka and Kafka Streams integration | E7 | OPEN |
 | CR-017 | NoSQL agent artifact persistence | E8 | OPEN |
@@ -49,7 +49,7 @@ No required feature may remain a placeholder.
 | CR-031 | Four-language architecture coverage verification | E15 | OPEN |
 | CR-032 | Final cloud resource and cost cleanup verification | E15 | OPEN |
 | CR-033 | Governed multi-agent endpoint acceptance and isolation | E3 | CLOSED |
-| CR-034 | Hybrid retrieval relevance and citation integrity | E3/E5 | OPEN |
+| CR-034 | Hybrid retrieval relevance and citation integrity | E3/E5 | CLOSED |
 | CR-035 | Production request-size enforcement verification | E10/E15 | OPEN |
 | CR-036 | Agent invocation authorization boundary verification | E3 | CLOSED |
 | CR-037 | Actual process-crash recovery acceptance | E4 | CLOSED |
@@ -247,3 +247,25 @@ and hybrid retrieval. Cumulative verified acceptance is 490 tests.
 
 CR-010 through CR-014 and CR-034 are ready for delivery closure,
 subject to successful GitHub merge and final synchronization.
+
+## E5 formal closure
+
+- GitHub PR: #11, MERGED.
+- Full regression baseline: 3605141.
+- Dedicated retrieval acceptance: 038c414.
+- Feature commit: 080946000ecd111c75ac98804ec1c7aac3dfe837
+- Merge commit: e038775a9c54e6bbb4069b4bdeccc5d2af069396
+- Full regression: 486 passed.
+- Additional PostgreSQL retrieval regression: 4 passed.
+- Cumulative verified acceptance: 490 tests.
+- Failed or skipped tests: zero.
+- Benchmark: 12/12 cases and eight metric gates passed.
+- Security holdout: 8/8 passed.
+- CR-010, CR-011, CR-012, CR-013, CR-014 and CR-034: CLOSED.
+- Completion register: 19 CLOSED, 22 OPEN.
+- Remote checks observed before merge: 0.
+- Cloud expenditure: EUR 0.
+
+All later-stage production identity, infrastructure security,
+distributed admission control, CI/CD and load acceptance
+requirements remain mandatory.

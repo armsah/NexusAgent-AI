@@ -71,6 +71,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 **E5 acceptance:** 490 cumulative passing tests, including dedicated semantic relevance cutoff and safe candidate backfill regression. All benchmark and security holdout gates passed.
 
+**E5 completed (PR #11):** AI evaluation, adversarial security, authenticated inference, resource controls and retrieval relevance validated locally. 490 cumulative passing tests. Cloud expenditure EUR 0.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
