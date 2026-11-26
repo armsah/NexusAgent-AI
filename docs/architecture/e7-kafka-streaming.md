@@ -391,3 +391,24 @@ Remaining mandatory acceptance:
 
 E7.3 remains OPEN.
 PostgreSQL remains authoritative.
+
+### E7.3.3 - Global identity registry implementation checkpoint
+
+- Globally scoped event identity keys.
+- Length-prefixed SHA-256 identity fingerprints.
+- Cross-aggregate, cross-tenant and cross-family conflict detection.
+- Persistent identity registry processor.
+- Redacted conflict dead-letter routing.
+- Identical deliveries preserved for downstream sequence-gap recovery.
+- Corrupted registry state fails closed.
+- Eight dedicated acceptance tests.
+- Full Java regression: 97 passed.
+- Failures, errors and skips: zero.
+- Cloud expenditure: EUR 0.
+
+Status: OPEN pending production topology integration.
+
+The identity registry processor must be connected through an event-ID
+repartition boundary and followed by aggregate-key repartitioning.
+The existing production topology remains aggregate-scoped until
+that integration is completed and verified.
