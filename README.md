@@ -45,6 +45,14 @@ local Ollama inference and independent extractive citation verification.
 
 See [E3 architecture and acceptance](docs/architecture/e3-multi-agent-orchestration.md).
 
+**E4 - Durable agent execution:** PostgreSQL-backed agent memory,
+bounded planning, transactional checkpoints, resumable execution,
+lease fencing, idempotency, cancellation, evidence replay verification
+and durable human approvals. Cumulative test coverage: 342 passing tests.
+Outstanding verification is tracked in the completion register.
+
+See [E4 architecture and acceptance evidence](docs/architecture/e4-durable-agent-execution.md).
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
