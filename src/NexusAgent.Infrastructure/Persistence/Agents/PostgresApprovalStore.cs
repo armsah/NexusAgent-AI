@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NexusAgent.Application.Approvals;
+using NexusAgent.Domain.Workflows;
 
 namespace NexusAgent.Infrastructure.Persistence.Agents;
 
@@ -25,7 +26,8 @@ public sealed class PostgresApprovalStore(
             (ApprovalStatus)state.Status,
             state.ApproverId,
             state.CreatedAt,
-            state.ExpiresAt);
+            state.ExpiresAt,
+            state.WorkflowId);
     }
 
     public async Task CreateAsync(
@@ -56,6 +58,7 @@ public sealed class PostgresApprovalStore(
         var state = new AgentApprovalState
         {
             Id = request.ApprovalId,
+            WorkflowId = request.WorkflowId,
             TenantId = request.Action.TenantId,
             RequesterId = request.Action.RequesterId,
             ToolName = request.Action.ToolName,
@@ -66,15 +69,41 @@ public sealed class PostgresApprovalStore(
             ExpiresAt = request.ExpiresAt.ToUniversalTime()
         };
 
-        db.AgentApprovals.Add(state);
+        await using var transaction =
+            await db.Database.BeginTransactionAsync(cancellationToken);
+
+        Workflow? workflow = null;
 
         try
         {
+            if (request.WorkflowId is Guid workflowId)
+            {
+                workflow = await db.Workflows.Include(x => x.Steps)
+                    .SingleOrDefaultAsync(x =>
+                        x.Id == workflowId &&
+                        x.TenantId == request.Action.TenantId &&
+                        x.RequesterId == request.Action.RequesterId,
+                        cancellationToken);
+
+                if (workflow is null ||
+                    workflow.Status != WorkflowStatus.Running)
+                {
+                    throw new InvalidOperationException(
+                        "Workflow is not eligible for approval.");
+                }
+
+                workflow.WaitForApproval(request.CreatedAt);
+            }
+
+            db.AgentApprovals.Add(state);
             await db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
         }
         finally
         {
             db.Entry(state).State = EntityState.Detached;
+            if (workflow is not null)
+                db.Entry(workflow).State = EntityState.Detached;
         }
     }
 
@@ -83,7 +112,8 @@ public sealed class PostgresApprovalStore(
         string approverId,
         bool approved,
         DateTimeOffset now,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? tenantId = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -93,24 +123,79 @@ public sealed class PostgresApprovalStore(
 
         now = now.ToUniversalTime();
 
+        await using var transaction =
+            await db.Database.BeginTransactionAsync(cancellationToken);
+
         var pending = db.AgentApprovals.Where(x =>
             x.Id == approvalId &&
             x.Status == (int)ApprovalStatus.Pending &&
-            x.RequesterId != approverId);
+            x.RequesterId != approverId &&
+            (tenantId == null
+                ? x.WorkflowId == null
+                : x.TenantId == tenantId));
 
-        await pending.Where(x => x.ExpiresAt <= now)
-            .ExecuteUpdateAsync(s => s.SetProperty(
-                x => x.Status, (int)ApprovalStatus.Expired),
-                cancellationToken);
+        var state = await pending.AsNoTracking()
+            .SingleOrDefaultAsync(cancellationToken);
 
-        return await pending.Where(x =>
+        if (state is null)
+            return false;
+
+        if (state.ExpiresAt <= now)
+        {
+            await pending.Where(x => x.ExpiresAt <= now)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    x => x.Status, (int)ApprovalStatus.Expired),
+                    cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+            return false;
+        }
+
+        var affected = await pending.Where(x =>
                 x.CreatedAt <= now && x.ExpiresAt > now)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(x => x.ApproverId, approverId)
                 .SetProperty(x => x.Status, approved
                     ? (int)ApprovalStatus.Approved
                     : (int)ApprovalStatus.Denied),
-                cancellationToken) == 1;
+                cancellationToken);
+
+        if (affected != 1)
+            return false;
+
+        Workflow? workflow = null;
+
+        try
+        {
+            if (state.WorkflowId is Guid workflowId)
+            {
+                workflow = await db.Workflows.Include(x => x.Steps)
+                    .SingleOrDefaultAsync(x =>
+                        x.Id == workflowId &&
+                        x.TenantId == state.TenantId &&
+                        x.RequesterId == state.RequesterId,
+                        cancellationToken);
+
+                if (workflow is null ||
+                    workflow.Status != WorkflowStatus.WaitingForApproval)
+                    return false;
+
+                if (approved)
+                    workflow.ResumeAfterApproval(now);
+                else
+                    workflow.Reject(now);
+
+                await db.SaveChangesAsync(cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        }
+        finally
+        {
+            if (workflow is not null)
+                db.Entry(workflow).State = EntityState.Detached;
+        }
     }
 
     public async Task<bool> ConsumeAsync(
@@ -126,6 +211,7 @@ public sealed class PostgresApprovalStore(
         var approved = db.AgentApprovals.Where(x =>
             x.Id == approvalId &&
             x.Status == (int)ApprovalStatus.Approved &&
+            x.WorkflowId == null &&
             x.TenantId == expectedAction.TenantId &&
             x.RequesterId == expectedAction.RequesterId &&
             x.ToolName == expectedAction.ToolName &&

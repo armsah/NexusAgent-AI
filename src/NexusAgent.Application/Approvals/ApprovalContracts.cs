@@ -30,12 +30,14 @@ public sealed record ApprovalRequest(
     ApprovalStatus Status,
     string? ApproverId,
     DateTimeOffset CreatedAt,
-    DateTimeOffset ExpiresAt);
+    DateTimeOffset ExpiresAt,
+    Guid? WorkflowId = null);
 
 public sealed record ApprovalDecision(
     Guid ApprovalId,
     string ApproverId,
-    bool Approved);
+    bool Approved,
+    string? TenantId = null);
 
 public interface IApprovalStore
 {
@@ -52,7 +54,8 @@ public interface IApprovalStore
         string approverId,
         bool approved,
         DateTimeOffset now,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken,
+        string? tenantId = null);
 
     Task<bool> ConsumeAsync(
         Guid approvalId,

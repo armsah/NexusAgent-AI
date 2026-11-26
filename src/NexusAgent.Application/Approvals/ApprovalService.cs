@@ -10,7 +10,8 @@ public sealed class ApprovalService(
         ToolRequest<TInput> request,
         ToolCaller caller,
         TimeSpan lifetime,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Guid? workflowId = null)
     {
         if (lifetime <= TimeSpan.Zero ||
             lifetime > TimeSpan.FromHours(24))
@@ -36,7 +37,8 @@ public sealed class ApprovalService(
             ApprovalStatus.Pending,
             null,
             now,
-            now.Add(lifetime));
+            now.Add(lifetime),
+            workflowId);
 
         await store.CreateAsync(approval, cancellationToken);
 
@@ -54,6 +56,7 @@ public sealed class ApprovalService(
             decision.ApproverId,
             decision.Approved,
             DateTimeOffset.UtcNow,
-            cancellationToken);
+            cancellationToken,
+            decision.TenantId);
     }
 }

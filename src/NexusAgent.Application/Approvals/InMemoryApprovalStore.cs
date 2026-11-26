@@ -27,7 +27,8 @@ public sealed class InMemoryApprovalStore : IApprovalStore
         ArgumentNullException.ThrowIfNull(request);
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (request.ApprovalId == Guid.Empty ||
+        if (request.WorkflowId is not null ||
+            request.ApprovalId == Guid.Empty ||
             request.Status != ApprovalStatus.Pending ||
             request.Risk < ActionRisk.High ||
             request.CreatedAt >= request.ExpiresAt ||
@@ -56,7 +57,8 @@ public sealed class InMemoryApprovalStore : IApprovalStore
         string approverId,
         bool approved,
         DateTimeOffset now,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? tenantId = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -64,6 +66,7 @@ public sealed class InMemoryApprovalStore : IApprovalStore
         {
             if (!_requests.TryGetValue(approvalId, out var request) ||
                 request.Status != ApprovalStatus.Pending ||
+                (tenantId is not null && request.Action.TenantId != tenantId) ||
                 string.IsNullOrWhiteSpace(approverId) ||
                 string.Equals(
                     request.Action.RequesterId,

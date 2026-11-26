@@ -179,3 +179,26 @@ No cloud resources have been provisioned.
 - Application approval association remains OPEN.
 - Dedicated domain rejection acceptance remains OPEN.
 - Cloud expenditure: EUR 0.
+
+### E7.2 approval association and atomic decision handling - CLOSED
+
+- Optional durable workflow association with foreign-key integrity.
+- Unique pending approval per associated workflow.
+- Atomic approval creation and WaitingForApproval transition.
+- Atomic approval decision, workflow transition and lifecycle journal.
+- Tenant and requester association validated.
+- Missing tenant context and self-approval rejected for linked decisions.
+- Repeated decisions rejected.
+- Failed workflow transition rolls back approval decision.
+- Standalone approval behavior preserved.
+- Workflow-bound approvals cannot be consumed through the standalone gateway.
+- Dedicated PostgreSQL approval acceptance passed.
+- Targeted unit and integration regression passed.
+- Cloud expenditure: EUR 0.
+
+Remaining requirements:
+- Expired workflow approval resolution.
+- Workflow-bound tool execution and continuation.
+- Dedicated domain rejection tests.
+- Crash-window recovery acceptance.
+- Trusted approver authentication (E10).

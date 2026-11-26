@@ -33,6 +33,7 @@ public sealed class AgentExecutionCheckpoint
 
 public sealed class AgentApprovalState
 {
+    public Guid? WorkflowId { get; set; }
     public Guid Id { get; set; }
     public string TenantId { get; set; } = "";
     public string RequesterId { get; set; } = "";

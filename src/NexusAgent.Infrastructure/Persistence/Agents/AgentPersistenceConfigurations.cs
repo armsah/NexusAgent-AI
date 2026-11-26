@@ -112,5 +112,14 @@ public sealed class AgentApprovalStateConfiguration
         builder.Property(x => x.ApproverId).HasMaxLength(256);
 
         builder.HasIndex(x => new { x.TenantId, x.Status, x.ExpiresAt });
+
+        builder.HasOne<Workflow>()
+            .WithMany()
+            .HasForeignKey(x => x.WorkflowId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(x => x.WorkflowId)
+            .IsUnique()
+            .HasFilter("\"WorkflowId\" IS NOT NULL AND \"Status\" = 0");
     }
 }

@@ -284,6 +284,9 @@ namespace NexusAgent.Infrastructure.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<Guid?>("WorkflowId")
+                        .HasColumnType("uuid");
+
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -291,6 +294,10 @@ namespace NexusAgent.Infrastructure.Persistence.Migrations
                         .HasColumnName("xmin");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("WorkflowId")
+                        .IsUnique()
+                        .HasFilter("\"WorkflowId\" IS NOT NULL AND \"Status\" = 0");
 
                     b.HasIndex("TenantId", "Status", "ExpiresAt");
 
@@ -659,6 +666,14 @@ namespace NexusAgent.Infrastructure.Persistence.Migrations
                         .HasForeignKey("WorkflowId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("NexusAgent.Infrastructure.Persistence.Agents.AgentApprovalState", b =>
+                {
+                    b.HasOne("NexusAgent.Domain.Workflows.Workflow", null)
+                        .WithMany()
+                        .HasForeignKey("WorkflowId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("NexusAgent.Infrastructure.Persistence.Agents.AgentExecutionCheckpoint", b =>
