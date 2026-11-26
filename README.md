@@ -93,6 +93,8 @@ acceptance requirements remain mandatory in E5 and E15.
 - E7.1 CLOSED: digest-pinned Kafka KRaft infrastructure, explicit topics, publication, consumption and persistent replay verified.
 - E7.2-E7.4 OPEN: durable event production, Kafka Streams and final acceptance.
 
+- E7.2 progress: Kafka producer transport and partition-key validation implemented; transactional integration remains open.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

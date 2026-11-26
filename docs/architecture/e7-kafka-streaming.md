@@ -61,3 +61,14 @@ hardening remain required before production acceptance.
 Broker-level replay is verified. Application-level publication,
 stream processing and durable deduplication remain E7.2-E7.3.
 No cloud resources have been provisioned.
+## E7.2 transport implementation
+
+- Confluent.Kafka 2.12.0.
+- Idempotent producer and acknowledged persistent delivery.
+- Deterministic tenant and aggregate partition keys.
+- Explicit topic allowlist and event identity validation.
+- Bounded payload and publication timeout.
+- Twelve targeted transport tests passed.
+- PostgreSQL transactional integration remains open.
+- Cross-system delivery semantics remain at-least-once.
+- Cloud expenditure: EUR 0.
