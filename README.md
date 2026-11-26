@@ -163,6 +163,19 @@ audit reader supports bounded point lookups.
 E738-03 acceptance is closed. Retention and migration safety are
 addressed separately under E738-04.
 
+### Streaming retention and acceptance safeguards
+
+Source event retention is protected against time-based and size-based
+expiry. Durable state policy validation rejects unsafe identity expiry
+and unverified rebuilds.
+
+UUID-scoped acceptance topic infrastructure provides owned-resource
+cleanup. Synthetic snapshot classification preserves authoritative
+tenants and prohibits prefix-only deletion decisions.
+
+E738-04 through E738-06 remain open pending runtime integration,
+isolated live acceptance and verified synthetic reconciliation.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
