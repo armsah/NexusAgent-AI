@@ -16,7 +16,7 @@ the authoritative C# orchestration and PostgreSQL persistence layers.
 | E6.5 | Functional transformations and analytics | CLOSED |
 | E6.6 | Deduplication and ordering semantics | CLOSED |
 | E6.7 | Cross-language contract acceptance | CLOSED |
-| E6.8 | Regression, documentation and GitHub merge | OPEN |
+| E6.8 | Regression, documentation and GitHub merge | READY FOR MERGE |
 
 ## E6.1 acceptance
 
@@ -157,3 +157,19 @@ verification during E6.7.
 - E6.7 closes the serialization and functional consumer boundary.
 - Workflow events are transport contracts, not persisted domain transitions.
 - Durable event generation, transactional sequencing and Kafka delivery remain required in E7.
+
+### E6.8 final regression acceptance
+
+- C# Release build passed.
+- C# tests: 353 passed.
+- Python tests: 151 passed.
+- Java tests: 72 passed.
+- Combined regression: 576 passed.
+- Failures, errors and skipped tests: zero.
+- Ten C#-generated event fixtures reproduced without changes.
+- Inference liveness and PostgreSQL availability verified.
+- E6.7 dependency security acceptance retained.
+- Cloud expenditure: EUR 0.
+- PostgreSQL remains authoritative.
+- Durable event production, transactional sequencing and Kafka delivery remain E7 scope.
+- Durable NoSQL projections remain E8 scope.

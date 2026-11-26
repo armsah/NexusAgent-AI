@@ -81,7 +81,7 @@ acceptance requirements remain mandatory in E5 and E15.
 - E6.7 security acceptance PASSED: 53 Java dependencies audited, zero OSV findings, 66 Java tests passed.
 - E6.7 document wire interoperability PASSED: actual C# serialization consumed by Java.
 - E6.7 CLOSED: document and workflow wire interoperability verified.
-- E6.8 OPEN: final regression and GitHub delivery.
+- E6.8 READY FOR MERGE: 576 regression tests passed across C#, Python and Java.
 - Architecture: [E6 implementation record](docs/architecture/e6-java-event-processing.md).
 
 - E6.3 CLOSED: Spring Boot service foundation. 3 Java tests passed.
