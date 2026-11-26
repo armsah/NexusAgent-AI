@@ -99,6 +99,10 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.2 progress: durable PostgreSQL workflow journal and transactional append foundation implemented.
 
+- E7.2 progress: automatic transactional workflow lifecycle capture and rollback verified.
+
+- E7.2 progress: EF workflow lifecycle migration applied and registered successfully.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

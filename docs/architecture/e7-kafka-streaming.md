@@ -95,3 +95,24 @@ No cloud resources have been provisioned.
 - Release build and targeted regression passed.
 - Lifecycle integration and ordered dispatch remain open.
 - Cloud expenditure: EUR 0.
+
+### E7.2 automatic workflow lifecycle capture
+
+- PostgreSQL trigger captures status transitions transactionally.
+- Migration contains journal and trigger provisioning.
+- Sequence allocation serialized by workflow row updates.
+- Unchanged status does not emit duplicate events.
+- Lifecycle sequence, terminal duration and atomic rollback acceptance passed.
+- Historical workflows without a captured STARTED event are not backfilled.
+- Migration execution through EF, tenant compatibility, rejection semantics and ordered dispatch require further acceptance.
+- Cloud expenditure: EUR 0.
+
+### E7.2 migration acceptance
+
+- EF Core migration applied successfully.
+- Migration history registration verified through PostgreSQL.
+- PowerShell native argument quoting issue corrected.
+- Atomic lifecycle and rollback acceptance repeated.
+- Targeted regression passed.
+- Fresh-database migration acceptance remains required.
+- Cloud expenditure: EUR 0.
