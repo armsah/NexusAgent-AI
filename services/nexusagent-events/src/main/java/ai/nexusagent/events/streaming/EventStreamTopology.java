@@ -44,6 +44,7 @@ public final class EventStreamTopology {
 
         for (String name : new String[]{
                 HISTORY, IDENTITIES, LATEST, PENDING,
+                ReconciliationAudit.STORE,
                 GlobalIdentityProcessor.STORE,
                 TenantAnalyticsProcessor.METRICS_STORE,
                 TenantAnalyticsProcessor.IDENTITIES_STORE}) {
@@ -101,7 +102,8 @@ public final class EventStreamTopology {
         var projected = byAggregate.process(
                 EventProcessor::new,
                 Named.as("validate-and-project"),
-                HISTORY, IDENTITIES, LATEST, PENDING);
+                HISTORY, IDENTITIES, LATEST, PENDING,
+                ReconciliationAudit.STORE);
 
         projected.filter((key, value) -> key.startsWith("failure:"))
                 .selectKey((key, value) -> key.substring(8))
@@ -316,6 +318,7 @@ public final class EventStreamTopology {
         private KeyValueStore<String, String> identities;
         private KeyValueStore<String, String> latest;
         private KeyValueStore<String, String> pending;
+        private KeyValueStore<String, String> reconciliationAudit;
         private boolean draining;
 
         @Override
@@ -325,6 +328,8 @@ public final class EventStreamTopology {
             identities = context.getStateStore(IDENTITIES);
             latest = context.getStateStore(LATEST);
             pending = context.getStateStore(PENDING);
+            reconciliationAudit =
+                    context.getStateStore(ReconciliationAudit.STORE);
         }
 
         private Event decode(String topic, String value) throws Exception {
@@ -548,17 +553,41 @@ public final class EventStreamTopology {
                     return;
                 }
 
-                pending.put(sequenceKey,
-                        PendingGapObservation.stamp(
-                                record.value(),
-                                Instant.ofEpochMilli(
-                                        context.currentSystemTimeMs())));
+                Instant observedAt = Instant.ofEpochMilli(
+                        context.currentSystemTimeMs());
+
+                String stamped = PendingGapObservation.stamp(
+                        record.value(), observedAt);
+
+                pending.put(sequenceKey, stamped);
+
+                audit(
+                        event,
+                        aggregateKey,
+                        expected,
+                        ReconciliationAudit.Status.BUFFERED,
+                        observedAt,
+                        "MISSING_PREDECESSOR");
+
                 return;
             }
 
             try {
                 validateSequence(event, previous);
             } catch (Rejected ex) {
+
+                if (draining) {
+                    audit(
+                            event,
+                            aggregateKey,
+                            expected,
+                            ReconciliationAudit.Status.REJECTED,
+                            PendingGapObservation
+                                    .observedAt(record.value())
+                                    .orElse(null),
+                            ex.getMessage());
+                }
+
                 reject(record, ex.getMessage());
                 return;
             }
@@ -602,12 +631,56 @@ public final class EventStreamTopology {
             history.put(sequenceKey, fingerprint);
             latest.put(aggregateKey, serialized);
 
+            if (draining) {
+                audit(
+                        event,
+                        aggregateKey,
+                        expected,
+                        ReconciliationAudit.Status.RECONCILED,
+                        PendingGapObservation
+                                .observedAt(record.value())
+                                .orElse(null),
+                        null);
+            }
+
             context.forward(
                     new Record<>(aggregateKey, serialized, record.timestamp()));
 
             // Drain contiguous successors already persisted by this task.
             // State mutations and outputs remain transactionally coordinated.
             drainPending(aggregateKey, record.timestamp());
+        }
+
+        private void audit(
+                Event event,
+                String aggregateKey,
+                long expected,
+                ReconciliationAudit.Status status,
+                Instant observedAt,
+                String reason) {
+
+            String key = ReconciliationAudit.key(
+                    aggregateKey, event.eventId(), status);
+
+            // Preserve the first committed record of each transition.
+            if (reconciliationAudit.get(key) != null) {
+                return;
+            }
+
+            reconciliationAudit.put(
+                    key,
+                    ReconciliationAudit.create(
+                            event.tenant(),
+                            event.family(),
+                            event.aggregate(),
+                            event.eventId(),
+                            event.sequence(),
+                            expected,
+                            status,
+                            observedAt,
+                            Instant.ofEpochMilli(
+                                    context.currentSystemTimeMs()),
+                            reason));
         }
 
         private void drainPending(String aggregateKey, long timestamp) {

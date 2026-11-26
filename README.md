@@ -153,6 +153,16 @@ Live scheduled monitoring, overdue detection and resolved-gap acceptance passed.
 
 See [E738 monitoring evidence](docs/architecture/e738-gap-monitoring-evidence.md).
 
+### Auditable streaming reconciliation
+
+Missing-predecessor events retain durable BUFFERED, RECONCILED or
+REJECTED audit transitions. Recovery, duplicate suppression, corrected
+successors and tenant isolation are verified. An internal tenant-scoped
+audit reader supports bounded point lookups.
+
+E738-03 acceptance is closed. Retention and migration safety are
+addressed separately under E738-04.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

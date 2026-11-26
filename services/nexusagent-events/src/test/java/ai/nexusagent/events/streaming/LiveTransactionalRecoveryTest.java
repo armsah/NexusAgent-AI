@@ -400,6 +400,13 @@ class LiveTransactionalRecoveryTest {
                     observer, tenant, projections,
                     failure, 6, 0, 0, 1);
             awaitResolvedGaps(streams);
+            for (var observation : verifiedPendingObservations.entrySet()) {
+                verifyReconciliationAudit(
+                        streams,
+                        observation.getKey(),
+                        observation.getValue(),
+                        true);
+            }
 
             assertEquals(1,
                     finalMetrics.path("documentsCreated").asLong());
@@ -624,6 +631,7 @@ class LiveTransactionalRecoveryTest {
                             var observed = PendingGapObservation
                                     .observedAt(entry.value)
                                     .orElseThrow();
+                            verifyReconciliationAudit(streams, eventId.toString(), observed, false);
 
                             var previous = verifiedPendingObservations
                                     .putIfAbsent(eventId.toString(), observed);
@@ -1248,5 +1256,115 @@ class LiveTransactionalRecoveryTest {
                     "Resolved gaps remained visible: "
                             + monitor.snapshot());
         }
+    }
+
+    private static void verifyReconciliationAudit(
+            org.apache.kafka.streams.KafkaStreams streams,
+            String eventId,
+            java.time.Instant observed,
+            boolean resolved) {
+
+        var store = streams.store(
+                org.apache.kafka.streams.StoreQueryParameters
+                        .fromNameAndType(
+                                ReconciliationAudit.STORE,
+                                org.apache.kafka.streams.state
+                                        .QueryableStoreTypes
+                                        .<String, String>keyValueStore()));
+
+        var json = new com.fasterxml.jackson.databind.ObjectMapper();
+
+        com.fasterxml.jackson.databind.JsonNode buffered = null;
+        com.fasterxml.jackson.databind.JsonNode reconciled = null;
+
+        try (var entries = store.all()) {
+
+            while (entries.hasNext()) {
+
+                var entry = entries.next();
+
+                if (entry.value == null) {
+                    continue;
+                }
+
+                com.fasterxml.jackson.databind.JsonNode audit;
+
+                try {
+                    audit = json.readTree(entry.value);
+                } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+                    throw new AssertionError(
+                            "Malformed reconciliation audit", ex);
+                }
+
+                if (!eventId.equals(audit.path("eventId").asText())) {
+                    continue;
+                }
+
+                org.junit.jupiter.api.Assertions.assertFalse(
+                        audit.has("payload"));
+
+                org.junit.jupiter.api.Assertions.assertEquals(
+                        observed.toString(),
+                        audit.path("firstObservedAt").asText());
+
+                switch (audit.path("status").asText()) {
+
+                    case "BUFFERED" -> {
+
+                        org.junit.jupiter.api.Assertions.assertNull(
+                                buffered, "Duplicate buffered audit");
+
+                        buffered = audit;
+                    }
+
+                    case "RECONCILED" -> {
+
+                        org.junit.jupiter.api.Assertions.assertNull(
+                                reconciled, "Duplicate reconciled audit");
+
+                        reconciled = audit;
+                    }
+
+                    default -> org.junit.jupiter.api.Assertions.fail(
+                            "Unexpected audit transition");
+                }
+            }
+        }
+
+        org.junit.jupiter.api.Assertions.assertNotNull(
+                buffered, "Original buffered audit missing");
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "MISSING_PREDECESSOR",
+                buffered.path("reason").asText());
+
+        org.junit.jupiter.api.Assertions.assertTrue(
+                buffered.path("sequence").asLong()
+                        > buffered.path("expectedSequence").asLong());
+
+        if (!resolved) {
+
+            org.junit.jupiter.api.Assertions.assertNull(
+                    reconciled, "Unresolved event marked reconciled");
+
+            return;
+        }
+
+        org.junit.jupiter.api.Assertions.assertNotNull(
+                reconciled, "Successful reconciliation audit missing");
+
+        for (String field : java.util.List.of(
+                "tenantId", "aggregateId",
+                "aggregateType", "eventId", "sequence")) {
+
+            org.junit.jupiter.api.Assertions.assertEquals(
+                    buffered.path(field),
+                    reconciled.path(field),
+                    "Audit identity changed: " + field);
+        }
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                reconciled.path("sequence").asLong(),
+                reconciled.path("expectedSequence").asLong());
     }
 }
