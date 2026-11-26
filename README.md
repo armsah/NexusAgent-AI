@@ -107,6 +107,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.2: Event tenant capacity aligned across C#, Java and PostgreSQL.
 
+- E7.2: Database publication safeguards and failure quarantine implemented.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

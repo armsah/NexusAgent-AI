@@ -136,3 +136,15 @@ No cloud resources have been provisioned.
 - Event tenant capacity aligned to 256 characters across C#, Java and PostgreSQL.
 - Targeted C# and Java regression passed.
 - Remaining producer acceptance stays OPEN.
+
+
+### E7.2 publication safeguards
+
+- Existing database tenant-capacity migration applied.
+- Database publication ordering safeguard installed.
+- Workflow publication quarantined after ten failed attempts.
+- Quarantined predecessors block subsequent workflow events.
+- Targeted regression passed.
+- PostgreSQL remains authoritative.
+- Cloud expenditure: EUR 0.
+- E7.2 remains open pending broker-side ordering, rejection and crash-window acceptance.

@@ -29,7 +29,7 @@ public sealed class PostgresWorkflowEventDispatcher(
                 """
                 SELECT e.event_id, e.workflow_id, e.tenant_id, e.payload::text
                 FROM kafka_workflow_events e
-                WHERE e.published_at IS NULL
+                WHERE e.published_at IS NULL AND e.permanently_failed_at IS NULL
                   AND e.next_attempt_at <= clock_timestamp()
                   AND NOT EXISTS (
                       SELECT 1
@@ -73,7 +73,8 @@ public sealed class PostgresWorkflowEventDispatcher(
             await dbContext.Database.ExecuteSqlInterpolatedAsync(
                 $"""
                 UPDATE kafka_workflow_events
-                SET attempts = attempts + 1,
+                SET permanently_failed_at = CASE WHEN attempts >= 9 THEN clock_timestamp() ELSE NULL END,
+                    attempts = attempts + 1,
                     last_error = {error},
                     next_attempt_at = clock_timestamp()
                         + make_interval(secs =>
