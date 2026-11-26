@@ -139,6 +139,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.3.6 CLOSED: live Kafka dead-letter acceptance, eleven rejection scenarios, source-coordinate verification, sensitive-data redaction, failure isolation and verified test resource cleanup; 132 passing Java tests.
 
+- E7.3.7 CLOSED: live Kafka broker interruption recovery, aborted transaction isolation, fresh-directory changelog restoration, buffered sequence recovery and duplicate suppression; 133 passing Java tests.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

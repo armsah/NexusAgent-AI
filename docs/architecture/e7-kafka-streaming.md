@@ -580,3 +580,51 @@ Operational boundaries:
 - Exactly-once external side effects are not established by this test.
 
 E7.3.6 end-to-end dead-letter acceptance: CLOSED.
+
+### E7.3.7 - Live transactional recovery and restoration: CLOSED
+
+Verified recovery acceptance:
+
+- Actual production topology with exactly-once-v2 configuration.
+- Aborted Kafka producer transaction excluded from accepted projections.
+- Read-committed observation of aggregate and tenant outputs.
+- Persistent pending-sequence state verified before interruption.
+- Actual Kafka Docker container stop/start while Streams remained active.
+- Existing Streams application resumed processing after broker recovery.
+- Committed consumer offsets verified before application restart.
+- Same application ID restarted with a fresh local state directory.
+- Pending sequence state restored from Kafka changelog.
+- Tenant metrics restored from Kafka changelog.
+- Restored global event identity conflict detection verified.
+- Previously accepted event replay did not duplicate projections.
+- Missing predecessor released the restored buffered successor.
+- Restored document and workflow lifecycle validation continued.
+- Final aggregate projections and cumulative tenant counters verified.
+- Acceptance internal topics and consumer groups removed.
+- Required application topics preserved.
+
+Regression:
+
+- Full Java regression: 133 passed.
+- Failures, errors and skips: zero.
+- Live dead-letter acceptance: PASSED.
+- Live transactional recovery acceptance: PASSED.
+- Broker interruption and recovery: PASSED.
+- Fresh-directory state restoration: PASSED.
+- Duplicate suppression after restoration: PASSED.
+- Cloud expenditure: EUR 0.
+
+Scope and limitations:
+
+- Single-broker local Kafka deployment.
+- Broker interruption exercised after a committed baseline.
+- Application restart uses orderly shutdown.
+- Abrupt process termination during an open Streams transaction is not
+  established by this acceptance.
+- Multi-broker failover and external exactly-once side effects are not
+  established by this acceptance.
+- Synthetic input and output records remain in shared topics.
+- Operational retention, missing-predecessor reconciliation and
+  synthetic snapshot cleanup remain consolidated acceptance obligations.
+
+E7.3.7 broker recovery and changelog restoration acceptance: CLOSED.
