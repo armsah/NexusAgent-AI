@@ -43,6 +43,16 @@ class LiveSpringGenerationRecoveryTest {
         String app = generation.applicationId();
 
         String tenant = "e738-operational-" + UUID.randomUUID();
+        String registryPath = System.getenv(
+                "NEXUS_ACCEPTANCE_TENANT_REGISTRY");
+
+        assertNotNull(registryPath,
+                "Explicit acceptance registry required");
+
+        var registry = Path.of(registryPath);
+
+        AcceptanceTenantRegistry.register(registry, tenant);
+
         UUID document = UUID.randomUUID();
         UUID event = UUID.randomUUID();
 
@@ -125,6 +135,26 @@ class LiveSpringGenerationRecoveryTest {
                         topics.tenantAnalytics());
 
                 assertTrue(exported.containsKey(tenant));
+
+                var operational =
+                        CurrentTenantSnapshotReader.readOperational(
+                                BOOTSTRAP,
+                                generation,
+                                topics.tenantAnalytics(),
+                                registry);
+
+                assertFalse(operational.containsKey(tenant));
+
+                for (var entry : exported.entrySet()) {
+                    if (!AcceptanceTenantRegistry.read(registry)
+                            .contains(entry.getKey())) {
+                        assertEquals(entry.getValue(),
+                                operational.get(entry.getKey()));
+                    }
+                }
+
+                System.out.println(
+                        "ACCEPTANCE_EXPORT_EXCLUSION_PASSED");
 
                 assertEquals(1,
                         exported.get(tenant)

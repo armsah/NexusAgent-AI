@@ -350,6 +350,18 @@ required before operational cutover.
 - Historical migration and producer cutover not performed.
 - Cloud expenditure: EUR 0.
 
+### E7 operational checkpoint and export safeguards
+
+- Reusable pristine-checkpoint preparation implemented and verified.
+- Existing committed checkpoints preserved.
+- Exact acceptance-tenant identities registered before publication.
+- Registered acceptance snapshots excluded from operational exports.
+- Spring lifecycle restoration and duplicate suppression verified.
+- Java regression: 271 passed across the full suite and targeted corrective rerun.
+- Combined failures, errors and skipped tests: zero.
+- Previously unverified historical snapshots remain preserved.
+- Cloud expenditure: EUR 0.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

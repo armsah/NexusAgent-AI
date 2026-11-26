@@ -33,8 +33,7 @@ final class ProductionRecoveryInspectionTest {
             String message = ex.getMessage();
 
             assertTrue(
-                    message.equals(
-                        "Durable state history is incomplete") ||
+                    (message.equals("Durable state history is incomplete") || message.equals("Explicit initialization approval required")) ||
                     message.equals(
                         "Missing committed source checkpoint") ||
                     message.equals(

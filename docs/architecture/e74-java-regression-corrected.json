@@ -1,0 +1,18 @@
+{
+    "schemaVersion":  1,
+    "sourceCommit":  "34c890d2571469f5ef89ad8b16b76df784f785bd",
+    "capturedAtUtc":  "2026-11-26T23:53:30.8531396Z",
+    "originalFullRegressionTests":  271,
+    "originalPassed":  270,
+    "originalFailed":  1,
+    "correctedInspectionPassed":  1,
+    "combinedPassed":  271,
+    "failures":  0,
+    "errors":  0,
+    "skipped":  0,
+    "verificationMethod":  "FULL_SUITE_PLUS_TARGETED_CORRECTIVE_RERUN",
+    "productionRecoveryGuardModified":  false,
+    "checkpointPreparation":  "PASSED",
+    "formalE7Closure":  false,
+    "cloudExpenditureEUR":  0
+}

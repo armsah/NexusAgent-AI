@@ -126,18 +126,37 @@ public final class CurrentTenantSnapshotReader {
         return Map.copyOf(snapshots);
     }
 
+    public static Map<String, JsonNode> readOperational(
+            String bootstrap,
+            StreamGeneration generation,
+            String sourceTopic,
+            java.nio.file.Path acceptanceRegistry)
+            throws Exception {
+
+        var excluded = AcceptanceTenantRegistry.read(
+                acceptanceRegistry);
+
+        var snapshots = new HashMap<>(
+                read(bootstrap, generation, sourceTopic));
+
+        excluded.forEach(snapshots::remove);
+
+        return Map.copyOf(snapshots);
+    }
+
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) {
+        if (args.length != 3) {
             throw new IllegalArgumentException(
-                    "Expected bootstrap servers and generation");
+                    "Expected bootstrap servers, generation and acceptance registry");
         }
 
         var generation = StreamGeneration.resolve(args[1]);
 
-        var snapshots = read(
+        var snapshots = readOperational(
                 args[0],
                 generation,
-                generation.topics().tenantAnalytics());
+                generation.topics().tenantAnalytics(),
+                java.nio.file.Path.of(args[2]));
 
         System.out.println(new ObjectMapper().writeValueAsString(
                 Map.of(
