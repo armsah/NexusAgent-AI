@@ -10,10 +10,20 @@ public sealed class KafkaEventTransport : IDisposable
     public const string WorkflowsTopic = "nexusagent.workflows.v1";
 
     private readonly IProducer<string, string> producer;
+    private readonly KafkaStreamGeneration generation;
 
     public KafkaEventTransport(string bootstrapServers)
+        : this(bootstrapServers, KafkaStreamGeneration.FromEnvironment())
+    {
+    }
+
+    public KafkaEventTransport(
+        string bootstrapServers,
+        KafkaStreamGeneration generation)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(bootstrapServers);
+        this.generation = generation
+            ?? throw new ArgumentNullException(nameof(generation));
 
         producer = new ProducerBuilder<string, string>(
             new ProducerConfig
@@ -74,7 +84,7 @@ public sealed class KafkaEventTransport : IDisposable
         cancellationToken.ThrowIfCancellationRequested();
 
         var result = await producer.ProduceAsync(
-            topic,
+            generation.Route(topic),
             new Message<string, string>
             {
                 Key = PartitionKey(tenantId, aggregateId),

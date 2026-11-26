@@ -106,6 +106,14 @@ public final class ProductionRecoveryGuard {
 
             var inspectedTopics = new ArrayList<>(topics.all());
 
+            var expectedRepartitions = Set.of(
+                    applicationId + "-event-identity-v1-repartition",
+                    applicationId + "-aggregate-order-v1-repartition",
+                    applicationId + "-tenant-analytics-v1-repartition");
+
+            boolean completeInternalInventory =
+                    names.containsAll(expectedRepartitions);
+
             var repartitionTopics = names.stream()
                     .filter(name -> name.startsWith(
                             applicationId + "-"))
@@ -114,6 +122,14 @@ public final class ProductionRecoveryGuard {
                     .toList();
 
             inspectedTopics.addAll(repartitionTopics);
+
+            boolean established = names.stream().anyMatch(
+                    name -> name.startsWith(applicationId + "-"));
+
+            if (established && !completeInternalInventory) {
+                throw new IllegalStateException(
+                        "Durable state history is incomplete");
+            }
 
             var descriptions = admin.describeTopics(inspectedTopics)
                     .allTopicNames().get(30, TimeUnit.SECONDS);

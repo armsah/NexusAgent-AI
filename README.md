@@ -315,6 +315,18 @@ The prospective namespace has a dedicated provisioning script.
 Live runtime restoration and producer-routing integration remain
 required before operational cutover.
 
+### E7 generation-aware producer integration
+
+- C# document and workflow publishers share generation-aware Kafka routing.
+- Java and C# use `NEXUS_STREAM_GENERATION` with supported values `v1` and `v2`.
+- The default remains `v1`; production cutover is not implicit.
+- Unknown generations and physical topic overrides are rejected.
+- Established stream applications require the expected repartition inventory.
+- Release build and targeted routing and streaming regressions passed.
+- Historical records and unverified acceptance resources remain preserved.
+- Live operational recovery and formal E7 acceptance remain outstanding.
+- Cloud expenditure: EUR 0.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
