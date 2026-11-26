@@ -15,7 +15,7 @@
 | E5.1 | Baseline and source audit | CLOSED |
 | E5.2 | Versioned evaluation datasets | CLOSED |
 | E5.3 | Automated evaluation framework | CLOSED |
-| E5.4 | Hybrid retrieval and citation metrics | OPEN |
+| E5.4 | Hybrid retrieval and citation metrics | CLOSED |
 | E5.5 | Adversarial and prompt-injection testing | OPEN |
 | E5.6 | Inference authentication | OPEN |
 | E5.7 | Concurrency, request limits and timeouts | OPEN |
@@ -83,3 +83,34 @@ No required implementation may be silently deferred.
 - Actual PostgreSQL and inference evaluation follows in E5.4
   and E5.5.
 - Cloud expenditure: EUR 0.
+
+### E5.4 - Hybrid retrieval and citation acceptance
+
+Status: CLOSED.
+
+- Live PostgreSQL/pgvector, Python and Ollama component benchmark.
+- Dataset version: 1.0.0; 12 cases and 8 synthetic documents.
+- Recall@5: 1.00; Precision@5: 0.65; MRR: 1.00.
+- Answer accuracy: 1.00; citation precision: 1.00.
+- Abstention accuracy: 1.00; rejection accuracy: 1.00.
+- Unauthorized exposure rate: 0.00.
+- All eight quantitative acceptance gates passed.
+- Release build passed.
+- .NET regression: 322 passed, zero failed or skipped.
+- Python regression: 96 passed, zero failed or skipped.
+- Semantic retrieval cosine distance cutoff: 0.55.
+- Suspicious evidence filtered before final top-five selection.
+- Llama 3.2 extraction, Mistral answerability and constraint audits.
+- Strict extractive grounding and citation validation retained.
+- Measured report and predictions retained under evaluation/reports.
+- Dataset and prediction SHA-256 hashes verified.
+- Cloud resources provisioned: none.
+- Cloud expenditure: EUR 0.
+
+Limitations:
+- The benchmark was used for iterative development and is not an independent holdout.
+- Model judgments remain probabilistic.
+- The benchmark exercises live retrieval and generation components rather than the complete governed API.
+- Independent adversarial and holdout acceptance remains required in E5.5/E5.9.
+- Diagnostic ML packages installed locally are not application dependencies.
+- CR034 remains open until final E5 integration and merge.

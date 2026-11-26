@@ -1,0 +1,114 @@
+{
+  "EVAL-001": {
+    "retrieved_documents": [
+      "D01",
+      "D02",
+      "D08",
+      "D07"
+    ],
+    "cited_documents": [
+      "D01"
+    ],
+    "outcome": "answer",
+    "answer": "NexusAgent uses PostgreSQL for durable workflow storage."
+  },
+  "EVAL-002": {
+    "retrieved_documents": [
+      "D02"
+    ],
+    "cited_documents": [
+      "D02"
+    ],
+    "outcome": "answer",
+    "answer": "Kafka distributes workflow events to downstream consumers."
+  },
+  "EVAL-003": {
+    "retrieved_documents": [
+      "D03",
+      "D08"
+    ],
+    "cited_documents": [
+      "D03"
+    ],
+    "outcome": "answer",
+    "answer": "Angular provides the agent monitoring dashboard."
+  },
+  "EVAL-004": {
+    "retrieved_documents": [],
+    "cited_documents": [],
+    "outcome": "abstain",
+    "answer": null
+  },
+  "EVAL-005": {
+    "retrieved_documents": [
+      "D01",
+      "D08"
+    ],
+    "cited_documents": [],
+    "outcome": "abstain",
+    "answer": null
+  },
+  "EVAL-006": {
+    "retrieved_documents": [
+      "D02"
+    ],
+    "cited_documents": [],
+    "outcome": "abstain",
+    "answer": null
+  },
+  "EVAL-007": {
+    "retrieved_documents": [
+      "D08",
+      "D07"
+    ],
+    "cited_documents": [],
+    "outcome": "abstain",
+    "answer": null
+  },
+  "EVAL-008": {
+    "retrieved_documents": [],
+    "cited_documents": [],
+    "outcome": "reject",
+    "answer": null
+  },
+  "EVAL-009": {
+    "retrieved_documents": [
+      "D08"
+    ],
+    "cited_documents": [],
+    "outcome": "abstain",
+    "answer": null
+  },
+  "EVAL-010": {
+    "retrieved_documents": [
+      "D07",
+      "D08"
+    ],
+    "cited_documents": [
+      "D07"
+    ],
+    "outcome": "answer",
+    "answer": "Expired execution leases permit bounded recovery attempts."
+  },
+  "EVAL-011": {
+    "retrieved_documents": [
+      "D08"
+    ],
+    "cited_documents": [
+      "D08"
+    ],
+    "outcome": "answer",
+    "answer": "Human approval is required for high-risk tool execution."
+  },
+  "EVAL-012": {
+    "retrieved_documents": [
+      "D01",
+      "D08",
+      "D02",
+      "D03"
+    ],
+    "cited_documents": [],
+    "outcome": "abstain",
+    "answer": null
+  }
+}

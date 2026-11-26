@@ -943,6 +943,203 @@ public sealed class MultiAgentAcceptanceTests
         }
     }
 
+    [Fact]
+    [Trait("Category", "LiveLocalAI")]
+    public async Task LiveHybridEvaluationBenchmark()
+    {
+        await using var factory = new AgentFactory("Development", true);
+        using var client = factory.CreateClient();
+        await using var scope = factory.Services.CreateAsyncScope();
+
+        var services = scope.ServiceProvider;
+        var db = services.GetRequiredService<NexusAgentDbContext>();
+        var embeddings = services.GetRequiredService<ITextEmbeddingProvider>();
+        var retriever = services.GetRequiredService<IAuthorizedEvidenceRetriever>();
+        var generator = services.GetRequiredService<IGroundedAnswerGenerator>();
+
+        using var budget = new CancellationTokenSource(
+            TimeSpan.FromMinutes(30));
+
+        var ct = budget.Token;
+
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (root is not null &&
+               !File.Exists(Path.Combine(root.FullName, "NexusAgent.slnx")))
+            root = root.Parent;
+
+        Assert.NotNull(root);
+
+        var evaluation = Path.Combine(root.FullName,
+            "services", "nexusagent-ai", "evaluation");
+
+        using var dataset = System.Text.Json.JsonDocument.Parse(
+            await File.ReadAllTextAsync(
+                Path.Combine(evaluation, "datasets", "v1", "benchmark.json"), ct));
+
+        var prefix = "e5-" + Guid.NewGuid().ToString("N") + "-";
+        var documents = new Dictionary<Guid, string>();
+        var workflowIds = new List<Guid>();
+        var predictions = new Dictionary<string, object>();
+
+        static string Text(System.Text.Json.JsonElement item, string key)
+            => item.GetProperty(key).GetString()!;
+
+        string Map(Guid id) =>
+            documents.TryGetValue(id, out var name)
+                ? name : "UNKNOWN-" + id;
+
+        try
+        {
+            foreach (var item in dataset.RootElement
+                .GetProperty("documents").EnumerateArray())
+            {
+                var principals = item.GetProperty("principals")
+                    .EnumerateArray()
+                    .Select(value => value.GetString()!)
+                    .ToArray();
+
+                var id = Guid.NewGuid();
+                var tenant = prefix + Text(item, "tenant");
+                var content = Text(item, "text");
+
+                var document = KnowledgeDocument.Create(
+                    id, tenant, Text(item, "id"), "internal",
+                    principals[0], principals, DateTimeOffset.UtcNow);
+
+                documents.Add(id, Text(item, "id"));
+                db.KnowledgeDocuments.Add(document);
+
+                await db.SaveChangesAsync(ct);
+
+                AddIndex(db, document, content, false);
+
+                var embedding = await embeddings.EmbedAsync(content, ct);
+
+                Assert.Equal(1536, embedding.Length);
+                Assert.All(embedding, value =>
+                    Assert.True(float.IsFinite(value)));
+
+                db.DocumentVectorIndexes.Add(new DocumentVectorIndex
+                {
+                    DocumentId = id,
+                    TenantId = tenant,
+                    ContentVersion = document.ContentVersion,
+                    EmbeddingModel = embeddings.ModelId,
+                    Embedding = new Vector(embedding),
+                    IndexedAt = DateTimeOffset.UtcNow
+                });
+
+                await db.SaveChangesAsync(ct);
+            }
+
+            foreach (var item in dataset.RootElement
+                .GetProperty("cases").EnumerateArray())
+            {
+                var caseId = Text(item, "id");
+                var tenant = prefix + Text(item, "tenant");
+                var principal = Text(item, "principal");
+                var question = Text(item, "question");
+
+                var workflow = Workflow.Create(
+                    Guid.NewGuid(), principal, tenant,
+                    question, DateTimeOffset.UtcNow);
+
+                workflowIds.Add(workflow.Id);
+                db.Workflows.Add(workflow);
+                await db.SaveChangesAsync(ct);
+
+                string outcome;
+                string? answer = null;
+                string[] retrieved = [];
+                string[] cited = [];
+
+                if (PromptInjectionDefense.IsSuspicious(question))
+                {
+                    outcome = "reject";
+                }
+                else
+                {
+                    var evidence = await retriever.RetrieveAsync(
+                        workflow.Id, tenant, question, ct);
+
+                    retrieved = evidence.Select(x => Map(x.DocumentId))
+                        .ToArray();
+
+                    outcome = "abstain";
+
+                    if (evidence.Count > 0)
+                    {
+                        var generated = await generator.GenerateAsync(
+                            question, evidence, ct);
+
+                        if (ExtractiveGroundingVerifier.IsSupported(
+                            generated, evidence))
+                        {
+                            outcome = "answer";
+
+                            answer = System.Text.RegularExpressions.Regex.Replace(
+                                generated.Answer,
+                                @"\s*\[S[1-9][0-9]*\]", "").Trim();
+
+                            cited = generated.CitedSourceIds
+                                .Select(id => Map(evidence.Single(
+                                    source => source.SourceId == id).DocumentId))
+                                .ToArray();
+                        }
+                    }
+                }
+
+                predictions.Add(caseId, new
+                {
+                    retrieved_documents = retrieved,
+                    cited_documents = cited,
+                    outcome,
+                    answer
+                });
+            }
+
+            Assert.Equal(12, predictions.Count);
+
+            var output = Environment.GetEnvironmentVariable(
+                "NEXUS_EVALUATION_OUTPUT")
+                ?? Path.Combine(Path.GetTempPath(),
+                    "nexus-e5-live-predictions.json");
+
+            await File.WriteAllTextAsync(
+                output,
+                System.Text.Json.JsonSerializer.Serialize(
+                    predictions,
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    }),
+                ct);
+        }
+        finally
+        {
+            db.ChangeTracker.Clear();
+
+            var ids = documents.Keys.ToArray();
+
+            await db.DocumentVectorIndexes
+                .Where(x => ids.Contains(x.DocumentId))
+                .ExecuteDeleteAsync();
+
+            await db.DocumentSearchIndexes
+                .Where(x => ids.Contains(x.DocumentId))
+                .ExecuteDeleteAsync();
+
+            await db.KnowledgeDocuments
+                .Where(x => ids.Contains(x.Id))
+                .ExecuteDeleteAsync();
+
+            await db.Workflows
+                .Where(x => workflowIds.Contains(x.Id))
+                .ExecuteDeleteAsync();
+        }
+    }
+
     private static KnowledgeDocument AddDocument(
         NexusAgentDbContext db,
         List<Guid> ids,

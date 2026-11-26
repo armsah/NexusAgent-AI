@@ -93,6 +93,7 @@ public sealed class PostgresEvidenceRetriever(
                 where vector.TenantId == tenantId
                     && vector.ContentVersion == item.ContentVersion
                     && vector.EmbeddingModel == model
+                    && vector.Embedding.CosineDistance(queryVector) <= 0.55
                 orderby vector.Embedding.CosineDistance(queryVector),
                     item.Id
                 select item.Id)
@@ -117,7 +118,6 @@ public sealed class PostgresEvidenceRetriever(
         var selected = scores
             .OrderByDescending(item => item.Value)
             .ThenBy(item => item.Key)
-            .Take(5)
             .Select(item => item.Key)
             .ToArray();
 
@@ -133,6 +133,7 @@ public sealed class PostgresEvidenceRetriever(
             .Where(item =>
                 !PromptInjectionDefense.IsSuspicious(item.Content) &&
                 !PromptInjectionDefense.IsSuspicious(item.Title))
+            .Take(5)
             .Select((item, position) =>
                 new GroundingEvidence(
                     $"S{position + 1}",
