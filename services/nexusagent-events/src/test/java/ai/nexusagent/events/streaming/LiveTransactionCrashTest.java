@@ -42,6 +42,27 @@ import java.util.concurrent.atomic.AtomicReference;
 
 class LiveTransactionCrashTest {
 
+    private static AcceptanceTopicFixture acceptanceFixture;
+    private static StreamTopics acceptanceTopics;
+
+    @org.junit.jupiter.api.BeforeAll
+    static void initializeAcceptanceTopics() throws Exception {
+
+        acceptanceFixture =
+                new AcceptanceTopicFixture(BOOTSTRAP);
+
+        acceptanceTopics = acceptanceFixture.topics();
+    }
+
+    @org.junit.jupiter.api.AfterAll
+    static void removeAcceptanceTopics() throws Exception {
+
+        if (acceptanceFixture != null) {
+            acceptanceFixture.close();
+        }
+    }
+
+
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private static final String BOOTSTRAP =
@@ -143,7 +164,7 @@ class LiveTransactionCrashTest {
             awaitPipeline(
                     producer, committed, tenant, failure);
 
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     key, event);
 
             awaitFile(child, marker, 30);
@@ -154,7 +175,7 @@ class LiveTransactionCrashTest {
                     java.nio.file.Files.readString(marker);
 
             assertTrue(coordinate.startsWith(
-                    StreamSettings.ANALYTICS + ":"));
+                    acceptanceTopics.analytics() + ":"));
 
             // Prove the target output physically reached Kafka.
             boolean rawOutputFound = false;
@@ -169,7 +190,7 @@ class LiveTransactionCrashTest {
                         uncommitted.poll(Duration.ofMillis(100))) {
 
                     if (record.topic().equals(
-                            StreamSettings.ANALYTICS)
+                            acceptanceTopics.analytics())
                             && record.value() != null
                             && record.value().contains(
                                     eventId.toString())) {
@@ -235,10 +256,10 @@ class LiveTransactionCrashTest {
             assertEquals(1, projections.size());
 
             // Replay accepted identity and then advance the aggregate.
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     key, event);
 
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     key, document(
                             tenant, aggregate, successorId,
                             2, "document.updated"));
@@ -260,14 +281,14 @@ class LiveTransactionCrashTest {
                         committed.poll(Duration.ofMillis(250))) {
 
                     if (record.topic().equals(
-                            StreamSettings.ANALYTICS)) {
+                            acceptanceTopics.analytics())) {
 
                         collectProjection(
                                 projections, tenant,
                                 record.value());
 
                     } else if (record.topic().equals(
-                            StreamSettings.TENANT_ANALYTICS)
+                            acceptanceTopics.tenantAnalytics())
                             && tenant.equals(record.key())) {
 
                         JsonNode metrics =
@@ -298,7 +319,7 @@ class LiveTransactionCrashTest {
                         }
 
                     } else if (record.topic().equals(
-                            StreamSettings.DEAD_LETTERS)) {
+                            acceptanceTopics.deadLetters())) {
 
                         // No valid crash-target event should be rejected.
                         assertFalse(record.value() != null
@@ -333,14 +354,14 @@ class LiveTransactionCrashTest {
                         committed.poll(Duration.ofMillis(250))) {
 
                     if (record.topic().equals(
-                            StreamSettings.ANALYTICS)) {
+                            acceptanceTopics.analytics())) {
 
                         collectProjection(
                                 projections, tenant,
                                 record.value());
 
                     } else if (record.topic().equals(
-                            StreamSettings.TENANT_ANALYTICS)
+                            acceptanceTopics.tenantAnalytics())
                             && tenant.equals(record.key())) {
 
                         assertEquals(2,
@@ -421,9 +442,9 @@ class LiveTransactionCrashTest {
             throws Exception {
 
         var descriptions = admin.describeTopics(Set.of(
-                StreamSettings.ANALYTICS,
-                StreamSettings.TENANT_ANALYTICS,
-                StreamSettings.DEAD_LETTERS))
+                acceptanceTopics.analytics(),
+                acceptanceTopics.tenantAnalytics(),
+                acceptanceTopics.deadLetters()))
                 .allTopicNames().get(20, TimeUnit.SECONDS);
 
         List<TopicPartition> partitions = new ArrayList<>();
@@ -465,7 +486,12 @@ class LiveTransactionCrashTest {
                 directory.toAbsolutePath().toString(),
                 eventId.toString(),
                 marker.toAbsolutePath().toString(),
-                Boolean.toString(crashMode))
+                Boolean.toString(crashMode),
+                acceptanceTopics.documents(),
+                acceptanceTopics.workflows(),
+                acceptanceTopics.analytics(),
+                acceptanceTopics.deadLetters(),
+                acceptanceTopics.tenantAnalytics())
                 .redirectErrorStream(true)
                 .redirectOutput(log.toFile())
                 .start();
@@ -669,7 +695,7 @@ class LiveTransactionCrashTest {
 
             UUID aggregate = UUID.randomUUID();
 
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     StreamIdentity.aggregateKey(
                             probeTenant, aggregate),
                     document(probeTenant, aggregate,
@@ -683,7 +709,7 @@ class LiveTransactionCrashTest {
                         observer.poll(Duration.ofMillis(250))) {
 
                     if (record.topic().equals(
-                            StreamSettings.TENANT_ANALYTICS)
+                            acceptanceTopics.tenantAnalytics())
                             && probeTenant.equals(record.key())) {
                         return;
                     }
@@ -710,7 +736,7 @@ class LiveTransactionCrashTest {
                     observer.poll(Duration.ofMillis(250))) {
 
                 if (record.topic().equals(
-                        StreamSettings.ANALYTICS)) {
+                        acceptanceTopics.analytics())) {
 
                     collectProjection(
                             projections, tenant, record.value());
@@ -741,7 +767,7 @@ class LiveTransactionCrashTest {
                     observer.poll(Duration.ofMillis(250))) {
 
                 if (record.topic().equals(
-                        StreamSettings.DEAD_LETTERS)
+                        acceptanceTopics.deadLetters())
                         && coordinate(expected.metadata())
                                 .equals(record.key())) {
 

@@ -42,6 +42,27 @@ import java.util.concurrent.atomic.AtomicReference;
 
 class LiveDeadLetterAcceptanceTest {
 
+    private static AcceptanceTopicFixture acceptanceFixture;
+    private static StreamTopics acceptanceTopics;
+
+    @org.junit.jupiter.api.BeforeAll
+    static void initializeAcceptanceTopics() throws Exception {
+
+        acceptanceFixture =
+                new AcceptanceTopicFixture(BOOTSTRAP);
+
+        acceptanceTopics = acceptanceFixture.topics();
+    }
+
+    @org.junit.jupiter.api.AfterAll
+    static void removeAcceptanceTopics() throws Exception {
+
+        if (acceptanceFixture != null) {
+            acceptanceFixture.close();
+        }
+    }
+
+
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private static final String BOOTSTRAP =
@@ -153,9 +174,9 @@ class LiveDeadLetterAcceptanceTest {
                      new KafkaConsumer<>(consumerProperties)) {
 
             Set<String> outputs = Set.of(
-                    StreamSettings.DEAD_LETTERS,
-                    StreamSettings.ANALYTICS,
-                    StreamSettings.TENANT_ANALYTICS);
+                    acceptanceTopics.deadLetters(),
+                    acceptanceTopics.analytics(),
+                    acceptanceTopics.tenantAnalytics());
 
             var descriptions = admin.describeTopics(outputs)
                     .allTopicNames().get(20, TimeUnit.SECONDS);
@@ -187,7 +208,7 @@ class LiveDeadLetterAcceptanceTest {
                     "latest");
 
             KafkaStreams streams = new KafkaStreams(
-                    EventStreamTopology.build(), streamProperties);
+                    EventStreamTopology.build(acceptanceTopics), streamProperties);
 
             streams.setUncaughtExceptionHandler(error -> {
                 runtimeFailure.compareAndSet(null, error);
@@ -220,7 +241,7 @@ class LiveDeadLetterAcceptanceTest {
                         tenant, aggregate, originalId,
                         1, "document.created");
 
-                send(producer, StreamSettings.DOCUMENTS,
+                send(producer, acceptanceTopics.documents(),
                         documentKey, first);
 
                 awaitProjection(
@@ -228,25 +249,25 @@ class LiveDeadLetterAcceptanceTest {
                         projections, runtimeFailure);
 
                 expect(expected, "INVALID_CONTRACT_OR_KEY",
-                        send(producer, StreamSettings.DOCUMENTS,
+                        send(producer, acceptanceTopics.documents(),
                                 documentKey,
                                 "{\"secret\":\"" + secret));
 
                 expect(expected, "EMPTY_PAYLOAD",
-                        send(producer, StreamSettings.DOCUMENTS,
+                        send(producer, acceptanceTopics.documents(),
                                 documentKey, null));
 
                 expect(expected, "EMPTY_PAYLOAD",
-                        send(producer, StreamSettings.DOCUMENTS,
+                        send(producer, acceptanceTopics.documents(),
                                 documentKey, "   "));
 
                 expect(expected, "PAYLOAD_TOO_LARGE",
-                        send(producer, StreamSettings.DOCUMENTS,
+                        send(producer, acceptanceTopics.documents(),
                                 documentKey,
                                 secret.repeat(1000)));
 
                 expect(expected, "INVALID_CONTRACT_OR_KEY",
-                        send(producer, StreamSettings.DOCUMENTS,
+                        send(producer, acceptanceTopics.documents(),
                                 "wrong-key-" + secret,
                                 document(tenant, aggregate,
                                         UUID.randomUUID(), 2,
@@ -261,33 +282,33 @@ class LiveDeadLetterAcceptanceTest {
                 unknownField.put("privateCredential", secret);
 
                 expect(expected, "INVALID_CONTRACT_OR_KEY",
-                        send(producer, StreamSettings.DOCUMENTS,
+                        send(producer, acceptanceTopics.documents(),
                                 documentKey, unknownField.toString()));
 
                 UUID other = UUID.randomUUID();
 
                 expect(expected, "GLOBAL_EVENT_ID_CONFLICT",
-                        send(producer, StreamSettings.DOCUMENTS,
+                        send(producer, acceptanceTopics.documents(),
                                 StreamIdentity.aggregateKey(
                                         tenant, other),
                                 document(tenant, other, originalId,
                                         1, "document.created")));
 
                 expect(expected, "GLOBAL_EVENT_ID_CONFLICT",
-                        send(producer, StreamSettings.WORKFLOWS,
+                        send(producer, acceptanceTopics.workflows(),
                                 workflowKey,
                                 workflow(tenant, workflow,
                                         originalId, 1, "STARTED")));
 
                 expect(expected, "SEQUENCE_CONFLICT",
-                        send(producer, StreamSettings.DOCUMENTS,
+                        send(producer, acceptanceTopics.documents(),
                                 documentKey,
                                 document(tenant, aggregate,
                                         UUID.randomUUID(), 1,
                                         "document.created")));
 
                 expect(expected, "SEQUENCE_GAP_LIMIT_EXCEEDED",
-                        send(producer, StreamSettings.DOCUMENTS,
+                        send(producer, acceptanceTopics.documents(),
                                 documentKey,
                                 document(tenant, aggregate,
                                         UUID.randomUUID(), 2048,
@@ -295,7 +316,7 @@ class LiveDeadLetterAcceptanceTest {
 
                 UUID workflowStart = UUID.randomUUID();
 
-                send(producer, StreamSettings.WORKFLOWS,
+                send(producer, acceptanceTopics.workflows(),
                         workflowKey,
                         workflow(tenant, workflow,
                                 workflowStart, 1, "STARTED"));
@@ -315,7 +336,7 @@ class LiveDeadLetterAcceptanceTest {
                             observer.poll(Duration.ofMillis(250))) {
 
                         if (record.topic().equals(
-                                StreamSettings.DEAD_LETTERS)) {
+                                acceptanceTopics.deadLetters())) {
 
                             ExpectedFailure failure =
                                     expected.get(record.key());
@@ -332,7 +353,7 @@ class LiveDeadLetterAcceptanceTest {
                                     "Duplicate committed DLQ record");
 
                         } else if (record.topic().equals(
-                                StreamSettings.ANALYTICS)) {
+                                acceptanceTopics.analytics())) {
 
                             collectProjection(
                                     projections, tenant,
@@ -350,7 +371,7 @@ class LiveDeadLetterAcceptanceTest {
                 // A lifecycle-invalid event must not poison the
                 // aggregate or prevent a valid replacement.
                 RecordMetadata invalidTransition = send(
-                        producer, StreamSettings.WORKFLOWS,
+                        producer, acceptanceTopics.workflows(),
                         workflowKey,
                         workflow(tenant, workflow,
                                 UUID.randomUUID(), 2, "APPROVED"));
@@ -370,13 +391,13 @@ class LiveDeadLetterAcceptanceTest {
                         tenant, aggregate, updateId,
                         2, "document.updated");
 
-                send(producer, StreamSettings.DOCUMENTS,
+                send(producer, acceptanceTopics.documents(),
                         documentKey, update);
 
-                send(producer, StreamSettings.DOCUMENTS,
+                send(producer, acceptanceTopics.documents(),
                         documentKey, update);
 
-                send(producer, StreamSettings.WORKFLOWS,
+                send(producer, acceptanceTopics.workflows(),
                         workflowKey,
                         workflow(tenant, workflow,
                                 completedId, 2, "COMPLETED"));
@@ -399,14 +420,14 @@ class LiveDeadLetterAcceptanceTest {
                             observer.poll(Duration.ofMillis(250))) {
 
                         if (record.topic().equals(
-                                StreamSettings.ANALYTICS)) {
+                                acceptanceTopics.analytics())) {
 
                             collectProjection(
                                     projections, tenant,
                                     record.value());
 
                         } else if (record.topic().equals(
-                                StreamSettings.TENANT_ANALYTICS)
+                                acceptanceTopics.tenantAnalytics())
                                 && tenant.equals(record.key())) {
 
                             JsonNode metrics =
@@ -644,7 +665,7 @@ class LiveDeadLetterAcceptanceTest {
 
             UUID aggregate = UUID.randomUUID();
 
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     StreamIdentity.aggregateKey(
                             probeTenant, aggregate),
                     document(probeTenant, aggregate,
@@ -658,7 +679,7 @@ class LiveDeadLetterAcceptanceTest {
                         observer.poll(Duration.ofMillis(250))) {
 
                     if (record.topic().equals(
-                            StreamSettings.TENANT_ANALYTICS)
+                            acceptanceTopics.tenantAnalytics())
                             && probeTenant.equals(record.key())) {
                         return;
                     }
@@ -685,7 +706,7 @@ class LiveDeadLetterAcceptanceTest {
                     observer.poll(Duration.ofMillis(250))) {
 
                 if (record.topic().equals(
-                        StreamSettings.ANALYTICS)) {
+                        acceptanceTopics.analytics())) {
 
                     collectProjection(
                             projections, tenant, record.value());
@@ -716,7 +737,7 @@ class LiveDeadLetterAcceptanceTest {
                     observer.poll(Duration.ofMillis(250))) {
 
                 if (record.topic().equals(
-                        StreamSettings.DEAD_LETTERS)
+                        acceptanceTopics.deadLetters())
                         && coordinate(expected.metadata())
                                 .equals(record.key())) {
 

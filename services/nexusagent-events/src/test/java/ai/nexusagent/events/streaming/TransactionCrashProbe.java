@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class TransactionCrashProbe {
 
+    private static StreamTopics acceptanceTopics;
     private static String targetEvent;
     private static Path marker;
 
@@ -32,10 +33,16 @@ public final class TransactionCrashProbe {
 
         boolean crashMode = Boolean.parseBoolean(args[5]);
 
+        acceptanceTopics = new StreamTopics(
+                args[6], args[7], args[8],
+                args[9], args[10]);
+
         var properties = StreamSettings.create(
                 bootstrap, appId, state);
 
-        properties.put("auto.offset.reset", "latest");
+        // Dedicated acceptance topics contain no unrelated history.
+// Recover uncommitted partitions from their earliest offset.
+        properties.put("auto.offset.reset", "earliest");
 
         properties.put(
                 StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 100);
@@ -50,7 +57,7 @@ public final class TransactionCrashProbe {
         }
 
         KafkaStreams streams = new KafkaStreams(
-                EventStreamTopology.build(), properties);
+                EventStreamTopology.build(acceptanceTopics), properties);
 
         streams.setUncaughtExceptionHandler(error -> {
             error.printStackTrace();
@@ -90,7 +97,7 @@ public final class TransactionCrashProbe {
         public ProducerRecord<byte[], byte[]> onSend(
                 ProducerRecord<byte[], byte[]> record) {
 
-            if (record.topic().equals(StreamSettings.ANALYTICS)
+            if (record.topic().equals(acceptanceTopics.analytics())
                     && record.value() != null) {
 
                 String value = new String(
@@ -111,7 +118,7 @@ public final class TransactionCrashProbe {
 
             if (exception == null
                     && metadata != null
-                    && StreamSettings.ANALYTICS.equals(
+                    && acceptanceTopics.analytics().equals(
                             metadata.topic())
                     && armed.get()
                     && blocked.compareAndSet(false, true)) {

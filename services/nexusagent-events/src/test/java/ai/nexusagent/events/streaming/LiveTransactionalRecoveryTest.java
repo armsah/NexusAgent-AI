@@ -41,6 +41,27 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 class LiveTransactionalRecoveryTest {
+
+    private static AcceptanceTopicFixture acceptanceFixture;
+    private static StreamTopics acceptanceTopics;
+
+    @org.junit.jupiter.api.BeforeAll
+    static void initializeAcceptanceTopics() throws Exception {
+
+        acceptanceFixture =
+                new AcceptanceTopicFixture(BOOTSTRAP);
+
+        acceptanceTopics = acceptanceFixture.topics();
+    }
+
+    @org.junit.jupiter.api.AfterAll
+    static void removeAcceptanceTopics() throws Exception {
+
+        if (acceptanceFixture != null) {
+            acceptanceFixture.close();
+        }
+    }
+
     private static final java.util.Map<String, java.time.Instant>
             verifiedPendingObservations =
                     new java.util.concurrent.ConcurrentHashMap<>();
@@ -188,9 +209,9 @@ class LiveTransactionalRecoveryTest {
                      new KafkaConsumer<>(consumerProperties)) {
 
             Set<String> outputTopics = Set.of(
-                    StreamSettings.ANALYTICS,
-                    StreamSettings.TENANT_ANALYTICS,
-                    StreamSettings.DEAD_LETTERS);
+                    acceptanceTopics.analytics(),
+                    acceptanceTopics.tenantAnalytics(),
+                    acceptanceTopics.deadLetters());
 
             var descriptions = admin.describeTopics(outputTopics)
                     .allTopicNames().get(20, TimeUnit.SECONDS);
@@ -233,7 +254,7 @@ class LiveTransactionalRecoveryTest {
                 transactional.beginTransaction();
 
                 send(transactional,
-                        StreamSettings.DOCUMENTS,
+                        acceptanceTopics.documents(),
                         StreamIdentity.aggregateKey(
                                 tenant, abortedAggregate),
                         document(tenant, abortedAggregate,
@@ -242,10 +263,10 @@ class LiveTransactionalRecoveryTest {
                 transactional.abortTransaction();
             }
 
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     key, first);
 
-            send(producer, StreamSettings.WORKFLOWS,
+            send(producer, acceptanceTopics.workflows(),
                     workflowKey,
                     workflow(tenant, workflowId,
                             workflowStart, 1, "STARTED"));
@@ -257,13 +278,13 @@ class LiveTransactionalRecoveryTest {
                     abortedId.toString()));
 
             // Buffer sequence three while sequence two is missing.
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     key, third);
 
             // Publish a barrier on the same source partition.
             // Its committed DLQ proves that source processing advanced.
             RecordMetadata barrier = send(
-                    producer, StreamSettings.DOCUMENTS,
+                    producer, acceptanceTopics.documents(),
                     key, "{invalid-recovery-barrier");
 
             awaitFailure(observer,
@@ -313,7 +334,7 @@ class LiveTransactionalRecoveryTest {
 
             String probeTenant = tenant + "-broker-recovery";
 
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     StreamIdentity.aggregateKey(
                             probeTenant, recoveryProbe),
                     document(probeTenant, recoveryProbe,
@@ -354,14 +375,14 @@ class LiveTransactionalRecoveryTest {
                     "RECOVERY: fresh-directory changelog restoration PASSED");
 
             // Replay the already accepted event.
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     key, first);
 
             // Reuse its identity for another aggregate.
             UUID conflictingAggregate = UUID.randomUUID();
 
             RecordMetadata conflict = send(
-                    producer, StreamSettings.DOCUMENTS,
+                    producer, acceptanceTopics.documents(),
                     StreamIdentity.aggregateKey(
                             tenant, conflictingAggregate),
                     document(tenant, conflictingAggregate,
@@ -375,23 +396,23 @@ class LiveTransactionalRecoveryTest {
 
             // Release the buffered third event by supplying
             // its missing predecessor.
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     key, second);
 
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     key, second);
 
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     key, third);
 
             awaitMetrics(observer, tenant, projections,
                     failure, 4, 1, 1, 0);
 
             // Continue the restored document and workflow lifecycles.
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     key, fourth);
 
-            send(producer, StreamSettings.WORKFLOWS,
+            send(producer, acceptanceTopics.workflows(),
                     workflowKey,
                     workflow(tenant, workflowId,
                             workflowComplete, 2, "COMPLETED"));
@@ -438,13 +459,13 @@ class LiveTransactionalRecoveryTest {
                         observer.poll(Duration.ofMillis(250))) {
 
                     if (record.topic().equals(
-                            StreamSettings.ANALYTICS)) {
+                            acceptanceTopics.analytics())) {
 
                         collectProjection(
                                 projections, tenant, record.value());
 
                     } else if (record.topic().equals(
-                            StreamSettings.TENANT_ANALYTICS)
+                            acceptanceTopics.tenantAnalytics())
                             && tenant.equals(record.key())) {
 
                         JsonNode metrics =
@@ -535,7 +556,7 @@ class LiveTransactionalRecoveryTest {
                 "read_committed");
 
         KafkaStreams streams = new KafkaStreams(
-                EventStreamTopology.build(), properties);
+                EventStreamTopology.build(acceptanceTopics), properties);
 
         streams.setUncaughtExceptionHandler(error -> {
             failure.compareAndSet(null, error);
@@ -827,13 +848,13 @@ class LiveTransactionalRecoveryTest {
                     observer.poll(Duration.ofMillis(250))) {
 
                 if (record.topic().equals(
-                        StreamSettings.ANALYTICS)) {
+                        acceptanceTopics.analytics())) {
 
                     collectProjection(
                             projections, tenant, record.value());
 
                 } else if (record.topic().equals(
-                        StreamSettings.TENANT_ANALYTICS)
+                        acceptanceTopics.tenantAnalytics())
                         && tenant.equals(record.key())) {
 
                     JsonNode metrics =
@@ -1052,7 +1073,7 @@ class LiveTransactionalRecoveryTest {
 
             UUID aggregate = UUID.randomUUID();
 
-            send(producer, StreamSettings.DOCUMENTS,
+            send(producer, acceptanceTopics.documents(),
                     StreamIdentity.aggregateKey(
                             probeTenant, aggregate),
                     document(probeTenant, aggregate,
@@ -1066,7 +1087,7 @@ class LiveTransactionalRecoveryTest {
                         observer.poll(Duration.ofMillis(250))) {
 
                     if (record.topic().equals(
-                            StreamSettings.TENANT_ANALYTICS)
+                            acceptanceTopics.tenantAnalytics())
                             && probeTenant.equals(record.key())) {
                         return;
                     }
@@ -1093,7 +1114,7 @@ class LiveTransactionalRecoveryTest {
                     observer.poll(Duration.ofMillis(250))) {
 
                 if (record.topic().equals(
-                        StreamSettings.ANALYTICS)) {
+                        acceptanceTopics.analytics())) {
 
                     collectProjection(
                             projections, tenant, record.value());
@@ -1124,7 +1145,7 @@ class LiveTransactionalRecoveryTest {
                     observer.poll(Duration.ofMillis(250))) {
 
                 if (record.topic().equals(
-                        StreamSettings.DEAD_LETTERS)
+                        acceptanceTopics.deadLetters())
                         && coordinate(expected.metadata())
                                 .equals(record.key())) {
 

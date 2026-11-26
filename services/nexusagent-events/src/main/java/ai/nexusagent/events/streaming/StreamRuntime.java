@@ -43,6 +43,11 @@ public final class StreamRuntime implements SmartLifecycle {
                 Path.of(System.getProperty("java.io.tmpdir"),
                         "nexusagent-streams").toString()));
 
+        BrokerRetentionGuard.verify(
+                bootstrap,
+                applicationId,
+                StreamTopics.production());
+
         streams = new KafkaStreams(
                 EventStreamTopology.build(),
                 StreamSettings.create(bootstrap, applicationId, state));

@@ -39,6 +39,11 @@ public final class EventStreamTopology {
     private EventStreamTopology() {}
 
     public static Topology build() {
+        return build(StreamTopics.production());
+    }
+
+    public static Topology build(StreamTopics topics) {
+        java.util.Objects.requireNonNull(topics);
         var serde = Serdes.String();
         var builder = new StreamsBuilder();
 
@@ -56,21 +61,21 @@ public final class EventStreamTopology {
         }
 
         KStream<String, String> documents = builder.stream(
-                StreamSettings.DOCUMENTS,
+                topics.documents(),
                 Consumed.with(serde, serde));
 
         KStream<String, String> workflows = builder.stream(
-                StreamSettings.WORKFLOWS,
+                topics.workflows(),
                 Consumed.with(serde, serde));
 
         var validated = documents.merge(workflows)
                 .process(
-                        ValidationProcessor::new,
+                        () -> new ValidationProcessor(topics),
                         Named.as("validate-source-events"));
 
         validated.filter((key, value) -> key.startsWith("failure:"))
                 .selectKey((key, value) -> key.substring(8))
-                .to(StreamSettings.DEAD_LETTERS,
+                .to(topics.deadLetters(),
                         Produced.with(serde, serde));
 
         var byIdentity = validated
@@ -88,7 +93,7 @@ public final class EventStreamTopology {
 
         registered.filter((key, value) -> key.startsWith("failure:"))
                 .selectKey((key, value) -> key.substring(8))
-                .to(StreamSettings.DEAD_LETTERS,
+                .to(topics.deadLetters(),
                         Produced.with(serde, serde));
 
         var byAggregate = registered
@@ -100,20 +105,20 @@ public final class EventStreamTopology {
                                 .withNumberOfPartitions(3));
 
         var projected = byAggregate.process(
-                EventProcessor::new,
+                () -> new EventProcessor(topics),
                 Named.as("validate-and-project"),
                 HISTORY, IDENTITIES, LATEST, PENDING,
                 ReconciliationAudit.STORE);
 
         projected.filter((key, value) -> key.startsWith("failure:"))
                 .selectKey((key, value) -> key.substring(8))
-                .to(StreamSettings.DEAD_LETTERS,
+                .to(topics.deadLetters(),
                         Produced.with(serde, serde));
 
         var accepted = projected.filter(
                 (key, value) -> !key.startsWith("failure:"));
 
-        accepted.to(StreamSettings.ANALYTICS,
+        accepted.to(topics.analytics(),
                 Produced.with(serde, serde));
 
         accepted.selectKey((key, value) ->
@@ -128,7 +133,7 @@ public final class EventStreamTopology {
                         Named.as("tenant-analytics"),
                         TenantAnalyticsProcessor.METRICS_STORE,
                         TenantAnalyticsProcessor.IDENTITIES_STORE)
-                .to(StreamSettings.TENANT_ANALYTICS,
+                .to(topics.tenantAnalytics(),
                         Produced.with(serde, serde));
 
         return builder.build();
@@ -137,7 +142,11 @@ public final class EventStreamTopology {
     private static final class ValidationProcessor
             implements Processor<String, String, String, String> {
 
-        private final EventProcessor decoder = new EventProcessor();
+        private final EventProcessor decoder;
+
+        private ValidationProcessor(StreamTopics topics) {
+            this.decoder = new EventProcessor(topics);
+        }
         private final ObjectMapper json = new ObjectMapper();
 
         private ProcessorContext<String, String> context;
@@ -310,6 +319,13 @@ public final class EventStreamTopology {
     private static final class EventProcessor
             implements Processor<String, String, String, String> {
 
+        private final StreamTopics topics;
+
+        private EventProcessor(StreamTopics topics) {
+            this.topics = topics;
+        }
+
+
         private final EventCodec codec = new EventCodec();
         private final ObjectMapper json = new ObjectMapper();
 
@@ -341,7 +357,7 @@ public final class EventStreamTopology {
                 throw new Rejected("PAYLOAD_TOO_LARGE");
             }
 
-            if (StreamSettings.DOCUMENTS.equals(topic)) {
+            if (topics.documents().equals(topic)) {
                 DocumentEvent e = codec.readDocument(value);
 
                 return new Event(
@@ -352,7 +368,7 @@ public final class EventStreamTopology {
                         codec.writeDocument(e));
             }
 
-            if (StreamSettings.WORKFLOWS.equals(topic)) {
+            if (topics.workflows().equals(topic)) {
                 WorkflowEvent e = codec.readWorkflow(value);
 
                 return new Event(

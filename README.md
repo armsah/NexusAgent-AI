@@ -176,6 +176,20 @@ tenants and prohibits prefix-only deletion decisions.
 E738-04 through E738-06 remain open pending runtime integration,
 isolated live acceptance and verified synthetic reconciliation.
 
+### Integrated streaming acceptance
+
+Broker-backed retention checks and isolated Kafka acceptance
+scenarios passed 69 combined targeted tests.
+
+Separate-JVM crash recovery uses dedicated topics and recovers
+uncommitted processing boundaries without skipping source history.
+
+A bounded snapshot inventory identified 20 historical synthetic
+candidates among 50 observed tenant snapshots.
+
+Historical migration verification and authorized reconciliation
+remain open.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
