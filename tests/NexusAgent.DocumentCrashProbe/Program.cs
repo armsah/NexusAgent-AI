@@ -39,6 +39,10 @@ await using var db = new NexusAgentDbContext(options);
 
 if (mode == "initialize")
 {
+    // Provision database-local pgvector before applying migrations.
+    await db.Database.ExecuteSqlRawAsync(
+        "CREATE EXTENSION IF NOT EXISTS vector");
+
     await db.Database.MigrateAsync();
     return;
 }

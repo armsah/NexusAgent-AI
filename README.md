@@ -279,6 +279,13 @@ approval. Established environments require durable checkpoints.
 Acceptance fixtures create all dedicated topics before verifying
 partition leaders, replica readiness and offset accessibility.
 
+
+### Isolated recovery database initialization
+
+The document publication crash probe provisions the database-local
+pgvector extension before applying EF Core migrations. Fresh database
+initialization verifies both pgvector and the durable publication journal.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
