@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
 using NexusAgent.Infrastructure.Messaging;
 using NexusAgent.Application.Documents;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using NexusAgent.Application.Abstractions;
 
 namespace NexusAgent.Infrastructure.Persistence.Outbox;
@@ -71,6 +71,7 @@ public sealed class PostgresDocumentIngestionEventPublisher(
                 wirePayload,
                 cancellationToken);
         }
+
 
         await dbContext.Database.ExecuteSqlInterpolatedAsync(
             $"""
