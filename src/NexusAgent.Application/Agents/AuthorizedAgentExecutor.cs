@@ -8,7 +8,7 @@ public sealed class AuthorizedAgentExecutor(
     IWorkflowRepository repository,
     IAgentAuthorizationPolicy authorization)
 {
-    public async Task<AgentResult> ExecuteAsync(
+    internal async Task<AgentResult> ExecuteGovernedAsync(
         string name,
         AgentRequest request,
         WorkflowAccess caller,
@@ -35,5 +35,25 @@ public sealed class AuthorizedAgentExecutor(
 
         return await harness.ExecuteAsync(
             name, request, limits, cancellationToken);
+    }
+
+    public Task<AgentResult> ExecuteAsync(
+        string agentName,
+        AgentRequest request,
+        WorkflowAccess caller,
+        AgentExecutionLimits limits,
+        CancellationToken cancellationToken = default)
+    {
+        if (agentName is AgentNames.Supervisor
+            or AgentNames.Policy
+            or AgentNames.Knowledge
+            or AgentNames.Verifier)
+        {
+            throw new UnauthorizedAccessException(
+                "Built-in agents require governed coordination.");
+        }
+
+        return ExecuteGovernedAsync(
+            agentName, request, caller, limits, cancellationToken);
     }
 }

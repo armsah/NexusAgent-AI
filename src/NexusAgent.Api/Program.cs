@@ -1,3 +1,5 @@
+using NexusAgent.Api.Agents;
+using NexusAgent.Application.Agents;
 using NexusAgent.Api.Health;
 using NexusAgent.Api.Questions;
 using NexusAgent.Api.Search;
@@ -25,6 +27,13 @@ builder.Services.AddInfrastructure(
     builder.Configuration);
 builder.Services.AddSingleton<DevelopmentRequestIdentity>();
 
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddScoped<
+        IAgentAuthorizationPolicy,
+        DevelopmentAgentAuthorizationPolicy>();
+}
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -33,6 +42,7 @@ if (app.Environment.IsDevelopment())
     app.MapDocumentEndpoints();
     app.MapDocumentSearchEndpoints();
     app.MapGroundedQuestionEndpoints();
+    app.MapMultiAgentEndpoints();
 }
 
 

@@ -27,6 +27,11 @@ public static class DependencyInjection
         services.TryAddScoped<IAgentAuthorizationPolicy,
             DenyAllAgentAuthorizationPolicy>();
 
+        services.AddScoped<IAgent, SupervisorAgent>();
+        services.AddScoped<IAgent, PolicyAgent>();
+        services.AddScoped<IAgent, KnowledgeAgent>();
+        services.AddScoped<IAgent, VerifierAgent>();
+        services.AddScoped<MultiAgentCoordinator>();
         services.AddScoped<AgentRegistry>();
         services.AddScoped<AgentHarness>();
         services.AddScoped<AuthorizedAgentExecutor>();
