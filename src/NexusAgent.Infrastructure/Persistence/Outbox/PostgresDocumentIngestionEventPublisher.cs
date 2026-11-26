@@ -37,6 +37,10 @@ public sealed class PostgresDocumentIngestionEventPublisher(
         if (string.IsNullOrWhiteSpace(payload))
             throw new ArgumentException("Payload is required.", nameof(payload));
 
+        // Preserve the domain payload when Kafka publication is disabled.
+        // For Kafka publications retain the exact serialized wire envelope.
+        var persistedPayload = payload;
+
         var bootstrapServers =
             Environment.GetEnvironmentVariable("NEXUS_KAFKA_BOOTSTRAP_SERVERS");
 
@@ -70,6 +74,8 @@ public sealed class PostgresDocumentIngestionEventPublisher(
                 documentId,
                 wirePayload,
                 cancellationToken);
+
+            persistedPayload = wirePayload;
         }
 
 
@@ -80,9 +86,16 @@ public sealed class PostgresDocumentIngestionEventPublisher(
                  document_version, payload, published_at)
             VALUES
                 ({eventId}, {eventType}, {tenantId}, {documentId},
-                 {documentVersion}, CAST({payload} AS jsonb),
+                 {documentVersion}, CAST({persistedPayload} AS jsonb),
                  clock_timestamp())
-            ON CONFLICT (event_id) DO NOTHING;
+            ON CONFLICT (event_id) DO UPDATE
+            SET payload = EXCLUDED.payload
+            WHERE published_document_events.tenant_id = EXCLUDED.tenant_id
+              AND published_document_events.document_id = EXCLUDED.document_id
+              AND published_document_events.document_version = EXCLUDED.document_version
+              AND published_document_events.event_type = EXCLUDED.event_type
+              AND NOT (published_document_events.payload ? 'schemaVersion')
+              AND EXCLUDED.payload ? 'schemaVersion';
             """,
             cancellationToken);
     }

@@ -1,0 +1,21 @@
+{
+    "totalPublications":  159,
+    "nonStreamPublications":  37,
+    "unresolvedEvents":  122,
+    "independentlyVerifiedEvents":  0,
+    "conflictingEvents":  0,
+    "survivingDocumentVersions":  0,
+    "survivingDocuments":  0,
+    "repositoryBackupCandidates":  0,
+    "prospectiveWirePersistenceImplemented":  true,
+    "crashSafePublicationVerified":  false,
+    "executableInventoryDenialVerified":  true,
+    "successfulLiveMigrationVerified":  false,
+    "authoritativeRebuildAuthorized":  false,
+    "targetedJavaTestsPassed":  32,
+    "failures":  0,
+    "errors":  0,
+    "skipped":  0,
+    "status":  "PARTIAL",
+    "cloudExpenditureEur":  0
+}

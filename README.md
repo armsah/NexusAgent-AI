@@ -213,6 +213,21 @@ Legacy publication records with missing document-version
 metadata remain explicitly unresolved. Authoritative migration
 is not certified by retained Kafka offsets alone.
 
+
+### Authoritative publication persistence
+
+Document Kafka publications retain complete semantic wire
+envelopes following acknowledged delivery.
+
+Read-only inventory export and strict Java validation reject
+incomplete historical migration evidence.
+
+Targeted acceptance: 32 tests passed.
+
+Crash-safe publication and successful authoritative migration
+remain outstanding.
+
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
