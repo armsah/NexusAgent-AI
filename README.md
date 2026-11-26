@@ -117,6 +117,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.2: Durable approved-action continuation, transactional execution receipts and fail-closed recovery implemented; four database acceptance scenarios passed.
 
+- E7.2: Unused approval expiration and durable claim interruption recovery verified; external tool process interruption acceptance remains open.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

@@ -255,3 +255,19 @@ Scope: terminal approved-action continuation. Arbitrary multi-step plan
 resumption and exactly-once external side effects are not guaranteed.
 Approved-but-unused expiry and actual process-interruption acceptance
 remain subject to additional verification.
+
+### E7.2 - Interrupted execution and unused approval expiration
+
+- Approved-but-unused expiration implemented and registered in the recovery worker.
+- Database client terminated after committing a durable execution claim.
+- Interrupted execution recovered as Uncertain without tool replay.
+- Workflow failed closed with reconciliation reason.
+- Unused approved workflow cancelled and approval expired.
+- Repeated recovery produced no duplicate terminal lifecycle events.
+- Recovery age accelerated for acceptance.
+- Targeted regression tests passed.
+- Cloud expenditure: EUR 0.
+
+The interruption test exercises a PostgreSQL client, not a running
+external tool process. Full external tool interruption acceptance
+remains outstanding.

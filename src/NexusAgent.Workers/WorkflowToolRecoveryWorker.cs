@@ -24,6 +24,18 @@ public sealed class WorkflowToolRecoveryWorker(
                     SELECT recover_workflow_tool_executions(100) AS "Value"
                     """).SingleAsync(stoppingToken);
 
+                var expired = await db.Database.SqlQueryRaw<int>(
+                    """
+                    SELECT expire_unused_workflow_approvals(100) AS "Value"
+                    """).SingleAsync(stoppingToken);
+
+                if (expired > 0)
+                {
+                    logger.LogInformation(
+                        "Expired {Count} unused workflow approvals.",
+                        expired);
+                }
+
                 if (recovered > 0)
                 {
                     logger.LogWarning(
