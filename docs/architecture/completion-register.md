@@ -51,7 +51,7 @@ No required feature may remain a placeholder.
 | CR-033 | Governed multi-agent endpoint acceptance and isolation | E3 | CLOSED |
 | CR-034 | Hybrid retrieval relevance and citation integrity | E3/E5 | OPEN |
 | CR-035 | Production request-size enforcement verification | E10/E15 | OPEN |
-| CR-036 | Agent invocation authorization boundary verification | E3 | OPEN |
+| CR-036 | Agent invocation authorization boundary verification | E3 | CLOSED |
 
 ## Closure procedure
 
@@ -97,7 +97,7 @@ CR-014 remains open for dependency deprecation remediation.
 
 All closures reference PR #6 and merge commit 6ca45f3.
 
-CR-036 remains OPEN pending complete invocation-boundary verification.
+CR-036 CLOSED following corrective PR #7.
 CR-004, CR-034 and CR-035 retain outstanding requirements.
 GitHub automated checks remain pending E13 CI/CD implementation.
 
@@ -110,5 +110,17 @@ GitHub automated checks remain pending E13 CI/CD implementation.
 - Cumulative regression: 314 passed, zero failed or skipped.
 - Azure expenditure: EUR 0.
 
-CR-036 closure awaits corrective pull request merge.
+CR-036 CLOSED: PR #7; feature adf9f2b; merge 82ca029.
 Production authentication remains tracked under CR-004 and CR-020.
+
+
+## E3 final closure
+
+- Implementation PR: #6, merge 6ca45f3.
+- Authorization corrective PR: #7, merge 82ca029.
+- Cumulative acceptance: 314 passing tests.
+- E3-specific requirements closed.
+- Cross-stage requirements remain tracked.
+- Production authentication remains assigned to E10.
+- Automated GitHub checks remain assigned to E13.
+- Azure expenditure: EUR 0.
