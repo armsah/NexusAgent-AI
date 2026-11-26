@@ -111,7 +111,7 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.2: Document predecessor ordering CLOSED; 18 targeted tests passed.
 
-- E7.2: Rejection lifecycle and atomic approval association verified; expiration, continuation and recovery acceptance remain open.
+- E7.2: Rejection lifecycle, atomic approval association and automatic expiration verified; continuation, domain rejection tests and recovery acceptance remain open.
 
 ## How can I run or inspect the demo?
 

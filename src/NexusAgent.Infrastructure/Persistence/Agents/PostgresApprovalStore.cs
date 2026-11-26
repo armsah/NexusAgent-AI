@@ -142,10 +142,24 @@ public sealed class PostgresApprovalStore(
 
         if (state.ExpiresAt <= now)
         {
-            await pending.Where(x => x.ExpiresAt <= now)
+            var expired = await pending.Where(x => x.ExpiresAt <= now)
                 .ExecuteUpdateAsync(s => s.SetProperty(
                     x => x.Status, (int)ApprovalStatus.Expired),
                     cancellationToken);
+
+            if (expired == 1 && state.WorkflowId is Guid expiredWorkflowId)
+            {
+                await db.Workflows.Where(x =>
+                        x.Id == expiredWorkflowId &&
+                        x.TenantId == state.TenantId &&
+                        x.RequesterId == state.RequesterId &&
+                        x.Status == WorkflowStatus.WaitingForApproval)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(x => x.Status, WorkflowStatus.Cancelled)
+                        .SetProperty(x => x.UpdatedAtUtc,
+                            x => x.UpdatedAtUtc > now ? x.UpdatedAtUtc : now),
+                        cancellationToken);
+            }
 
             await transaction.CommitAsync(cancellationToken);
             return false;

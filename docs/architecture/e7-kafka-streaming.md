@@ -202,3 +202,16 @@ Remaining requirements:
 - Dedicated domain rejection tests.
 - Crash-window recovery acceptance.
 - Trusted approver authentication (E10).
+
+### E7.2 expired approval resolution - CLOSED
+
+- Pending expired approvals resolved automatically by a hosted worker.
+- Associated waiting workflows transition atomically to Cancelled.
+- Cancellation lifecycle events recorded transactionally.
+- Bounded batches and SKIP LOCKED support competing workers.
+- Late approval and denial cannot override expiration.
+- Concurrent expiration-versus-decision tests passed.
+- Repeated expiration produces no duplicate cancellation.
+- SQL rollback and actual hosted worker acceptance passed.
+- Approval regression passed.
+- Cloud expenditure: EUR 0.
