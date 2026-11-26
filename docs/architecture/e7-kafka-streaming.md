@@ -84,3 +84,14 @@ No cloud resources have been provisioned.
 - Full PostgreSQL-to-Kafka failure recovery acceptance remains open.
 - Workflow lifecycle persistence remains open.
 - Cloud expenditure: EUR 0.
+
+### E7.2 workflow journal foundation
+
+- PostgreSQL durable workflow event journal implemented.
+- Unique event identity and aggregate sequence constraints.
+- JSON payload identity constraints.
+- Transaction-required C# append operation.
+- Duplicate event, duplicate sequence and rollback SQL acceptance passed.
+- Release build and targeted regression passed.
+- Lifecycle integration and ordered dispatch remain open.
+- Cloud expenditure: EUR 0.
