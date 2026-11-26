@@ -15,7 +15,7 @@ the authoritative C# orchestration and PostgreSQL persistence layers.
 | E6.4 | Immutable versioned event contracts | CLOSED |
 | E6.5 | Functional transformations and analytics | CLOSED |
 | E6.6 | Deduplication and ordering semantics | CLOSED |
-| E6.7 | Cross-language contract acceptance | OPEN |
+| E6.7 | Cross-language contract acceptance | CLOSED |
 | E6.8 | Regression, documentation and GitHub merge | OPEN |
 
 ## E6.1 acceptance
@@ -146,3 +146,14 @@ verification during E6.7.
 - Identity, tenant, timestamp, revision, deduplication and analytics verified.
 - PostgreSQL remains authoritative.
 - Broker publication and durable workflow event sequencing are E7 responsibilities.
+
+### E6.7 workflow wire acceptance
+
+- Versioned C# workflow lifecycle serialization implemented.
+- Seven C#-generated workflow event fixtures consumed by Java.
+- Approval, rejection, completion, failure and cancellation histories verified.
+- Invalid duration and approval bypass rejected.
+- Fourteen new C# contract tests and six new Java interoperability tests.
+- E6.7 closes the serialization and functional consumer boundary.
+- Workflow events are transport contracts, not persisted domain transitions.
+- Durable event generation, transactional sequencing and Kafka delivery remain required in E7.
