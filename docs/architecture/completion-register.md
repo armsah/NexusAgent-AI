@@ -225,3 +225,13 @@ Earlier E4 residual assignments are superseded by this evidence.
 E4 acceptance is completed within the documented validation
 scope. Earlier E4 outstanding-status statements are superseded.
 Later-stage cross-cutting requirements remain tracked separately.
+
+## E5 consolidated acceptance evidence
+
+- Regression: 486 passed, zero failed or skipped.
+- Authenticated inference and resource controls verified.
+- Clean dependency acceptance passed.
+- Live hybrid benchmark and security holdout passed.
+- E5 final closure remains gated by dedicated retrieval cutoff
+  and candidate backfill regression.
+- Cloud expenditure: EUR 0.

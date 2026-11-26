@@ -176,3 +176,36 @@ Full authenticated API and hybrid regression follow in E5.9.
 - Temporary environment removed.
 - No warning suppression or additional application dependency required.
 - Cloud expenditure: EUR 0.
+
+## E5.9 - Consolidated regression evidence
+
+- Release build passed.
+- .NET regression: 335 passed.
+- Python regression: 151 passed with warnings treated as errors.
+- Total regression: 486 passed, zero failed or skipped.
+- Authenticated live C#-Python-Ollama integration passed.
+- Missing and incorrect credentials rejected on all inference endpoints.
+- Live oversized request and unsafe grounded question rejected.
+- All three grounding model calls asserted.
+- Hybrid benchmark: 12/12 correct; eight metric gates passed.
+- Security holdout: 8/8 passed.
+- Dataset and prediction hashes verified.
+- Final measured evaluation artifacts retained.
+
+- abstention_accuracy: 1.0
+- answer_accuracy: 1.0
+- citation_precision: 1.0
+- mrr: 1.0
+- precision_at_5: 0.65
+- recall_at_5: 1.0
+- rejection_accuracy: 1.0
+- unauthorized_exposure_rate: 0.0
+
+Operational limitations:
+- Admission control is process-local.
+- Shared-secret authentication is intended for local inference.
+- Model judgments remain probabilistic.
+- Small synthetic datasets do not establish universal robustness.
+- Dedicated retrieval cutoff and candidate backfill regression
+  remains required before unconditional E5 closure.
+- Cloud expenditure: EUR 0.

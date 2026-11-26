@@ -240,6 +240,7 @@ async def test_extraction_and_verification_use_distinct_models(monkeypatch):
     calls = []
 
     async def fake_post(endpoint, payload):
+        calls.append(payload["model"])
         properties = payload["format"]["properties"]
 
         if "missing_constraints" in properties:
@@ -247,7 +248,6 @@ async def test_extraction_and_verification_use_distinct_models(monkeypatch):
                 "done": True,
                 "response": json.dumps({"missing_constraints": []}),
             }
-        calls.append(payload["model"])
 
         if "answer" in properties:
             response = {"answer": "PostgreSQL"}
@@ -271,7 +271,7 @@ async def test_extraction_and_verification_use_distinct_models(monkeypatch):
         ],
     ))
 
-    assert calls == ["llama3.2:3b", "mistral:7b"]
+    assert calls == ["llama3.2:3b", "mistral:7b", "mistral:7b"]
     assert result.cited_source_ids == ["S1"]
     assert result.answer == "The application uses PostgreSQL [S1]."
 
