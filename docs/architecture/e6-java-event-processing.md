@@ -10,7 +10,7 @@ the authoritative C# orchestration and PostgreSQL persistence layers.
 | Step | Scope | Status |
 |---|---|---|
 | E6.1 | Baseline and event-contract audit | CLOSED |
-| E6.2 | Reproducible Java and Maven foundation | OPEN |
+| E6.2 | Reproducible Java and Maven foundation | CLOSED |
 | E6.3 | Spring Boot service foundation | OPEN |
 | E6.4 | Immutable versioned event contracts | OPEN |
 | E6.5 | Functional transformations and analytics | OPEN |
@@ -51,3 +51,13 @@ Trusted identity and external API authorization remain E10.
 Java 21 LTS is available locally.
 Maven is not currently on PATH.
 No cloud resources were provisioned.
+## E6.2 acceptance
+
+- Java 21 enforced by Maven Enforcer.
+- Maven 3.9.11 pinned and installed locally.
+- Distribution SHA512 verified against Apache checksum.
+- Maven wrapper generated with distribution SHA256.
+- JUnit and build plugin versions pinned.
+- Wrapper clean verify succeeded.
+- Tests: 1 passed, zero failed, zero skipped.
+- Cloud expenditure: EUR 0.

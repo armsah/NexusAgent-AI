@@ -76,7 +76,8 @@ acceptance requirements remain mandatory in E5 and E15.
 ### E6 - Java functional event processing
 
 - E6.1 CLOSED: existing event contracts and Java environment audited.
-- E6.2-E6.8 OPEN: Java analytics implementation and acceptance.
+- E6.2 CLOSED: pinned Maven wrapper and Java 21 build verified.
+- E6.3-E6.8 OPEN: Java analytics implementation and acceptance.
 - Architecture: [E6 implementation record](docs/architecture/e6-java-event-processing.md).
 
 ## How can I run or inspect the demo?
