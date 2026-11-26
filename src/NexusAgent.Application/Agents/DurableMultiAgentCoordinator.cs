@@ -223,6 +223,8 @@ public sealed class DurableMultiAgentCoordinator(
                 new AgentExecutionLimits(TimeSpan.FromSeconds(150), 1),
                 cancellationToken);
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (!verified.Succeeded ||
                 string.IsNullOrWhiteSpace(verified.Output) ||
                 verified.Output.Length > 8000 ||
@@ -238,6 +240,7 @@ public sealed class DurableMultiAgentCoordinator(
             }
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         return state;
 
         async Task<DurableAgentExecution> ReloadAsync() =>

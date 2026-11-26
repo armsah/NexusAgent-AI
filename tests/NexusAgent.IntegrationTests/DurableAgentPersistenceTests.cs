@@ -622,6 +622,66 @@ public sealed class DurableAgentPersistenceTests
             }
         });
 
+    [Fact]
+    public Task CheckpointRollsBackWhenInsertWaitOutlivesLease() =>
+        WithExecution(async (_, executionId) =>
+        {
+            await using var db = Open();
+            var store = new PostgresAgentExecutionStore(db);
+
+            var lease = await store.TryClaimAsync(
+                executionId, Owner, default);
+
+            Assert.NotNull(lease);
+
+            await db.AgentExecutions
+                .Where(x => x.Id == executionId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    x => x.LeaseExpiresAt,
+                    DateTimeOffset.UtcNow.AddSeconds(3)));
+
+            await using var holder = Open();
+            await using var transaction =
+                await holder.Database.BeginTransactionAsync();
+
+            await holder.Database.ExecuteSqlRawAsync(
+                "LOCK TABLE agent_execution_checkpoints IN ACCESS EXCLUSIVE MODE");
+
+            await using var contender = Open();
+            var writer = new PostgresAgentExecutionStore(contender);
+
+            var pending = writer.CheckpointAsync(
+                lease, Owner,
+                new AgentResult(true, "Expired checkpoint"),
+                default);
+
+            await Task.Delay(TimeSpan.FromSeconds(4));
+            await transaction.CommitAsync();
+
+            Assert.False(await pending);
+
+            Assert.Empty(await writer.ReadMemoryAsync(
+                executionId, Owner, default));
+
+            var state = await writer.GetAsync(
+                executionId, Owner, default);
+
+            Assert.NotNull(state);
+            Assert.Equal("Running", state.Status);
+            Assert.Equal(0, state.NextStage);
+
+            var recovered = await writer.TryClaimAsync(
+                executionId, Owner, default);
+
+            Assert.NotNull(recovered);
+            Assert.Equal(2, recovered.Attempt);
+
+            Assert.True(await writer.CheckpointAsync(
+                recovered, Owner,
+                new AgentResult(true, "Recovered checkpoint"),
+                default));
+        });
+
     private static async Task WithApproval(
         Func<Guid, ApprovalAction, Task> test)
     {

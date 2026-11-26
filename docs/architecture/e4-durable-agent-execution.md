@@ -88,3 +88,27 @@ under CR-014 for E5.
 
 Formal closure requires corrective PR merge and acceptance
 scope verification.
+
+
+## E4 consolidated final acceptance
+
+- CR-037: Actual API-host termination during knowledge retrieval,
+  restart, successful grounded completion and preservation of
+  checkpoint invocation identifiers.
+- CR-038: PostgreSQL clock-based lease fencing, lock-contention
+  verification and rollback of delayed checkpoint transactions.
+- CR-039: Replay memory and verifier retrieval budgets, with
+  cancellation checks before returning the final answer.
+- Release build: passed.
+- .NET tests: 321 passed.
+- Python tests: 27 passed.
+- Total regression: 348 passed, zero failed or skipped.
+- Cloud expenditure: EUR 0.
+
+The crash test uses accelerated lease expiry and real local
+inference after restart. Lease validity is checked immediately
+before transaction commit. Absolute physical commit timing is
+not guaranteed.
+
+The Python dependency warning remains tracked under CR-014.
+Earlier E4 residual assignments are superseded by this evidence.

@@ -175,6 +175,21 @@ public sealed class PostgresAgentExecutionStore(
             x.LeaseExpiresAt > DateTimeOffset.UtcNow &&
             x.DeadlineAt > DateTimeOffset.UtcNow);
 
+    private async Task<bool> LeaseStillValidAsync(
+        DateTimeOffset expiresAt,
+        DateTimeOffset deadlineAt,
+        CancellationToken cancellationToken)
+    {
+        var now = (await db.Database
+            .SqlQueryRaw<DateTimeOffset>(
+                """SELECT clock_timestamp() AS "Value" """)
+            .ToListAsync(cancellationToken)).Single();
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return now < expiresAt && now < deadlineAt;
+    }
+
     public async Task<bool> CheckpointAsync(
         AgentExecutionLease lease, WorkflowAccess caller,
         AgentResult result, CancellationToken cancellationToken)
@@ -206,6 +221,14 @@ public sealed class PostgresAgentExecutionStore(
               AND "RequesterId" = {caller.RequesterId}
             FOR UPDATE
             """, cancellationToken);
+
+        var persistedLease = await Fenced(lease, caller)
+            .AsNoTracking()
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (persistedLease is null ||
+            persistedLease.LeaseExpiresAt is null)
+            return false;
 
         var checkedAt = (await db.Database
             .SqlQueryRaw<DateTimeOffset>(
@@ -242,6 +265,15 @@ public sealed class PostgresAgentExecutionStore(
              {result.Succeeded},{output},{now})
             """, cancellationToken);
 
+        if (!await LeaseStillValidAsync(
+                persistedLease.LeaseExpiresAt.Value,
+                persistedLease.DeadlineAt,
+                cancellationToken))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return false;
+        }
+
         await transaction.CommitAsync(cancellationToken);
         return true;
     }
@@ -265,6 +297,14 @@ public sealed class PostgresAgentExecutionStore(
             FOR UPDATE
             """, cancellationToken);
 
+        var persistedLease = await Fenced(lease, caller)
+            .AsNoTracking()
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (persistedLease is null ||
+            persistedLease.LeaseExpiresAt is null)
+            return false;
+
         var checkedAt = (await db.Database
             .SqlQueryRaw<DateTimeOffset>(
                 """SELECT clock_timestamp() AS "Value" """)
@@ -283,6 +323,15 @@ public sealed class PostgresAgentExecutionStore(
                 .SetProperty(x => x.LeaseExpiresAt, (DateTimeOffset?)null)
                 .SetProperty(x => x.UpdatedAt, now),
                 cancellationToken) == 1;
+
+        if (!await LeaseStillValidAsync(
+                persistedLease.LeaseExpiresAt.Value,
+                persistedLease.DeadlineAt,
+                cancellationToken))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return false;
+        }
 
         await transaction.CommitAsync(cancellationToken);
         return released;
