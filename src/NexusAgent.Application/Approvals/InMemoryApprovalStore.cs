@@ -102,10 +102,14 @@ public sealed class InMemoryApprovalStore : IApprovalStore
         Guid approvalId,
         ApprovalAction expectedAction,
         DateTimeOffset now,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? workflowId = null)
     {
         ArgumentNullException.ThrowIfNull(expectedAction);
         cancellationToken.ThrowIfCancellationRequested();
+
+        if (workflowId.HasValue)
+            return Task.FromResult(false);
 
         lock (_sync)
         {

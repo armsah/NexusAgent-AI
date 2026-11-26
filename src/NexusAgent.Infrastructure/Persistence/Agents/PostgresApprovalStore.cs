@@ -216,30 +216,79 @@ public sealed class PostgresApprovalStore(
         Guid approvalId,
         ApprovalAction expectedAction,
         DateTimeOffset now,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? workflowId = null)
     {
         ArgumentNullException.ThrowIfNull(expectedAction);
 
         now = now.ToUniversalTime();
 
+        if (workflowId == Guid.Empty)
+            return false;
+
+        await using var transaction =
+            await db.Database.BeginTransactionAsync(cancellationToken);
+
+        if (workflowId.HasValue)
+        {
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                SELECT "Id" FROM agent_approvals
+                WHERE "Id" = {approvalId}
+                  AND "WorkflowId" = {workflowId.Value}
+                  AND "TenantId" = {expectedAction.TenantId}
+                  AND "RequesterId" = {expectedAction.RequesterId}
+                FOR UPDATE
+                """, cancellationToken);
+
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                SELECT id FROM workflows
+                WHERE id = {workflowId.Value}
+                  AND tenant_id = {expectedAction.TenantId}
+                  AND requester_id = {expectedAction.RequesterId}
+                FOR UPDATE
+                """, cancellationToken);
+
+            now = (await db.Database.SqlQueryRaw<DateTimeOffset>(
+                """SELECT clock_timestamp() AS "Value" """)
+                .ToListAsync(cancellationToken)).Single();
+        }
+
         var approved = db.AgentApprovals.Where(x =>
             x.Id == approvalId &&
             x.Status == (int)ApprovalStatus.Approved &&
-            x.WorkflowId == null &&
+            x.WorkflowId == workflowId &&
             x.TenantId == expectedAction.TenantId &&
             x.RequesterId == expectedAction.RequesterId &&
             x.ToolName == expectedAction.ToolName &&
             x.PayloadDigest == expectedAction.PayloadDigest);
+
+        if (workflowId.HasValue)
+        {
+            approved = approved.Where(x =>
+                db.Workflows.Any(w =>
+                    w.Id == workflowId.Value &&
+                    w.TenantId == expectedAction.TenantId &&
+                    w.RequesterId == expectedAction.RequesterId &&
+                    w.Status == WorkflowStatus.Running &&
+                    !w.Steps.Any(s => s.CompletedAtUtc == null)) &&
+                !db.AgentApprovals.Any(other =>
+                    other.WorkflowId == workflowId &&
+                    other.Id != x.Id &&
+                    other.CreatedAt >= x.CreatedAt));
+        }
 
         await approved.Where(x => x.ExpiresAt <= now)
             .ExecuteUpdateAsync(s => s.SetProperty(
                 x => x.Status, (int)ApprovalStatus.Expired),
                 cancellationToken);
 
-        return await approved.Where(x =>
+        var consumed = await approved.Where(x =>
                 x.CreatedAt <= now && x.ExpiresAt > now)
             .ExecuteUpdateAsync(s => s.SetProperty(
                 x => x.Status, (int)ApprovalStatus.Consumed),
                 cancellationToken) == 1;
+
+        await transaction.CommitAsync(cancellationToken);
+        return consumed;
     }
 }

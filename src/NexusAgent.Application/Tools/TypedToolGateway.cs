@@ -16,7 +16,8 @@ public sealed class TypedToolGateway(
         ToolCaller caller,
         ToolExecutionLimits? limits = null,
         CancellationToken cancellationToken = default,
-        Guid? approvalId = null)
+        Guid? approvalId = null,
+        Guid? workflowId = null)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(caller);
@@ -59,8 +60,8 @@ public sealed class TypedToolGateway(
                 var risk = riskPolicy?.Classify(request.ToolName)
                     ?? ActionRisk.Critical;
 
-                var requiresApproval = riskPolicy?.RequiresApproval(risk)
-                    ?? true;
+                var requiresApproval = workflowId.HasValue ||
+                    (riskPolicy?.RequiresApproval(risk) ?? true);
 
                 var approvalGranted = !requiresApproval;
 
@@ -78,7 +79,8 @@ public sealed class TypedToolGateway(
                             approvalId.Value,
                             action,
                             DateTimeOffset.UtcNow,
-                            cancellationToken);
+                            cancellationToken,
+                            workflowId);
                     }
                     catch (OperationCanceledException)
                         when (cancellationToken.IsCancellationRequested)

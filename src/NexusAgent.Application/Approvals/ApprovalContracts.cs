@@ -61,5 +61,6 @@ public interface IApprovalStore
         Guid approvalId,
         ApprovalAction expectedAction,
         DateTimeOffset now,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken,
+        Guid? workflowId = null);
 }

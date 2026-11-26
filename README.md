@@ -113,6 +113,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.2: Rejection lifecycle, atomic approval association and automatic expiration verified; continuation, domain rejection tests and recovery acceptance remain open.
 
+- E7.2 workflow-bound gateway CLOSED: PostgreSQL-backed single-use approval consumption, workflow and caller binding, concurrent invocation protection and replay rejection verified locally.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

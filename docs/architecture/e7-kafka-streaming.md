@@ -215,3 +215,26 @@ Remaining requirements:
 - SQL rollback and actual hosted worker acceptance passed.
 - Approval regression passed.
 - Cloud expenditure: EUR 0.
+
+
+### E7.2 - Workflow-bound gateway acceptance
+
+**Status: CLOSED**
+
+- Workflow-scoped approval consumption implemented in PostgreSQL.
+- Standalone approval isolation preserved.
+- Workflow, tenant, requester and approved action binding enforced.
+- Database-clock validation and stale approval rejection implemented.
+- Concurrent consumption permits only one authorized invocation.
+- Replay rejected after database context restart.
+- Build, targeted integration acceptance and 30 unit tests passed.
+- Cloud expenditure: EUR 0.
+
+Remaining E7.2 requirements:
+- Durable orchestration continuation after approval.
+- Interrupted tool execution recovery and ambiguous outcome handling.
+- Dedicated rejection lifecycle domain tests.
+- Kafka publication crash-window recovery.
+
+Single-use authorization does not guarantee exactly-once external side effects.
+Ambiguous external actions must not be automatically retried.
