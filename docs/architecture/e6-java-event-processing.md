@@ -138,3 +138,11 @@ verification during E6.7.
 - Audit date: 2026-11-26.
 - Results reflect advisory database coverage at audit time.
 - Cross-language acceptance remains pending.
+
+### E6.7 document wire interoperability
+
+- Versioned C# document serialization boundary implemented.
+- Three actual .NET-generated lifecycle fixtures consumed by Java.
+- Identity, tenant, timestamp, revision, deduplication and analytics verified.
+- PostgreSQL remains authoritative.
+- Broker publication and durable workflow event sequencing are E7 responsibilities.

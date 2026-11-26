@@ -79,6 +79,7 @@ acceptance requirements remain mandatory in E5 and E15.
 - E6.2 CLOSED: pinned Maven wrapper and Java 21 build verified.
 - E6.6 CLOSED: event integrity, deduplication and lifecycle validation; 66 Java tests passed.
 - E6.7 security acceptance PASSED: 53 Java dependencies audited, zero OSV findings, 66 Java tests passed.
+- E6.7 document wire interoperability PASSED: actual C# serialization consumed by Java.
 - E6.7-E6.8 OPEN: cross-language acceptance and final delivery.
 - Architecture: [E6 implementation record](docs/architecture/e6-java-event-processing.md).
 
