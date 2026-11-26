@@ -65,6 +65,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 **E5.6 completed:** Inference authentication verified. See the E5 acceptance register.
 
+**E5.7 completed:** Concurrency, request limits and timeouts verified. See the E5 acceptance register.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

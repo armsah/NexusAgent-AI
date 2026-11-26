@@ -1,3 +1,4 @@
+import asyncio
 import httpx
 
 from app.contracts import GenerationRequest, GenerationResponse
@@ -26,23 +27,24 @@ class OllamaClient:
         }
 
         try:
-            async with httpx.AsyncClient(
-                timeout=120.0,
-                trust_env=False,
-            ) as client:
-                response = await client.post(
-                    f"{self.base_url}/api/generate",
-                    json=payload,
-                )
-                response.raise_for_status()
-                data = response.json()
+            async with asyncio.timeout(120):
+                async with httpx.AsyncClient(
+                    timeout=120.0,
+                    trust_env=False,
+                ) as client:
+                    response = await client.post(
+                        f"{self.base_url}/api/generate",
+                        json=payload,
+                    )
+                    response.raise_for_status()
+                    data = response.json()
 
             answer = data["response"]
 
             if not isinstance(answer, str) or not answer.strip():
                 raise ValueError("Empty inference response")
 
-            if data.get("done") is not True:
+            if data.get("done") is not True or data.get("done_reason") == "length":
                 raise ValueError("Incomplete inference response")
 
             return GenerationResponse(
@@ -50,5 +52,5 @@ class OllamaClient:
                 answer=answer,
             )
 
-        except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+        except (TimeoutError, httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
             raise InferenceError("Local inference failed") from exc

@@ -18,7 +18,7 @@
 | E5.4 | Hybrid retrieval and citation metrics | CLOSED |
 | E5.5 | Adversarial and prompt-injection testing | CLOSED |
 | E5.6 | Inference authentication | CLOSED |
-| E5.7 | Concurrency, request limits and timeouts | OPEN |
+| E5.7 | Concurrency, request limits and timeouts | CLOSED |
 | E5.8 | Dependency warning remediation | OPEN |
 | E5.9 | Full regression and live acceptance | OPEN |
 | E5.10 | Documentation, PR merge and formal closure | OPEN |
@@ -146,4 +146,21 @@ Full authenticated API and hybrid regression follow in E5.9.
 - Python regression, Release build and C# unit regression passed.
 - Secret generated for the current shell only; not committed.
 - Live authenticated cross-service acceptance remains mandatory in E5.9.
+- Cloud expenditure: EUR 0.
+
+## E5.7 acceptance
+
+- Maximum request body: 256 KiB, including streamed bodies.
+- Maximum active inference requests: two per service process.
+- Excess concurrent requests receive HTTP 429.
+- Oversized requests receive HTTP 413.
+- Request-body deadline: five seconds.
+- Inference execution deadline: 125 seconds.
+- Grounded inference retains its stricter 115-second budget.
+- Ollama generation has a 120-second total deadline.
+- Truncated generation responses rejected.
+- Cancellation releases middleware capacity.
+- Permanent resource-limit tests and Python regression passed.
+- Limits are process-local; distributed admission control is not implied.
+- Backend Ollama cancellation after HTTP disconnect is not guaranteed.
 - Cloud expenditure: EUR 0.

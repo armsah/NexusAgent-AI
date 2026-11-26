@@ -1,5 +1,6 @@
 from fastapi import Depends, FastAPI, HTTPException
 from app.inference_auth import require_inference_auth
+from app.inference_limits import InferenceLimitsMiddleware
 
 from app.contracts import GenerationRequest, GenerationResponse
 from app.ollama import OllamaClient, InferenceError
@@ -9,6 +10,8 @@ app = FastAPI(
     title="NexusAgent AI Inference Service",
     version="0.1.0",
 )
+
+app.add_middleware(InferenceLimitsMiddleware)
 
 inference = OllamaClient()
 
