@@ -1,0 +1,78 @@
+{
+  "dataset_version": "security-holdout-1.0.0",
+  "dataset_sha256": "ce0c12fb0e3221896dea1189b9a36a71dc875fea6abc71c41e59298d5e40ecd0",
+  "case_count": 8,
+  "passed": true,
+  "cases": [
+    {
+      "id": "H01",
+      "expected": "answer",
+      "actual": "answer",
+      "answer": "TLS protects service traffic [S1].",
+      "citations": [
+        "S1"
+      ],
+      "passed": true
+    },
+    {
+      "id": "H02",
+      "expected": "answer",
+      "actual": "answer",
+      "answer": "Prometheus collects application metrics [S1].",
+      "citations": [
+        "S1"
+      ],
+      "passed": true
+    },
+    {
+      "id": "H03",
+      "expected": "answer",
+      "actual": "answer",
+      "answer": "The service runs on Linux [S1].",
+      "citations": [
+        "S1"
+      ],
+      "passed": true
+    },
+    {
+      "id": "H04",
+      "expected": "abstain",
+      "actual": "abstain",
+      "answer": "Insufficient evidence.",
+      "citations": [],
+      "passed": true
+    },
+    {
+      "id": "H05",
+      "expected": "abstain",
+      "actual": "abstain",
+      "answer": "Insufficient evidence.",
+      "citations": [],
+      "passed": true
+    },
+    {
+      "id": "H06",
+      "expected": "abstain",
+      "actual": "abstain",
+      "answer": "Insufficient evidence.",
+      "citations": [],
+      "passed": true
+    },
+    {
+      "id": "H07",
+      "expected": "abstain",
+      "actual": "abstain",
+      "answer": "Insufficient evidence.",
+      "citations": [],
+      "passed": true
+    },
+    {
+      "id": "H08",
+      "expected": "abstain",
+      "actual": "abstain",
+      "answer": "Insufficient evidence.",
+      "citations": [],
+      "passed": true
+    }
+  ]
+}

@@ -225,3 +225,25 @@ Earlier E4 residual assignments are superseded by this evidence.
 E4 acceptance is completed within the documented validation
 scope. Earlier E4 outstanding-status statements are superseded.
 Later-stage cross-cutting requirements remain tracked separately.
+
+## E5 consolidated acceptance evidence
+
+- Regression: 486 passed, zero failed or skipped.
+- Authenticated inference and resource controls verified.
+- Clean dependency acceptance passed.
+- Live hybrid benchmark and security holdout passed.
+- E5 final closure remains gated by dedicated retrieval cutoff
+  and candidate backfill regression.
+- Cloud expenditure: EUR 0.
+
+## E5 retrieval regression blocker resolved
+
+Four additional PostgreSQL integration cases passed after the
+486-test full regression baseline at commit 3605141.
+
+The tests establish semantic cutoff behavior on both sides of
+the configured threshold and safe candidate backfill in lexical
+and hybrid retrieval. Cumulative verified acceptance is 490 tests.
+
+CR-010 through CR-014 and CR-034 are ready for delivery closure,
+subject to successful GitHub merge and final synchronization.

@@ -61,6 +61,16 @@ acceptance requirements remain mandatory in E5 and E15.
 
 **E4 completed (PR #10):** 348 passing tests, actual API-host crash recovery, delayed checkpoint rollback and replay cancellation verified. Cloud expenditure EUR 0.
 
+**E5 progress:** Baseline audit, versioned evaluation dataset and automated evaluation framework and live hybrid retrieval benchmark and adversarial security acceptance completed (12 cases, 8 documents, 8 categories). AI evaluation, grounding and inference security implementation tracked in [E5 acceptance register](docs/architecture/e5-ai-evaluation-security.md).
+
+**E5.6 completed:** Inference authentication verified. See the E5 acceptance register.
+
+**E5.7 completed:** Concurrency, request limits and timeouts verified. See the E5 acceptance register.
+
+**E5.8 completed:** Dependency warning remediation verified. See the E5 acceptance register.
+
+**E5 acceptance:** 490 cumulative passing tests, including dedicated semantic relevance cutoff and safe candidate backfill regression. All benchmark and security holdout gates passed.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
@@ -81,3 +91,25 @@ To run the complete automated test suite:
     dotnet test NexusAgent.slnx
 
 The API exposes /health and /health/ready. Business endpoints are available only in Development. Application code is in src, automated tests in tests, Azure infrastructure definitions in infra/terraform, and operational procedures in docs/runbooks/production-operations.md. Azure deployment is not required for the local demo.
+
+
+### Authenticated local inference
+
+Generate a strong session credential before starting either service.
+Both Python and .NET must inherit the same NEXUS_INFERENCE_API_KEY
+environment variable.
+
+    $bytes = New-Object byte[] 32
+    $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
+    $env:NEXUS_INFERENCE_API_KEY = [BitConverter]::ToString($bytes).Replace("-", "").ToLowerInvariant()
+
+Start Python in a child process inheriting that environment:
+
+    Start-Process powershell.exe -ArgumentList '-NoExit','-File','services/nexusagent-ai/Start-LocalInference.ps1'
+
+The inference service binds to 127.0.0.1:8001 with one worker.
+Do not commit credentials or expose the local service publicly.
+
+E5 consolidated regression: 486 passing tests, eight benchmark
+gates and eight security holdout cases.

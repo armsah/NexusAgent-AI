@@ -1,3 +1,5 @@
+using System.Text;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace NexusAgent.Application.Questions;
@@ -7,45 +9,45 @@ public static class PromptInjectionDefense
     private static readonly Regex[] Patterns =
     [
         new(
-            @"\b(ignore|disregard|override)\b.{0,100}\b(previous|prior|system|developer|instructions|rules)\b",
+            @"\b(ignore|disregard|override|forget|bypass)\b.{0,100}\b(previous|prior|system|developer|instructions|rules|policy)\b",
             RegexOptions.Compiled | RegexOptions.IgnoreCase |
-            RegexOptions.CultureInvariant,
+            RegexOptions.CultureInvariant | RegexOptions.Singleline,
             TimeSpan.FromMilliseconds(100)),
 
         new(
             @"\b(system|developer)\s*(message|prompt|instructions)\s*:",
             RegexOptions.Compiled | RegexOptions.IgnoreCase |
-            RegexOptions.CultureInvariant,
+            RegexOptions.CultureInvariant | RegexOptions.Singleline,
             TimeSpan.FromMilliseconds(100)),
 
         new(
-            @"\b(reveal|print|expose|leak)\b.{0,100}\b(system prompt|api key|secret|credentials)\b",
+            @"\b(reveal|print|expose|leak|disclose)\b.{0,100}\b(system prompt|api key|secrets?|credentials)\b",
             RegexOptions.Compiled | RegexOptions.IgnoreCase |
-            RegexOptions.CultureInvariant,
+            RegexOptions.CultureInvariant | RegexOptions.Singleline,
             TimeSpan.FromMilliseconds(100)),
 
         new(
             @"\b(execute|run)\b.{0,60}\b(shell|command|powershell|bash|script)\b",
             RegexOptions.Compiled | RegexOptions.IgnoreCase |
-            RegexOptions.CultureInvariant,
+            RegexOptions.CultureInvariant | RegexOptions.Singleline,
             TimeSpan.FromMilliseconds(100)),
 
         new(
             @"\b(send|upload|exfiltrate)\b.{0,100}\b(data|documents|secrets|credentials)\b",
             RegexOptions.Compiled | RegexOptions.IgnoreCase |
-            RegexOptions.CultureInvariant,
+            RegexOptions.CultureInvariant | RegexOptions.Singleline,
             TimeSpan.FromMilliseconds(100)),
 
         new(
             @"\b(you are now|act as|pretend to be)\b.{0,80}\b(system|developer|administrator|assistant)\b",
             RegexOptions.Compiled | RegexOptions.IgnoreCase |
-            RegexOptions.CultureInvariant,
+            RegexOptions.CultureInvariant | RegexOptions.Singleline,
             TimeSpan.FromMilliseconds(100)),
 
         new(
-            @"\[\s*im_start\s*\]|\[\s*inst\s*\]|<\s*\|im_start\|\s*>",
+            @"\[\s*(im_start|im_end|/?inst)\s*\]|<\s*\|(im_start|im_end|system|assistant|developer)\|\s*>",
             RegexOptions.Compiled | RegexOptions.IgnoreCase |
-            RegexOptions.CultureInvariant,
+            RegexOptions.CultureInvariant | RegexOptions.Singleline,
             TimeSpan.FromMilliseconds(100))
     ];
 
@@ -58,9 +60,18 @@ public static class PromptInjectionDefense
 
         try
         {
-            return Patterns.Any(pattern => pattern.IsMatch(content));
+            var normalized = content.Normalize(NormalizationForm.FormKC);
+            var cleaned = new StringBuilder(normalized.Length);
+
+            foreach (var rune in normalized.EnumerateRunes())
+            {
+                if (Rune.GetUnicodeCategory(rune) != UnicodeCategory.Format)
+                    cleaned.Append(rune.ToString());
+            }
+
+            return Patterns.Any(pattern => pattern.IsMatch(cleaned.ToString()));
         }
-        catch (RegexMatchTimeoutException)
+        catch (Exception exception) when (exception is RegexMatchTimeoutException or ArgumentException)
         {
             // Fail closed when inspection cannot finish.
             return true;
