@@ -136,8 +136,18 @@ Production authentication remains tracked under CR-004 and CR-020.
 - Full regression: 337 tests passed.
 - Two additional replay and approval gateway tests passed.
 - Final targeted hardening regression: 13 tests passed.
-- Cumulative distinct test coverage: 339 tests.
+- Cumulative distinct test coverage: 342 tests.
 - Database migration consistency passed.
 - Azure expenditure: EUR 0.
 - CR-006 through CR-009 remain open pending final closure verification.
 - CR-037 through CR-041 record outstanding verification requirements.
+## E4 corrective acceptance
+
+- Overall request cancellation budget implemented.
+- Checkpoint and retry-release expiry checked after row-lock acquisition.
+- Both lock-contention regression tests passed.
+- Database-session termination and lease recovery passed.
+- Full cumulative regression: 342 tests passed.
+- Actual agent-process termination remains unverified.
+- Dedicated replay timeout acceptance remains outstanding.
+- Azure expenditure: EUR 0.

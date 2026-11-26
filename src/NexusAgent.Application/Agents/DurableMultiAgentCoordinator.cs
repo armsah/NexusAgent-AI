@@ -21,6 +21,12 @@ public sealed class DurableMultiAgentCoordinator(
 
         BoundedAgentPlan.ValidateTimeout(timeout);
 
+        using var requestBudget =
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+        requestBudget.CancelAfter(timeout);
+        cancellationToken = requestBudget.Token;
+
         if (request.ExecutionId == Guid.Empty ||
             request.WorkflowId == Guid.Empty ||
             string.IsNullOrWhiteSpace(request.Input) ||

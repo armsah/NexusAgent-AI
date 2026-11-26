@@ -179,7 +179,21 @@ public sealed class PostgresAgentExecutionStore(
         await using var transaction =
             await db.Database.BeginTransactionAsync(cancellationToken);
 
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            SELECT "Id"
+            FROM agent_executions
+            WHERE "Id" = {lease.ExecutionId}
+              AND "TenantId" = {caller.TenantId}
+              AND "RequesterId" = {caller.RequesterId}
+            FOR UPDATE
+            """, cancellationToken);
+
+        var checkedAt = DateTimeOffset.UtcNow;
+
         var count = await Fenced(lease, caller)
+            .Where(x =>
+                x.LeaseExpiresAt > checkedAt &&
+                x.DeadlineAt > checkedAt)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(x => x.Status, status)
                 .SetProperty(x => x.NextStage, lease.Stage + 1)
@@ -218,7 +232,23 @@ public sealed class PostgresAgentExecutionStore(
         var exhausted =
             lease.Attempt >= BoundedAgentPlan.MaxAttemptsPerStage;
 
-        return await Fenced(lease, caller)
+        await using var transaction =
+            await db.Database.BeginTransactionAsync(cancellationToken);
+
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            SELECT "Id" FROM agent_executions
+            WHERE "Id" = {lease.ExecutionId}
+              AND "TenantId" = {caller.TenantId}
+              AND "RequesterId" = {caller.RequesterId}
+            FOR UPDATE
+            """, cancellationToken);
+
+        var checkedAt = DateTimeOffset.UtcNow;
+
+        var released = await Fenced(lease, caller)
+            .Where(x =>
+                x.LeaseExpiresAt > checkedAt &&
+                x.DeadlineAt > checkedAt)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(x => x.Status,
                     exhausted ? "Failed" : "Pending")
@@ -228,6 +258,9 @@ public sealed class PostgresAgentExecutionStore(
                 .SetProperty(x => x.LeaseExpiresAt, (DateTimeOffset?)null)
                 .SetProperty(x => x.UpdatedAt, now),
                 cancellationToken) == 1;
+
+        await transaction.CommitAsync(cancellationToken);
+        return released;
     }
 
     public async Task<bool> CancelAsync(

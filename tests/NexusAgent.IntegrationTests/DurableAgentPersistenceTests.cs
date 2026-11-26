@@ -286,6 +286,212 @@ public sealed class DurableAgentPersistenceTests
             Assert.Equal("ExecutionBudgetExhausted", state.FailureCode);
         });
 
+    [Fact]
+    public Task CheckpointCannotCommitAfterLeaseExpiresWhileBlocked() =>
+        WithExecution(async (_, executionId) =>
+        {
+            await using var holder = Open();
+            var store = new PostgresAgentExecutionStore(holder);
+
+            var lease = await store.TryClaimAsync(
+                executionId, Owner, default);
+
+            Assert.NotNull(lease);
+
+            var expires = DateTimeOffset.UtcNow.AddSeconds(3);
+
+            await holder.AgentExecutions
+                .Where(x => x.Id == executionId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    x => x.LeaseExpiresAt, expires));
+
+            await using var transaction =
+                await holder.Database.BeginTransactionAsync();
+
+            await holder.Database.ExecuteSqlInterpolatedAsync($"""
+                SELECT "Id" FROM agent_executions
+                WHERE "Id" = {executionId}
+                FOR UPDATE
+                """);
+
+            await using var contender = Open();
+            var competingStore = new PostgresAgentExecutionStore(contender);
+
+            var pending = competingStore.CheckpointAsync(
+                lease, Owner,
+                new AgentResult(true, "Expired output"), default);
+
+            await Task.Delay(TimeSpan.FromSeconds(4));
+
+            await transaction.CommitAsync();
+
+            Assert.False(await pending);
+            Assert.Empty(await competingStore.ReadMemoryAsync(
+                executionId, Owner, default));
+
+            var recovered = await competingStore.TryClaimAsync(
+                executionId, Owner, default);
+
+            Assert.NotNull(recovered);
+            Assert.Equal(2, recovered.Attempt);
+        });
+
+    [Fact]
+    public Task RetryReleaseCannotSucceedAfterLeaseExpiresWhileBlocked() =>
+        WithExecution(async (_, executionId) =>
+        {
+            await using var holder = Open();
+            var store = new PostgresAgentExecutionStore(holder);
+
+            var lease = await store.TryClaimAsync(
+                executionId, Owner, default);
+
+            Assert.NotNull(lease);
+
+            var expires = DateTimeOffset.UtcNow.AddSeconds(3);
+
+            await holder.AgentExecutions
+                .Where(x => x.Id == executionId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    x => x.LeaseExpiresAt, expires));
+
+            await using var transaction =
+                await holder.Database.BeginTransactionAsync();
+
+            await holder.Database.ExecuteSqlInterpolatedAsync($"""
+                SELECT "Id" FROM agent_executions
+                WHERE "Id" = {executionId}
+                FOR UPDATE
+                """);
+
+            await using var contender = Open();
+            var competingStore = new PostgresAgentExecutionStore(contender);
+
+            var pending = competingStore.ReleaseForRetryAsync(
+                lease, Owner, default);
+
+            await Task.Delay(TimeSpan.FromSeconds(4));
+            await transaction.CommitAsync();
+
+            Assert.False(await pending);
+
+            var recovered = await competingStore.TryClaimAsync(
+                executionId, Owner, default);
+
+            Assert.NotNull(recovered);
+            Assert.Equal(2, recovered.Attempt);
+        });
+
+    [Fact]
+    public Task ExecutionRecoversAfterDatabaseClientProcessTermination() =>
+        WithExecution(async (_, executionId) =>
+        {
+            await using var db = Open();
+            var store = new PostgresAgentExecutionStore(db);
+
+            var lease = await store.TryClaimAsync(
+                executionId, Owner, default);
+
+            Assert.NotNull(lease);
+
+            var applicationName = "e4-crash-" + executionId.ToString("N");
+
+            var sql = $"""
+                UPDATE agent_executions
+                SET "LeaseExpiresAt" = clock_timestamp() + interval '3 seconds'
+                WHERE "Id" = '{executionId}';
+                SELECT pg_sleep(60);
+                """;
+
+            // Separate commands ensure the lease update commits before sleep.
+            var arguments =
+                $"exec -e PGAPPNAME={applicationName} nexusagent-postgres " +
+                "-i psql -U nexusagent -d nexusagent " +
+                "-v ON_ERROR_STOP=1";
+
+            // docker exec options must precede the container name.
+            arguments =
+                $"exec -i -e PGAPPNAME={applicationName} nexusagent-postgres " +
+                "psql -U nexusagent -d nexusagent -v ON_ERROR_STOP=1";
+
+            using var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "docker",
+                    Arguments = arguments,
+                    UseShellExecute = false,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                }
+            };
+
+            Assert.True(process.Start());
+
+            try
+            {
+                await process.StandardInput.WriteLineAsync(sql);
+                await process.StandardInput.FlushAsync();
+
+                var ready = false;
+
+                for (var i = 0; i < 50; i++)
+                {
+                    ready = await db.AgentExecutions
+                        .AsNoTracking()
+                        .AnyAsync(x =>
+                            x.Id == executionId &&
+                            x.LeaseExpiresAt < lease.ExpiresAt);
+
+                    if (ready)
+                        break;
+
+                    await Task.Delay(100);
+                }
+
+                Assert.True(ready);
+
+                await db.Database.ExecuteSqlInterpolatedAsync($"""
+                    SELECT pg_terminate_backend(pid)
+                    FROM pg_stat_activity
+                    WHERE application_name = {applicationName}
+                    """);
+
+                using var exitBudget =
+                    new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
+                await process.WaitForExitAsync(exitBudget.Token);
+
+                Assert.NotEqual(0, process.ExitCode);
+
+                await Task.Delay(TimeSpan.FromSeconds(4));
+
+                await using var restarted = Open();
+                var recovered = new PostgresAgentExecutionStore(restarted);
+
+                var next = await recovered.TryClaimAsync(
+                    executionId, Owner, default);
+
+                Assert.NotNull(next);
+                Assert.Equal(2, next.Attempt);
+
+                Assert.True(await recovered.CheckpointAsync(
+                    next, Owner,
+                    new AgentResult(true, "Recovered"), default));
+
+                Assert.Equal("Recovered",
+                    Assert.Single(await recovered.ReadMemoryAsync(
+                        executionId, Owner, default)).Output);
+            }
+            finally
+            {
+                if (!process.HasExited)
+                    process.Kill(entireProcessTree: true);
+            }
+        });
+
     private static async Task WithApproval(
         Func<Guid, ApprovalAction, Task> test)
     {

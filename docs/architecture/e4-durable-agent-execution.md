@@ -43,7 +43,7 @@ External side effects are not covered by this guarantee.
 - Additional evidence-replay acceptance passed.
 - Additional durable approval gateway acceptance passed.
 - Final targeted hardening regression: 13 tests passed.
-- Cumulative distinct test coverage: 339 tests.
+- Cumulative distinct test coverage: 342 tests.
 - EF Core migration consistency passed.
 - Azure expenditure: EUR 0.
 
@@ -58,3 +58,13 @@ External side effects are not covered by this guarantee.
 
 These requirements remain tracked in the mandatory completion register.
 Database-context restart testing is not equivalent to process-crash testing.
+## E4 corrective acceptance
+
+- Overall request cancellation budget implemented.
+- Checkpoint and retry-release expiry checked after row-lock acquisition.
+- Both lock-contention regression tests passed.
+- Database-session termination and lease recovery passed.
+- Full cumulative regression: 342 tests passed.
+- Actual agent-process termination remains unverified.
+- Dedicated replay timeout acceptance remains outstanding.
+- Azure expenditure: EUR 0.
