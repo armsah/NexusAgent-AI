@@ -33,6 +33,8 @@ public final class EventStreamTopology {
     private static final String HISTORY = "accepted-history-v1";
     private static final String IDENTITIES = "accepted-identities-v1";
     private static final String LATEST = "aggregate-latest-v1";
+    private static final String PENDING = "aggregate-pending-v1";
+    private static final long MAX_SEQUENCE_GAP = 1024;
 
     private EventStreamTopology() {}
 
@@ -41,7 +43,7 @@ public final class EventStreamTopology {
         var builder = new StreamsBuilder();
 
         for (String name : new String[]{
-                HISTORY, IDENTITIES, LATEST,
+                HISTORY, IDENTITIES, LATEST, PENDING,
                 GlobalIdentityProcessor.STORE}) {
 
             builder.addStateStore(
@@ -97,7 +99,7 @@ public final class EventStreamTopology {
         var projected = byAggregate.process(
                 EventProcessor::new,
                 Named.as("validate-and-project"),
-                HISTORY, IDENTITIES, LATEST);
+                HISTORY, IDENTITIES, LATEST, PENDING);
 
         projected.filter((key, value) -> key.startsWith("failure:"))
                 .selectKey((key, value) -> key.substring(8))
@@ -294,6 +296,8 @@ public final class EventStreamTopology {
         private KeyValueStore<String, String> history;
         private KeyValueStore<String, String> identities;
         private KeyValueStore<String, String> latest;
+        private KeyValueStore<String, String> pending;
+        private boolean draining;
 
         @Override
         public void init(ProcessorContext<String, String> context) {
@@ -301,6 +305,7 @@ public final class EventStreamTopology {
             history = context.getStateStore(HISTORY);
             identities = context.getStateStore(IDENTITIES);
             latest = context.getStateStore(LATEST);
+            pending = context.getStateStore(PENDING);
         }
 
         private Event decode(String topic, String value) throws Exception {
@@ -502,6 +507,32 @@ public final class EventStreamTopology {
             String prior = latest.get(aggregateKey);
             JsonNode previous = prior == null ? null : readState(prior);
 
+            long expected = previous == null
+                    ? 1 : previous.path("sequence").asLong() + 1;
+
+            if (event.sequence() > expected) {
+                if (event.sequence() - expected > MAX_SEQUENCE_GAP) {
+                    reject(record, "SEQUENCE_GAP_LIMIT_EXCEEDED");
+                    return;
+                }
+
+                String buffered = pending.get(sequenceKey);
+
+                if (buffered != null) {
+                    JsonNode oldEnvelope = readEnvelope(buffered);
+
+                    if (!oldEnvelope.path("payload").asText()
+                            .equals(event.canonical())) {
+                        reject(record, "BUFFERED_SEQUENCE_CONFLICT");
+                    }
+
+                    return;
+                }
+
+                pending.put(sequenceKey, record.value());
+                return;
+            }
+
             try {
                 validateSequence(event, previous);
             } catch (Rejected ex) {
@@ -550,6 +581,47 @@ public final class EventStreamTopology {
 
             context.forward(
                     new Record<>(aggregateKey, serialized, record.timestamp()));
+
+            // Drain contiguous successors already persisted by this task.
+            // State mutations and outputs remain transactionally coordinated.
+            drainPending(aggregateKey, record.timestamp());
+        }
+
+        private void drainPending(String aggregateKey, long timestamp) {
+            if (draining) {
+                return;
+            }
+
+            draining = true;
+
+            try {
+                for (long i = 0; i < MAX_SEQUENCE_GAP; i++) {
+                    JsonNode current = readState(latest.get(aggregateKey));
+
+                    long next = current.path("sequence").asLong() + 1;
+                    String key = aggregateKey + ":" + next;
+                    String buffered = pending.get(key);
+
+                    if (buffered == null) {
+                        return;
+                    }
+
+                    pending.delete(key);
+
+                    process(new Record<>(
+                            aggregateKey, buffered, timestamp));
+
+                    JsonNode after = readState(latest.get(aggregateKey));
+
+                    if (after.path("sequence").asLong() != next) {
+                        // Invalid successor was routed to the DLQ.
+                        // Do not advance past a rejected revision.
+                        return;
+                    }
+                }
+            } finally {
+                draining = false;
+            }
         }
     }
 }

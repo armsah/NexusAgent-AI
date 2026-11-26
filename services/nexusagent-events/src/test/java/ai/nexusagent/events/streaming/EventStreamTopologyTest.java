@@ -186,17 +186,20 @@ class EventStreamTopologyTest {
                 3, "document.updated");
 
         documents.pipeInput(key(tenant), third);
-        reason("SEQUENCE_GAP_OR_REGRESSION");
+
+        assertTrue(analytics.isEmpty());
+        assertTrue(failures.isEmpty());
 
         documents.pipeInput(key(tenant),
                 document(UUID.randomUUID(), tenant,
                         2, "document.updated"));
 
         assertEquals(2, projection().get("sequence").asInt());
+        assertEquals(3, projection().get("sequence").asInt());
 
         documents.pipeInput(key(tenant), third);
 
-        assertEquals(3, projection().get("sequence").asInt());
+        assertTrue(analytics.isEmpty());
         assertTrue(failures.isEmpty());
     }
 
@@ -296,7 +299,7 @@ class EventStreamTopologyTest {
         workflows.pipeInput(key(tenant),
                 workflow(UUID.randomUUID(), 2, "STARTED"));
 
-        reason("INITIAL_SEQUENCE_REQUIRED");
+        assertTrue(failures.isEmpty());
         assertTrue(analytics.isEmpty());
     }
 
@@ -437,5 +440,180 @@ class EventStreamTopologyTest {
         assertEquals(1, projection().get("acceptedEvents").asInt());
         assertTrue(analytics.isEmpty());
         assertTrue(failures.isEmpty());
+    }
+
+    @Test
+    void reversedDocumentDeliveryDrainsInSequence() throws Exception {
+        String first = document(UUID.randomUUID(), tenant,
+                1, "document.created");
+
+        String second = document(UUID.randomUUID(), tenant,
+                2, "document.updated");
+
+        String third = document(UUID.randomUUID(), tenant,
+                3, "document.updated");
+
+        documents.pipeInput(key(tenant), third);
+        documents.pipeInput(key(tenant), second);
+        documents.pipeInput(key(tenant), third);
+
+        assertTrue(analytics.isEmpty());
+        assertTrue(failures.isEmpty());
+
+        documents.pipeInput(key(tenant), first);
+
+        for (int i = 1; i <= 3; i++) {
+            assertEquals(i, projection().path("sequence").asInt());
+        }
+
+        assertTrue(analytics.isEmpty());
+        assertTrue(failures.isEmpty());
+    }
+
+    @Test
+    void reversedWorkflowDeliveryPreservesApprovalLifecycle()
+            throws Exception {
+
+        String[] types = {
+                "STARTED", "APPROVAL_REQUIRED",
+                "APPROVED", "COMPLETED"
+        };
+
+        for (int i = 3; i >= 0; i--) {
+            workflows.pipeInput(key(tenant),
+                    workflow(UUID.randomUUID(), i + 1, types[i]));
+        }
+
+        for (int i = 0; i < types.length; i++) {
+            JsonNode output = projection();
+
+            assertEquals(i + 1, output.path("sequence").asInt());
+            assertEquals(types[i], output.path("eventType").asText());
+        }
+
+        assertTrue(analytics.isEmpty());
+        assertTrue(failures.isEmpty());
+    }
+
+    @Test
+    void excessiveSequenceGapRejected() throws Exception {
+        workflows.pipeInput(key(tenant),
+                workflow(UUID.randomUUID(), 1026, "STARTED"));
+
+        reason("SEQUENCE_GAP_LIMIT_EXCEEDED");
+        assertTrue(analytics.isEmpty());
+    }
+
+    @Test
+    void conflictingBufferedSequenceRejected() throws Exception {
+        String second = document(UUID.randomUUID(), tenant,
+                2, "document.updated");
+
+        documents.pipeInput(key(tenant), second);
+
+        documents.pipeInput(key(tenant),
+                document(UUID.randomUUID(), tenant,
+                        2, "document.updated"));
+
+        reason("BUFFERED_SEQUENCE_CONFLICT");
+
+        documents.pipeInput(key(tenant),
+                document(UUID.randomUUID(), tenant,
+                        1, "document.created"));
+
+        assertEquals(1, projection().path("sequence").asInt());
+        assertEquals(2, projection().path("sequence").asInt());
+        assertTrue(failures.isEmpty());
+    }
+
+    @Test
+    void bufferedInvalidTransitionCannotAdvanceSequence()
+            throws Exception {
+
+        workflows.pipeInput(key(tenant),
+                workflow(UUID.randomUUID(), 2, "APPROVED"));
+
+        workflows.pipeInput(key(tenant),
+                workflow(UUID.randomUUID(), 1, "STARTED"));
+
+        assertEquals(1, projection().path("sequence").asInt());
+        reason("INVALID_WORKFLOW_TRANSITION");
+        assertTrue(analytics.isEmpty());
+
+        workflows.pipeInput(key(tenant),
+                workflow(UUID.randomUUID(), 2, "APPROVAL_REQUIRED"));
+
+        assertEquals(2, projection().path("sequence").asInt());
+        assertTrue(failures.isEmpty());
+    }
+
+    @Test
+    void pendingSequencesRemainTenantIsolated() throws Exception {
+        documents.pipeInput(key("tenant-a"),
+                document(UUID.randomUUID(), "tenant-a",
+                        2, "document.updated"));
+
+        documents.pipeInput(key("tenant-b"),
+                document(UUID.randomUUID(), "tenant-b",
+                        1, "document.created"));
+
+        assertEquals("tenant-b",
+                projection().path("tenantId").asText());
+
+        assertTrue(analytics.isEmpty());
+
+        documents.pipeInput(key("tenant-a"),
+                document(UUID.randomUUID(), "tenant-a",
+                        1, "document.created"));
+
+        assertEquals(1, projection().path("sequence").asInt());
+
+        JsonNode successor = projection();
+
+        assertEquals("tenant-a", successor.path("tenantId").asText());
+        assertEquals(2, successor.path("sequence").asInt());
+
+        assertTrue(failures.isEmpty());
+    }
+
+    @Test
+    void terminalWorkflowCannotBeReopened() throws Exception {
+        workflows.pipeInput(key(tenant),
+                workflow(UUID.randomUUID(), 1, "STARTED"));
+
+        projection();
+
+        workflows.pipeInput(key(tenant),
+                workflow(UUID.randomUUID(), 2, "COMPLETED"));
+
+        assertTrue(projection().path("terminal").asBoolean());
+
+        workflows.pipeInput(key(tenant),
+                workflow(UUID.randomUUID(), 3, "APPROVAL_REQUIRED"));
+
+        reason("INVALID_WORKFLOW_TRANSITION");
+        assertTrue(analytics.isEmpty());
+    }
+
+    @Test
+    void deletedDocumentCannotBeUpdated() throws Exception {
+        documents.pipeInput(key(tenant),
+                document(UUID.randomUUID(), tenant,
+                        1, "document.created"));
+
+        projection();
+
+        documents.pipeInput(key(tenant),
+                document(UUID.randomUUID(), tenant,
+                        2, "document.deleted"));
+
+        assertFalse(projection().path("active").asBoolean());
+
+        documents.pipeInput(key(tenant),
+                document(UUID.randomUUID(), tenant,
+                        3, "document.updated"));
+
+        reason("INVALID_DOCUMENT_TRANSITION");
+        assertTrue(analytics.isEmpty());
     }
 }

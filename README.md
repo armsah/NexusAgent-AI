@@ -133,6 +133,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.3.3 CLOSED: production global identity registry, dual repartition boundaries and 104 passing Java tests.
 
+- E7.3.4 CLOSED: persistent sequence buffering, ordered lifecycle processing and 112 passing Java tests.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

@@ -445,3 +445,29 @@ Live multi-partition processing, transactional interruption and
 changelog restoration remain mandatory E7.3.7 acceptance.
 
 E7.3.3 implementation and topology acceptance: CLOSED.
+
+### E7.3.4 - Aggregate sequencing and lifecycle validation: CLOSED
+
+- Corrected ordering risk introduced by event-ID repartitioning.
+- Persistent changelog-enabled pending sequence buffer.
+- Maximum forward sequence gap of 1024 revisions.
+- Automatic contiguous successor processing.
+- Duplicate buffered delivery suppression.
+- Conflicting buffered revision rejection.
+- Invalid successors cannot advance aggregate state.
+- Tenant-isolated pending sequences.
+- Terminal workflow and deleted-document lifecycle protection.
+- Eight additional topology acceptance tests.
+- Full Java regression: 112 passed.
+- Failures, errors and skips: zero.
+- Cloud expenditure: EUR 0.
+
+A missing predecessor prevents subsequent revisions from advancing.
+Pending revisions remain durable until the predecessor arrives.
+Excessive sequence gaps are routed to the dead-letter topic.
+
+Live distributed ordering, interruption and state restoration
+remain subject to E7.3.7 acceptance.
+
+Pending sequence age monitoring and operational reconciliation
+remain required before production readiness.
