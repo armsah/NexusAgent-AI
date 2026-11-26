@@ -1,0 +1,22 @@
+{
+    "baseline":  "eff463e9bc92c2dd9a2cbae138715665dafad0a3",
+    "actualProcessTerminationVerified":  true,
+    "durableIntentRecoveryVerified":  true,
+    "exactKafkaRetransmissionVerified":  true,
+    "acknowledgedRetrySuppressionVerified":  true,
+    "independentProspectiveHistoryComparisonVerified":  true,
+    "crossLanguageAuthoritativeRebuildVerified":  true,
+    "projectionEquivalenceVerified":  true,
+    "tenantMetricsEquivalenceVerified":  true,
+    "duplicateSuppressionVerified":  true,
+    "acceptanceResourceCleanupVerified":  true,
+    "productionEndOffsetsPreserved":  true,
+    "verifiedEventId":  "21c90249-2e55-4b13-be6d-6013605b9857",
+    "verifiedBrokerRecords":  2,
+    "javaTestsPassed":  34,
+    "targetedCsharpRegressionPassed":  true,
+    "legacyHistoricalCompletenessVerified":  false,
+    "historicalProductionMigrationAuthorized":  false,
+    "status":  "PARTIAL",
+    "cloudExpenditureEur":  0
+}

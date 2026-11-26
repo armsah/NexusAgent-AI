@@ -10,6 +10,27 @@ public sealed class PostgresDocumentIngestionEventPublisher(
     NexusAgentDbContext dbContext)
     : IDocumentIngestionEventPublisher
 {
+    private readonly Func<string, string, Guid, string,
+        CancellationToken, Task>? acceptanceTransport;
+
+    private readonly Func<CancellationToken, Task>?
+        afterBrokerAcknowledgement;
+
+    internal PostgresDocumentIngestionEventPublisher(
+        NexusAgentDbContext dbContext,
+        Func<string, string, Guid, string,
+            CancellationToken, Task> acceptanceTransport,
+        Func<CancellationToken, Task> afterBrokerAcknowledgement)
+        : this(dbContext)
+    {
+        this.acceptanceTransport = acceptanceTransport
+            ?? throw new ArgumentNullException(nameof(acceptanceTransport));
+
+        this.afterBrokerAcknowledgement = afterBrokerAcknowledgement
+            ?? throw new ArgumentNullException(
+                nameof(afterBrokerAcknowledgement));
+    }
+
     public async Task PublishAsync(
         Guid eventId,
         string eventType,
@@ -80,15 +101,33 @@ public sealed class PostgresDocumentIngestionEventPublisher(
             if (!await journal.IsAcknowledgedAsync(
                     eventId, cancellationToken))
             {
-                using var transport =
-                    new KafkaEventTransport(bootstrapServers);
+                if (acceptanceTransport is not null)
+                {
+                    await acceptanceTransport(
+                        KafkaEventTransport.DocumentsTopic,
+                        tenantId,
+                        documentId,
+                        wirePayload,
+                        cancellationToken);
+                }
+                else
+                {
+                    using var transport =
+                        new KafkaEventTransport(bootstrapServers);
 
-                await transport.PublishAsync(
-                    KafkaEventTransport.DocumentsTopic,
-                    tenantId,
-                    documentId,
-                    wirePayload,
-                    cancellationToken);
+                    await transport.PublishAsync(
+                        KafkaEventTransport.DocumentsTopic,
+                        tenantId,
+                        documentId,
+                        wirePayload,
+                        cancellationToken);
+                }
+
+                if (afterBrokerAcknowledgement is not null)
+                {
+                    await afterBrokerAcknowledgement(
+                        cancellationToken);
+                }
 
                 await journal.AcknowledgeAsync(
                     eventId,

@@ -239,6 +239,16 @@ Database immutability acceptance and 19 targeted C# tests passed.
 Live document crash recovery and authoritative isolated migration
 remain outstanding.
 
+
+### Cross-language publication recovery and rebuild
+
+Actual .NET publisher process termination, immutable PostgreSQL
+publication recovery, exact Kafka retransmission and independent
+Java Kafka Streams rebuild acceptance are verified.
+
+Historical production migration remains fail-closed pending
+complete legacy publication coverage.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
