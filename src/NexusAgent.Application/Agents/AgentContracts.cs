@@ -4,7 +4,20 @@ public sealed record AgentRequest(
     Guid ExecutionId,
     Guid WorkflowId,
     string TenantId,
-    string Input);
+    string Input)
+{
+    internal string? AuthorizedAgentName { get; init; }
+
+    internal void RequireAuthorization(string agentName)
+    {
+        if (!string.Equals(
+            AuthorizedAgentName, agentName, StringComparison.Ordinal))
+        {
+            throw new UnauthorizedAccessException(
+                "Governed agent invocation required.");
+        }
+    }
+}
 
 public sealed record AgentResult(
     bool Succeeded,

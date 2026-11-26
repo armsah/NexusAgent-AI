@@ -44,6 +44,7 @@ From a separate repository-root PowerShell terminal:
 
     $env:Embeddings__Provider = "LocalPython"
     $env:GroundedAnswers__Provider = "LocalPython"
+    $env:Agents__EnableDevelopmentExecution = "true"
     $env:ASPNETCORE_ENVIRONMENT = "Development"
     dotnet run --project src/NexusAgent.Api
 
@@ -81,3 +82,30 @@ The application boundary is not a sandbox against trusted in-process code.
 
 The Starlette TestClient deprecation remains tracked in CR-014.
 No Azure resources were provisioned during E3.
+
+## Final authorization hardening
+
+Multi-agent execution requires explicit development opt-in.
+Production and Staging deny execution regardless of configuration.
+
+The authorized executor attaches an internal agent-specific
+authorization marker after workflow ownership and policy checks.
+All four built-in agents reject unauthorized direct invocation.
+
+This protects ordinary application invocation paths, not arbitrary
+malicious trusted code or reflection.
+
+Cumulative corrective regression results:
+
+- C# unit tests: 163 passed.
+- Architecture tests: 3 passed.
+- Integration tests: 121 passed, including live local inference.
+- Python tests: 27 passed.
+- Total: 314 passed, zero failed or skipped.
+
+The seven unit fixture corrections were validated separately after
+the successful integration and architecture runs.
+
+Production authentication remains assigned to E10.
+Dependency deprecation remediation remains assigned to E5.
+Azure expenditure: EUR 0.

@@ -20,6 +20,56 @@ namespace NexusAgent.IntegrationTests;
 
 public sealed class MultiAgentAcceptanceTests
 {
+
+    [Fact]
+    public async Task DevelopmentWithoutOptInDeniesAgentExecution()
+    {
+        await using var factory = new AgentFactory(
+            "Development", false, enabled: false);
+
+        using var client = factory.CreateClient();
+
+        using var response = await client.PostAsync(
+            $"/api/workflows/{Guid.NewGuid()}/agents/execute", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+
+        var policy = scope.ServiceProvider
+            .GetRequiredService<IAgentAuthorizationPolicy>();
+
+        Assert.False(policy.IsAuthorized(
+            new WorkflowAccess(Tenant, Principal),
+            AgentNames.Knowledge));
+    }
+
+    [Fact]
+    public async Task BuiltInAgentsRejectUnauthorizedDirectInvocation()
+    {
+        await using var factory = new AgentFactory("Development", false);
+        using var client = factory.CreateClient();
+        using var scope = factory.Services.CreateScope();
+
+        var agents = scope.ServiceProvider.GetServices<IAgent>()
+            .Where(agent => agent.Name is AgentNames.Supervisor
+                or AgentNames.Policy
+                or AgentNames.Knowledge
+                or AgentNames.Verifier)
+            .ToArray();
+
+        Assert.Equal(4, agents.Length);
+
+        foreach (var agent in agents)
+        {
+            var request = new AgentRequest(
+                Guid.NewGuid(), Guid.NewGuid(), Tenant,
+                "Database question");
+
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                async () => await agent.ExecuteAsync(request, default));
+        }
+    }
     private const string Tenant = "local-development";
     private const string Principal = "local-developer";
 
@@ -446,7 +496,7 @@ public sealed class MultiAgentAcceptanceTests
     private sealed class AgentFactory(
         string environment,
         bool live,
-        bool hybrid = false) : WebApplicationFactory<Program>
+        bool hybrid = false, bool enabled = true) : WebApplicationFactory<Program>
     {
         private readonly string storageRoot = Path.Combine(
             Path.GetTempPath(), "nexusagent-agent-tests",
@@ -455,6 +505,7 @@ public sealed class MultiAgentAcceptanceTests
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment(environment);
+            builder.UseSetting("Agents:EnableDevelopmentExecution", enabled.ToString());
             builder.UseSetting("ConnectionStrings:NexusAgent", ConnectionString);
             builder.UseSetting("DocumentStorage:RootPath", storageRoot);
             builder.UseSetting("Embeddings:Provider",

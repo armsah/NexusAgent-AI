@@ -100,3 +100,15 @@ All closures reference PR #6 and merge commit 6ca45f3.
 CR-036 remains OPEN pending complete invocation-boundary verification.
 CR-004, CR-034 and CR-035 retain outstanding requirements.
 GitHub automated checks remain pending E13 CI/CD implementation.
+
+
+### CR-036 corrective acceptance
+
+- Explicit development opt-in enforced.
+- Default-deny authorization verified.
+- Direct invocation of all four built-in agents rejected.
+- Cumulative regression: 314 passed, zero failed or skipped.
+- Azure expenditure: EUR 0.
+
+CR-036 closure awaits corrective pull request merge.
+Production authentication remains tracked under CR-004 and CR-020.
