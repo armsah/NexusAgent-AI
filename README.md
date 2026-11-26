@@ -82,6 +82,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E6.3 CLOSED: Spring Boot service foundation. 3 Java tests passed.
 
+- E6.4 CLOSED: Immutable versioned event contracts. 26 Java tests passed.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
