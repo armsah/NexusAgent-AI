@@ -616,4 +616,189 @@ class EventStreamTopologyTest {
         reason("INVALID_DOCUMENT_TRANSITION");
         assertTrue(analytics.isEmpty());
     }
+
+    private org.apache.kafka.streams.TestOutputTopic<String, String>
+            tenantOutput() {
+
+        return driver.createOutputTopic(
+                StreamSettings.TENANT_ANALYTICS,
+                org.apache.kafka.common.serialization.Serdes.String()
+                        .deserializer(),
+                org.apache.kafka.common.serialization.Serdes.String()
+                        .deserializer());
+    }
+
+    @Test
+    void tenantMetricsAggregateMultipleDocuments() throws Exception {
+        var output = tenantOutput();
+
+        documents.pipeInput(key(tenant),
+                document(UUID.randomUUID(), tenant,
+                        1, "document.created"));
+
+        UUID other = UUID.randomUUID();
+
+        String second = document(UUID.randomUUID(), tenant,
+                1, "document.created")
+                .replace(aggregate.toString(), other.toString());
+
+        documents.pipeInput(
+                StreamIdentity.aggregateKey(tenant, other), second);
+
+        var snapshots = output.readKeyValuesToList();
+
+        assertEquals(2, snapshots.size());
+        assertEquals(tenant, snapshots.get(1).key);
+
+        JsonNode metrics = json.readTree(snapshots.get(1).value);
+
+        assertEquals(2, metrics.path("documentsCreated").asLong());
+        assertEquals(2, metrics.path("activeDocuments").asLong());
+        assertEquals(2, metrics.path("acceptedEvents").asLong());
+    }
+
+    @Test
+    void tenantMetricsExcludeDuplicatesAndRejectedRecords()
+            throws Exception {
+
+        var output = tenantOutput();
+
+        String original = document(UUID.randomUUID(), tenant,
+                1, "document.created");
+
+        documents.pipeInput(key(tenant), original);
+        documents.pipeInput(key(tenant), original);
+        documents.pipeInput(key(tenant), original);
+        documents.pipeInput(key(tenant), "invalid-json");
+
+        var snapshots = output.readValuesToList();
+
+        assertEquals(1, snapshots.size());
+
+        JsonNode metrics = json.readTree(snapshots.getFirst());
+
+        assertEquals(1, metrics.path("acceptedEvents").asLong());
+        assertEquals(1, metrics.path("activeDocuments").asLong());
+    }
+
+    @Test
+    void tenantMetricsRemainIsolated() throws Exception {
+        var output = tenantOutput();
+
+        documents.pipeInput(key("tenant-a"),
+                document(UUID.randomUUID(), "tenant-a",
+                        1, "document.created"));
+
+        documents.pipeInput(key("tenant-b"),
+                document(UUID.randomUUID(), "tenant-b",
+                        1, "document.created"));
+
+        documents.pipeInput(key("tenant-a"),
+                document(UUID.randomUUID(), "tenant-a",
+                        2, "document.updated"));
+
+        var snapshots = output.readKeyValuesToList();
+
+        assertEquals(3, snapshots.size());
+
+        assertEquals("tenant-a", snapshots.get(0).key);
+        assertEquals("tenant-b", snapshots.get(1).key);
+        assertEquals("tenant-a", snapshots.get(2).key);
+
+        assertEquals(1, json.readTree(snapshots.get(1).value)
+                .path("acceptedEvents").asLong());
+
+        assertEquals(2, json.readTree(snapshots.get(2).value)
+                .path("acceptedEvents").asLong());
+    }
+
+    @Test
+    void tenantMetricsCombineDocumentAndWorkflowEvents()
+            throws Exception {
+
+        var output = tenantOutput();
+
+        documents.pipeInput(key(tenant),
+                document(UUID.randomUUID(), tenant,
+                        1, "document.created"));
+
+        workflows.pipeInput(key(tenant),
+                workflow(UUID.randomUUID(), 1, "STARTED"));
+
+        workflows.pipeInput(key(tenant),
+                workflow(UUID.randomUUID(), 2, "COMPLETED"));
+
+        var snapshots = output.readValuesToList();
+
+        assertEquals(3, snapshots.size());
+
+        JsonNode metrics = json.readTree(snapshots.getLast());
+
+        assertEquals(3, metrics.path("acceptedEvents").asLong());
+        assertEquals(1, metrics.path("activeDocuments").asLong());
+        assertEquals(1, metrics.path("workflowsCompleted").asLong());
+        assertEquals(0, metrics.path("nonTerminalWorkflows").asLong());
+        assertEquals(1.0, metrics.path("completionRate").asDouble());
+    }
+
+    @Test
+    void tenantMetricsFollowBufferedAggregateOrder()
+            throws Exception {
+
+        var output = tenantOutput();
+
+        documents.pipeInput(key(tenant),
+                document(UUID.randomUUID(), tenant,
+                        3, "document.deleted"));
+
+        documents.pipeInput(key(tenant),
+                document(UUID.randomUUID(), tenant,
+                        2, "document.updated"));
+
+        assertTrue(output.isEmpty());
+
+        documents.pipeInput(key(tenant),
+                document(UUID.randomUUID(), tenant,
+                        1, "document.created"));
+
+        var snapshots = output.readValuesToList();
+
+        assertEquals(3, snapshots.size());
+
+        JsonNode metrics = json.readTree(snapshots.getLast());
+
+        assertEquals(1, metrics.path("documentsCreated").asLong());
+        assertEquals(1, metrics.path("documentsUpdated").asLong());
+        assertEquals(1, metrics.path("documentsDeleted").asLong());
+        assertEquals(0, metrics.path("activeDocuments").asLong());
+        assertEquals(3, metrics.path("acceptedEvents").asLong());
+    }
+
+    @Test
+    void tenantMetricsPersistInStateStore() throws Exception {
+        documents.pipeInput(key(tenant),
+                document(UUID.randomUUID(), tenant,
+                        1, "document.created"));
+
+        var store = driver.<String, String>getKeyValueStore(
+                TenantAnalyticsProcessor.METRICS_STORE);
+
+        JsonNode persisted = json.readTree(store.get(tenant));
+
+        assertEquals(1, persisted.path("activeDocuments").asLong());
+        assertEquals(tenant, persisted.path("tenantId").asText());
+    }
+
+    @Test
+    void tenantTopologyContainsRepartitionAndPersistentStores() {
+        String topology = EventStreamTopology.build()
+                .describe().toString();
+
+        assertTrue(topology.contains("tenant-analytics-v1-repartition"));
+        assertTrue(topology.contains(
+                TenantAnalyticsProcessor.METRICS_STORE));
+        assertTrue(topology.contains(
+                TenantAnalyticsProcessor.IDENTITIES_STORE));
+        assertTrue(topology.contains(StreamSettings.TENANT_ANALYTICS));
+    }
 }

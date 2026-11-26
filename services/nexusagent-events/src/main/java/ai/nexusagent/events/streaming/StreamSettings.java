@@ -9,6 +9,7 @@ public final class StreamSettings {
     public static final String DOCUMENTS = "nexusagent.documents.v1";
     public static final String WORKFLOWS = "nexusagent.workflows.v1";
     public static final String ANALYTICS = "nexusagent.analytics.v1";
+    public static final String TENANT_ANALYTICS = "nexusagent.tenant-analytics.v1";
     public static final String DEAD_LETTERS = "nexusagent.events.dlq.v1";
 
     private StreamSettings() {}

@@ -135,6 +135,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.3.4 CLOSED: persistent sequence buffering, ordered lifecycle processing and 112 passing Java tests.
 
+- E7.3.5 CLOSED: persistent tenant-wide document, workflow, approval and duration analytics; compacted tenant snapshot topic; 131 passing Java tests.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

@@ -44,7 +44,9 @@ public final class EventStreamTopology {
 
         for (String name : new String[]{
                 HISTORY, IDENTITIES, LATEST, PENDING,
-                GlobalIdentityProcessor.STORE}) {
+                GlobalIdentityProcessor.STORE,
+                TenantAnalyticsProcessor.METRICS_STORE,
+                TenantAnalyticsProcessor.IDENTITIES_STORE}) {
 
             builder.addStateStore(
                     Stores.keyValueStoreBuilder(
@@ -106,8 +108,25 @@ public final class EventStreamTopology {
                 .to(StreamSettings.DEAD_LETTERS,
                         Produced.with(serde, serde));
 
-        projected.filter((key, value) -> !key.startsWith("failure:"))
-                .to(StreamSettings.ANALYTICS,
+        var accepted = projected.filter(
+                (key, value) -> !key.startsWith("failure:"));
+
+        accepted.to(StreamSettings.ANALYTICS,
+                Produced.with(serde, serde));
+
+        accepted.selectKey((key, value) ->
+                        TenantAnalyticsProcessor.tenantKey(value))
+                .repartition(
+                        Repartitioned.<String, String>as("tenant-analytics-v1")
+                                .withKeySerde(serde)
+                                .withValueSerde(serde)
+                                .withNumberOfPartitions(3))
+                .process(
+                        TenantAnalyticsProcessor::new,
+                        Named.as("tenant-analytics"),
+                        TenantAnalyticsProcessor.METRICS_STORE,
+                        TenantAnalyticsProcessor.IDENTITIES_STORE)
+                .to(StreamSettings.TENANT_ANALYTICS,
                         Produced.with(serde, serde));
 
         return builder.build();

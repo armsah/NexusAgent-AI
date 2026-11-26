@@ -471,3 +471,60 @@ remain subject to E7.3.7 acceptance.
 
 Pending sequence age monitoring and operational reconciliation
 remain required before production readiness.
+
+### E7.3.5 - Persistent tenant-wide analytics: CLOSED
+
+Implementation:
+
+- Dedicated tenant-key repartition boundary with three partitions.
+- Persistent changelog-enabled tenant metrics state.
+- Persistent accepted-projection identity registry.
+- Tenant-wide document creation, update, deletion and active counts.
+- Workflow start, completion, failure, rejection and cancellation counts.
+- Non-terminal workflow counts.
+- Approval request, approval grant and rejection counts.
+- Arbitrary-precision cumulative terminal workflow duration.
+- Average terminal duration and completion rate.
+- Counter overflow, underflow and consistency protection.
+- Duplicate accepted projections cannot increment counters twice.
+- Rejected source events cannot affect tenant metrics.
+- Aggregate sequence buffering respected before tenant aggregation.
+- Compacted tenant snapshot topic: nexusagent.tenant-analytics.v1.
+- Reproducible local topic provisioning.
+- Existing aggregate analytics topic remains unchanged.
+
+Metric semantics:
+
+- Metrics are cumulative across accepted event history.
+- Completion rate equals completed workflows divided by all terminal workflows.
+- Average terminal duration includes all terminal workflow outcomes.
+- Both rates are zero before the first terminal workflow.
+- Last-event metadata describes processing order, not maximum event time.
+- Tenant snapshots are derived projections; PostgreSQL remains authoritative.
+- Each accepted aggregate projection contributes once to tenant metrics.
+- Tenant metrics and their identity registry are transactionally coordinated
+  under Kafka Streams exactly-once-v2 configuration.
+
+Acceptance:
+
+- Twelve dedicated metric-model tests.
+- Seven production topology acceptance tests.
+- Full Java regression: 131 passed.
+- Failures, errors and skips: zero.
+- Live Kafka tenant analytics topic provisioning: PASSED.
+- Topic partition count: 3.
+- Topic cleanup policy: compact.
+- Repeatable topic initialization: PASSED.
+- Cloud expenditure: EUR 0.
+
+Operational limitations:
+
+- Live transactional tenant aggregation and fresh-directory changelog
+  restoration remain mandatory E7.3.7 acceptance.
+- Complete cumulative metrics require complete source history or a
+  verified state migration.
+- Persistent identity and history retention must be governed by an
+  explicit operational retention policy.
+- Missing-predecessor monitoring and reconciliation remain required.
+
+E7.3.5 implementation and topology acceptance: CLOSED.

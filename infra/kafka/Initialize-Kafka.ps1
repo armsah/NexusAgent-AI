@@ -55,3 +55,6 @@ foreach ($topic in $manifest.topics) {
 }
 
 Write-Host "KAFKA INITIALIZATION PASSED" -ForegroundColor Green
+
+# Provision the compacted tenant analytics snapshot topic.
+& (Join-Path $PSScriptRoot "Initialize-TenantAnalytics.ps1")
