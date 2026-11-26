@@ -73,6 +73,23 @@ acceptance requirements remain mandatory in E5 and E15.
 
 **E5 completed (PR #11):** AI evaluation, adversarial security, authenticated inference, resource controls and retrieval relevance validated locally. 490 cumulative passing tests. Cloud expenditure EUR 0.
 
+### E6 - Java functional event processing
+
+- E6.1 CLOSED: existing event contracts and Java environment audited.
+- E6.2 CLOSED: pinned Maven wrapper and Java 21 build verified.
+- E6.6 CLOSED: event integrity, deduplication and lifecycle validation; 66 Java tests passed.
+- E6.7 security acceptance PASSED: 53 Java dependencies audited, zero OSV findings, 66 Java tests passed.
+- E6.7 document wire interoperability PASSED: actual C# serialization consumed by Java.
+- E6.7 CLOSED: document and workflow wire interoperability verified.
+- E6.8 READY FOR MERGE: 576 regression tests passed across C#, Python and Java.
+- Architecture: [E6 implementation record](docs/architecture/e6-java-event-processing.md).
+
+- E6.3 CLOSED: Spring Boot service foundation. 3 Java tests passed.
+
+- E6.4 CLOSED: Immutable versioned event contracts. 26 Java tests passed.
+
+- E6.5 CLOSED: Functional transformations and analytics. 40 Java tests passed.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
