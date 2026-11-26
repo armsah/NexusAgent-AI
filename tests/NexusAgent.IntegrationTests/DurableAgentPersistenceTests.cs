@@ -492,6 +492,136 @@ public sealed class DurableAgentPersistenceTests
             }
         });
 
+    [Fact]
+    public Task ClaimCannotStartAfterDeadlineExpiresWhileBlocked() =>
+        WithExecution(async (_, executionId) =>
+        {
+            await using var holder = Open();
+
+            await holder.AgentExecutions
+                .Where(x => x.Id == executionId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    x => x.DeadlineAt,
+                    DateTimeOffset.UtcNow.AddSeconds(3)));
+
+            await using var transaction =
+                await holder.Database.BeginTransactionAsync();
+
+            await holder.Database.ExecuteSqlInterpolatedAsync($"""
+                SELECT "Id" FROM agent_executions
+                WHERE "Id" = {executionId}
+                FOR UPDATE
+                """);
+
+            await using var contender = Open();
+            var store = new PostgresAgentExecutionStore(contender);
+
+            var pending = store.TryClaimAsync(
+                executionId, Owner, default);
+
+            await Task.Delay(TimeSpan.FromSeconds(4));
+            await transaction.CommitAsync();
+
+            Assert.Null(await pending);
+
+            var state = await store.GetAsync(
+                executionId, Owner, default);
+
+            Assert.NotNull(state);
+            Assert.Equal("Failed", state.Status);
+            Assert.Equal("ExecutionBudgetExhausted", state.FailureCode);
+        });
+
+    [Fact]
+    public Task ActualAgentProcessCrashPreservesMemoryAndRecovers() =>
+        WithExecution(async (_, executionId) =>
+        {
+            var dll = Path.Combine(
+                AppContext.BaseDirectory,
+                "CrashProbe", "NexusAgent.CrashProbe.dll");
+
+            Assert.True(File.Exists(dll));
+
+            var start = new System.Diagnostics.ProcessStartInfo("dotnet")
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true
+            };
+
+            start.ArgumentList.Add(dll);
+            start.ArgumentList.Add(executionId.ToString());
+            start.ArgumentList.Add(Owner.TenantId);
+            start.ArgumentList.Add(Owner.RequesterId);
+            start.Environment["NEXUS_CRASH_DB"] = ConnectionString;
+
+            using var process = System.Diagnostics.Process.Start(start)!;
+
+            try
+            {
+                using var budget =
+                    new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+                Assert.Equal("CRASH_READY",
+                    await process.StandardOutput.ReadLineAsync(budget.Token));
+
+                await using var db = Open();
+
+                var before = await db.AgentExecutions.AsNoTracking()
+                    .SingleAsync(x => x.Id == executionId);
+
+                Assert.Equal("Running", before.Status);
+                Assert.Equal(1, before.NextStage);
+
+                // Shorten the test lease, then allow natural expiry.
+                await db.AgentExecutions
+                    .Where(x => x.Id == executionId)
+                    .ExecuteUpdateAsync(s => s.SetProperty(
+                        x => x.LeaseExpiresAt,
+                        DateTimeOffset.UtcNow.AddSeconds(3)));
+
+                process.Kill(entireProcessTree: true);
+                await process.WaitForExitAsync(budget.Token);
+
+                Assert.NotEqual(0, process.ExitCode);
+
+                await Task.Delay(TimeSpan.FromSeconds(4));
+
+                await using var restarted = Open();
+                var store = new PostgresAgentExecutionStore(restarted);
+
+                var memory = await store.ReadMemoryAsync(
+                    executionId, Owner, default);
+
+                Assert.Equal("Crash probe checkpoint",
+                    Assert.Single(memory).Output);
+
+                var recovered = await store.TryClaimAsync(
+                    executionId, Owner, default);
+
+                Assert.NotNull(recovered);
+                Assert.Equal(1, recovered.Stage);
+                Assert.Equal(2, recovered.Attempt);
+                Assert.NotEqual(before.LeaseToken, recovered.LeaseToken);
+
+                Assert.True(await store.CheckpointAsync(
+                    recovered, Owner,
+                    new AgentResult(true, "Recovered after process crash"),
+                    default));
+
+                Assert.Equal(2, (await store.ReadMemoryAsync(
+                    executionId, Owner, default)).Count);
+            }
+            finally
+            {
+                if (!process.HasExited)
+                {
+                    process.Kill(entireProcessTree: true);
+                    await process.WaitForExitAsync();
+                }
+            }
+        });
+
     private static async Task WithApproval(
         Func<Guid, ApprovalAction, Task> test)
     {
