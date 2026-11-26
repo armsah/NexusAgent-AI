@@ -116,3 +116,17 @@ No cloud resources have been provisioned.
 - Targeted regression passed.
 - Fresh-database migration acceptance remains required.
 - Cloud expenditure: EUR 0.
+
+### E7.2 durable ordered workflow dispatch
+
+- Workflow Kafka background worker registered.
+- PostgreSQL SKIP LOCKED claims and aggregate sequence ordering.
+- Broker acknowledgment precedes PostgreSQL acknowledgment.
+- Failed publication retains events with bounded retry backoff.
+- Fresh isolated database provisioned with pgvector before EF migration.
+- Broker connection failure and ordered recovery acceptance passed.
+- Full unit and architecture regression passed.
+- Atomic lifecycle acceptance repeated.
+- Temporary database cleanup verified.
+- Delivery remains at-least-once.
+- Cloud expenditure: EUR 0.
