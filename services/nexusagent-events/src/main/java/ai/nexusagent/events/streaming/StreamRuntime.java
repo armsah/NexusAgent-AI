@@ -48,16 +48,41 @@ public final class StreamRuntime implements SmartLifecycle {
                 applicationId,
                 StreamTopics.production());
 
-        ProductionRecoveryGuard.verify(
+        boolean initializationApproved = "true".equalsIgnoreCase(
+                System.getenv("NEXUS_STREAM_INITIALIZE_EMPTY"));
+
+        boolean localStateEmpty = false;
+
+        Path applicationState = state.resolve(applicationId);
+
+        if (java.nio.file.Files.notExists(applicationState)) {
+            localStateEmpty = true;
+        } else {
+            try (var entries =
+                    java.nio.file.Files.list(applicationState)) {
+
+                localStateEmpty = entries.findAny().isEmpty();
+
+            } catch (java.io.IOException ex) {
+
+                throw new IllegalStateException(
+                        "Unable to verify local stream state", ex);
+            }
+        }
+
+        var startupMode = ProductionRecoveryGuard.verifyStartup(
                 bootstrap,
                 applicationId,
-                StreamTopics.production());
+                StreamTopics.production(),
+                initializationApproved,
+                localStateEmpty);
 
         var settings = StreamSettings.create(
                 bootstrap, applicationId, state);
 
-        // Never silently replay or skip missing production history.
-        settings.put("auto.offset.reset", "none");
+        settings.put(
+                "auto.offset.reset",
+                StreamInitializationPolicy.offsetReset(startupMode));
 
         streams = new KafkaStreams(
                 EventStreamTopology.build(),

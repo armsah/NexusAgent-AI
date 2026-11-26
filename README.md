@@ -270,6 +270,15 @@ Historical malformed records and unverified synthetic snapshots
 receive explicit preservation dispositions. Destructive
 reconciliation and unverified historical migration remain denied.
 
+
+### Controlled initialization and acceptance readiness
+
+Pristine streaming environments require explicit initialization
+approval. Established environments require durable checkpoints.
+
+Acceptance fixtures create all dedicated topics before verifying
+partition leaders, replica readiness and offset accessibility.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

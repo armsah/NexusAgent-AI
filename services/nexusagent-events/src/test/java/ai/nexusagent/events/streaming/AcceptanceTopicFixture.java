@@ -54,6 +54,11 @@ final class AcceptanceTopicFixture implements AutoCloseable {
                 created.add(topic);
             }
 
+            AcceptanceBrokerReadiness.await(
+                    admin,
+                    topics.all(),
+                    Duration.ofSeconds(90));
+
         } catch (Exception ex) {
 
             try {

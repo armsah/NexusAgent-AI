@@ -76,6 +76,18 @@ public final class ProductionRecoveryGuard {
             String applicationId,
             StreamTopics topics) {
 
+        verifyStartup(
+                bootstrap, applicationId, topics,
+                false, false);
+    }
+
+    public static StreamInitializationPolicy.Mode verifyStartup(
+            String bootstrap,
+            String applicationId,
+            StreamTopics topics,
+            boolean initializationApproved,
+            boolean localStateEmpty) {
+
         requireApplication(applicationId);
 
         if (!StreamTopics.production().equals(topics)) {
@@ -98,7 +110,12 @@ public final class ProductionRecoveryGuard {
                                     store + "-changelog"));
 
             var descriptions = admin.describeTopics(
-                    List.of(topics.documents(), topics.workflows()))
+                    List.of(
+                            topics.documents(),
+                            topics.workflows(),
+                            topics.analytics(),
+                            topics.deadLetters(),
+                            topics.tenantAnalytics()))
                     .allTopicNames().get(30, TimeUnit.SECONDS);
 
             var partitions = new HashSet<TopicPartition>();
@@ -133,6 +150,11 @@ public final class ProductionRecoveryGuard {
 
                 var checkpoint = committed.get(partition);
 
+                if (!partition.topic().equals(topics.documents()) &&
+                        !partition.topic().equals(topics.workflows())) {
+                    continue;
+                }
+
                 boundaries.add(new Boundary(
                         beginning.get(partition).offset(),
                         end.get(partition).offset(),
@@ -141,7 +163,25 @@ public final class ProductionRecoveryGuard {
                                 : checkpoint.offset()));
             }
 
-            requireContinuation(boundaries, storesPresent);
+            boolean anyInternalTopics = names.stream()
+                    .anyMatch(name -> name.startsWith(
+                            applicationId + "-"));
+
+            boolean allTopicsEmpty = partitions.stream()
+                    .allMatch(partition ->
+                            beginning.get(partition).offset() == 0 &&
+                            end.get(partition).offset() == 0);
+
+            return StreamInitializationPolicy.select(
+                    new StreamInitializationPolicy.Evidence(
+                            initializationApproved,
+                            anyInternalTopics,
+                            !committed.isEmpty(),
+                            allTopicsEmpty,
+                            true,
+                            localStateEmpty),
+                    boundaries,
+                    storesPresent);
 
         } catch (InterruptedException ex) {
 
