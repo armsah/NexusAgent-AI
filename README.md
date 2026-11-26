@@ -202,6 +202,17 @@ references have been inspected and recorded.
 E738-04 and E738-06 remain gated by authoritative historical
 completeness and verified synthetic provenance respectively.
 
+
+### Historical migration coverage safeguards
+
+Historical coverage validation rejects unresolved publication
+metadata, incomplete authoritative inventories and unsafe
+migration evidence.
+
+Legacy publication records with missing document-version
+metadata remain explicitly unresolved. Authoritative migration
+is not certified by retained Kafka offsets alone.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

@@ -1,0 +1,19 @@
+{
+    "baseline":  "b769349",
+    "publicationCoverage":  {
+                                "totalPublications":  159,
+                                "nonStreamPublications":  37,
+                                "metadataAvailable":  0,
+                                "missingDocumentVersions":  122,
+                                "missingOutboxOrigins":  0,
+                                "workflowPublications":  0
+                            },
+    "independentlyVerifiedEvents":  0,
+    "authoritativeHistoryComplete":  false,
+    "authoritativeRebuildAuthorized":  false,
+    "liveMigrationAccepted":  false,
+    "historicalCoverageValidatorTestsPassed":  28,
+    "productionRecordsModified":  0,
+    "productionOffsetsReset":  false,
+    "cloudExpenditureEur":  0
+}
