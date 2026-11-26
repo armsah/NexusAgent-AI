@@ -228,6 +228,17 @@ Crash-safe publication and successful authoritative migration
 remain outstanding.
 
 
+
+### Durable document publication intent
+
+An immutable PostgreSQL journal persists document wire envelopes
+before Kafka transmission and records acknowledgement separately.
+
+Database immutability acceptance and 19 targeted C# tests passed.
+
+Live document crash recovery and authoritative isolated migration
+remain outstanding.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

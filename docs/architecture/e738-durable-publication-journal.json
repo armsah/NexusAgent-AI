@@ -1,0 +1,24 @@
+{
+    "baseline":  "c2a8f02927e8d3f25fcb330ce2dc455bb4711cf5",
+    "migration":  "20261126214114_DurableDocumentPublicationJournal",
+    "releaseBuildPassed":  true,
+    "databaseMigrationPassed":  true,
+    "databaseImmutabilityAcceptancePassed":  true,
+    "retainedAcceptanceRecords":  0,
+    "targetedCsharpTestsPassed":  19,
+    "previousJavaTestsPassed":  32,
+    "actualInventory":  {
+                            "preparedDocumentPublications":  0,
+                            "acknowledgedDocumentPublications":  0,
+                            "pendingDocumentPublications":  0,
+                            "legacyUnresolvedPublications":  122,
+                            "acknowledgedWorkflowPublications":  0
+                        },
+    "durableIntentBeforeTransmissionImplemented":  true,
+    "actualDocumentProcessCrashVerified":  false,
+    "independentKafkaHistoryComparisonVerified":  false,
+    "successfulIsolatedRebuildVerified":  false,
+    "authoritativeMigrationAuthorized":  false,
+    "status":  "PARTIAL",
+    "cloudExpenditureEur":  0
+}

@@ -66,14 +66,34 @@ public sealed class PostgresDocumentIngestionEventPublisher(
                     ContentVersion: contentVersion,
                     OccurredAt: occurredAt));
 
-            using var transport = new KafkaEventTransport(bootstrapServers);
+            var journal = new DocumentPublicationJournal(dbContext);
 
-            await transport.PublishAsync(
-                KafkaEventTransport.DocumentsTopic,
+            wirePayload = await journal.PrepareAsync(
+                eventId,
+                eventType,
                 tenantId,
                 documentId,
+                documentVersion,
                 wirePayload,
                 cancellationToken);
+
+            if (!await journal.IsAcknowledgedAsync(
+                    eventId, cancellationToken))
+            {
+                using var transport =
+                    new KafkaEventTransport(bootstrapServers);
+
+                await transport.PublishAsync(
+                    KafkaEventTransport.DocumentsTopic,
+                    tenantId,
+                    documentId,
+                    wirePayload,
+                    cancellationToken);
+
+                await journal.AcknowledgeAsync(
+                    eventId,
+                    cancellationToken);
+            }
 
             persistedPayload = wirePayload;
         }
