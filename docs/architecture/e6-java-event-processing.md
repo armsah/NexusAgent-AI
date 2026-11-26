@@ -14,7 +14,7 @@ the authoritative C# orchestration and PostgreSQL persistence layers.
 | E6.3 | Spring Boot service foundation | CLOSED |
 | E6.4 | Immutable versioned event contracts | CLOSED |
 | E6.5 | Functional transformations and analytics | CLOSED |
-| E6.6 | Deduplication and ordering semantics | OPEN |
+| E6.6 | Deduplication and ordering semantics | CLOSED |
 | E6.7 | Cross-language contract acceptance | OPEN |
 | E6.8 | Regression, documentation and GitHub merge | OPEN |
 
@@ -102,3 +102,25 @@ must not yet be connected directly to an at-least-once transport.
 - Java regression: 40 passed.
 - Failed, errors and skipped: zero.
 - Cloud expenditure: EUR 0.
+
+## E6.6 acceptance
+
+- Identical event deliveries deduplicated before analytics.
+- Conflicting event identities rejected.
+- Conflicting document revisions and workflow sequences rejected.
+- Tenant-scoped revision and sequence identities.
+- Deterministic ordering and immutable normalized collections.
+- Explicit complete-history validation for workflow transitions.
+- Missing starts, sequence gaps and timestamp regressions rejected.
+- Approval bypass and post-terminal transitions rejected.
+- Partial-window analytics remain distinct from complete-history validation.
+- Java regression: 66 passed, zero failures, errors or skips.
+- Cloud expenditure: EUR 0.
+
+Deduplication operates over the supplied batch. Durable deduplication,
+cross-batch state, late-arrival policy and broker replay handling remain
+E7/E8 responsibilities. Complete-history validation is not implicitly
+applied to partial-window analytics.
+
+The proposed workflow lifecycle requires C# producer compatibility
+verification during E6.7.

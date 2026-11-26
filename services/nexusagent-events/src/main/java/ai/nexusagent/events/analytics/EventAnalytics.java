@@ -62,7 +62,7 @@ public final class EventAnalytics {
 
         validateWindow(fromInclusive, toExclusive);
 
-        return events.stream()
+        return EventIntegrity.documents(events).stream()
             .filter(inWindow(DocumentEvent::occurredAt,
                 fromInclusive, toExclusive))
             .collect(Collectors.collectingAndThen(
@@ -79,7 +79,7 @@ public final class EventAnalytics {
 
         validateWindow(fromInclusive, toExclusive);
 
-        return events.stream()
+        return EventIntegrity.workflows(events).stream()
             .filter(inWindow(WorkflowEvent::occurredAt,
                 fromInclusive, toExclusive))
             .collect(Collectors.collectingAndThen(
