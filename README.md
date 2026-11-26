@@ -125,6 +125,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.2 CLOSED (11/11): durable C# event publication, workflow lifecycle governance, approval continuation and live Kafka publication recovery verified.
 
+- E7.3.1 CLOSED: Kafka Streams 4.1.1 foundation, aligned dependencies, persistent state stores and 77 passing Java tests.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

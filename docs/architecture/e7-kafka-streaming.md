@@ -342,3 +342,23 @@ execution, continuation, rejection and publication recovery acceptance
 have been implemented and verified.
 
 Next stage: E7.3 - Java Kafka Streams processing.
+
+### E7.3.1 - Kafka Streams foundation: CLOSED
+
+- Kafka Streams, clients and test utilities aligned to 4.1.1.
+- Resolved Kafka dependency versions verified.
+- AutoOffsetResetStrategy runtime compatibility error corrected.
+- Exactly-once-v2 Kafka processing configuration.
+- Explicit topic configuration and earliest-offset replay.
+- Cross-language tenant and aggregate partition-key validation.
+- Persistent, changelog-enabled state-store definitions.
+- Five dedicated foundation acceptance tests.
+- Full Java regression: 77 passed.
+- Failed, errored or skipped tests: zero.
+- Cloud expenditure: EUR 0.
+
+Replication factor one is restricted to local development.
+Production processors, conflict handling, tenant analytics,
+dead-letter routing and live state restoration remain open.
+Foundation topology tests do not establish broker-level
+exactly-once delivery or production deduplication.
