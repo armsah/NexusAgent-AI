@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 public final class StreamRuntime implements SmartLifecycle {
     private final AtomicBoolean running = new AtomicBoolean();
     private KafkaStreams streams;
+    private PendingGapMonitor gapMonitor;
 
     @Override
     public boolean isAutoStartup() {
@@ -60,8 +61,14 @@ public final class StreamRuntime implements SmartLifecycle {
         running.set(true);
 
         try {
+            gapMonitor = PendingGapMonitor.fromEnvironment(streams);
             streams.start();
+            gapMonitor.start();
         } catch (RuntimeException ex) {
+            if (gapMonitor != null) {
+                gapMonitor.close();
+                gapMonitor = null;
+            }
             running.set(false);
             streams.close(Duration.ofSeconds(10));
             streams = null;
@@ -71,6 +78,10 @@ public final class StreamRuntime implements SmartLifecycle {
 
     @Override
     public synchronized void stop() {
+        if (gapMonitor != null) {
+            gapMonitor.close();
+            gapMonitor = null;
+        }
         if (streams != null) {
             streams.close(Duration.ofSeconds(30));
             streams = null;

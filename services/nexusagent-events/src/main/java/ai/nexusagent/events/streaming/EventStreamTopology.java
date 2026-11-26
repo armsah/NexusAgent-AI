@@ -548,7 +548,11 @@ public final class EventStreamTopology {
                     return;
                 }
 
-                pending.put(sequenceKey, record.value());
+                pending.put(sequenceKey,
+                        PendingGapObservation.stamp(
+                                record.value(),
+                                Instant.ofEpochMilli(
+                                        context.currentSystemTimeMs())));
                 return;
             }
 

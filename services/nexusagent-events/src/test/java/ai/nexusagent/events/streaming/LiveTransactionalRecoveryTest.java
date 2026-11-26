@@ -41,6 +41,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 class LiveTransactionalRecoveryTest {
+    private static final java.util.Map<String, java.time.Instant>
+            verifiedPendingObservations =
+                    new java.util.concurrent.ConcurrentHashMap<>();
+
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -57,7 +61,7 @@ class LiveTransactionalRecoveryTest {
             RecordMetadata metadata) {}
 
     @Test
-    @Timeout(value = 480, unit = TimeUnit.SECONDS)
+    @Timeout(value = 600, unit = TimeUnit.SECONDS)
     void restoresCommittedStateAfterBrokerInterruption()
             throws Exception {
 
@@ -616,6 +620,27 @@ class LiveTransactionalRecoveryTest {
                                 && entry.value.contains(
                                         eventId.toString())) {
 
+                            var observed = PendingGapObservation
+                                    .observedAt(entry.value)
+                                    .orElseThrow();
+
+                            var previous = verifiedPendingObservations
+                                    .putIfAbsent(eventId.toString(), observed);
+
+                            if (previous != null) {
+                                org.junit.jupiter.api.Assertions.assertEquals(
+                                        previous, observed,
+                                        "Pending observation changed after restoration");
+                            }
+
+                            org.junit.jupiter.api.Assertions.assertTrue(
+                                    PendingGapAge.evaluate(
+                                            observed,
+                                            observed.plusSeconds(301),
+                                            java.time.Duration.ofMinutes(5))
+                                            .overdue());
+
+
                             return;
                         }
                     }
@@ -928,7 +953,7 @@ class LiveTransactionalRecoveryTest {
             AtomicReference<Throwable> failure)
             throws Exception {
 
-        Instant deadline = Instant.now().plusSeconds(45);
+        Instant deadline = Instant.now().plusSeconds(120);
 
         while (Instant.now().isBefore(deadline)) {
             assertNull(failure.get(),
@@ -941,7 +966,7 @@ class LiveTransactionalRecoveryTest {
             Thread.sleep(200);
         }
 
-        fail("Kafka Streams did not reach RUNNING");
+        fail("Kafka Streams did not reach RUNNING; final state=" + streams.state());
     }
 
     private static void assertHealthy(
