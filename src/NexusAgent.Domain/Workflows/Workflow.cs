@@ -131,6 +131,14 @@ public sealed class Workflow
         Touch(now);
     }
 
+    public void Reject(DateTimeOffset now)
+    {
+        RequireStatus(WorkflowStatus.WaitingForApproval);
+        EnsureNoActiveStep();
+        Touch(now);
+        Status = WorkflowStatus.Rejected;
+    }
+
     public void Complete(DateTimeOffset now)
     {
         RequireStatus(WorkflowStatus.Running);
@@ -182,7 +190,8 @@ public sealed class Workflow
     {
         if (Status is WorkflowStatus.Completed
             or WorkflowStatus.Failed
-            or WorkflowStatus.Cancelled)
+            or WorkflowStatus.Cancelled
+            or WorkflowStatus.Rejected)
         {
             throw new DomainException(
                 $"Workflow '{Id}' is already terminal.");

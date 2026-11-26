@@ -162,3 +162,20 @@ No cloud resources have been provisioned.
 - No failed or skipped tests in final targeted acceptance.
 - Delayed duplicate delivery remains an at-least-once consideration.
 - Cloud expenditure: EUR 0.
+
+### E7.2 rejection lifecycle foundation - CLOSED
+
+- Rejected terminal domain status introduced.
+- Existing enum values preserved.
+- Rejection restricted to WaitingForApproval.
+- Transactional REJECTED lifecycle event implemented.
+- PostgreSQL migration applied.
+- Workflow regression passed.
+- Invalid database transition rejected.
+- STARTED, APPROVAL_REQUIRED and REJECTED sequence verified.
+- Terminal duration of 4000 milliseconds verified.
+- Repeated status update produces no duplicate event.
+- Atomic rollback verified.
+- Application approval association remains OPEN.
+- Dedicated domain rejection acceptance remains OPEN.
+- Cloud expenditure: EUR 0.

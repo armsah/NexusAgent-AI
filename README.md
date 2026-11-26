@@ -111,6 +111,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.2: Document predecessor ordering CLOSED; 18 targeted tests passed.
 
+- E7.2: Rejection lifecycle foundation verified; approval association remains open.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

@@ -30,11 +30,21 @@ BEGIN
         WHEN 'Completed' THEN 'COMPLETED'
         WHEN 'Failed' THEN 'FAILED'
         WHEN 'Cancelled' THEN 'CANCELLED'
+        WHEN 'Rejected' THEN 'REJECTED'
         ELSE NULL
     END;
 
     IF event_kind IS NULL THEN
         RAISE EXCEPTION 'Unsupported workflow status';
+    END IF;
+
+    IF event_kind = 'REJECTED' THEN
+        IF TG_OP <> 'UPDATE' THEN
+            RAISE EXCEPTION 'Rejection requires an existing workflow';
+        END IF;
+        IF OLD.status <> 'WaitingForApproval' THEN
+            RAISE EXCEPTION 'Rejection requires pending approval';
+        END IF;
     END IF;
 
     SELECT COALESCE(MAX(sequence), 0) + 1
@@ -50,7 +60,7 @@ BEGIN
 
     event_identifier := gen_random_uuid();
 
-    IF event_kind IN ('COMPLETED', 'FAILED', 'CANCELLED') THEN
+    IF event_kind IN ('COMPLETED', 'FAILED', 'CANCELLED', 'REJECTED') THEN
         SELECT (payload->>'occurredAt')::timestamptz
         INTO started_at
         FROM kafka_workflow_events
