@@ -109,6 +109,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.2: Database publication safeguards and failure quarantine implemented.
 
+- E7.2: Document predecessor ordering CLOSED; 18 targeted tests passed.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

@@ -36,10 +36,18 @@ public sealed class PostgresOutboxClaimer(
 
             command.CommandText = """
                 WITH candidates AS (
-                    SELECT id
-                    FROM outbox_messages
-                    WHERE processed_at IS NULL
-                      AND failed_at IS NULL
+                    SELECT candidate.id
+                    FROM outbox_messages AS candidate
+                    WHERE candidate.processed_at IS NULL
+                      AND candidate.failed_at IS NULL
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM outbox_messages AS predecessor
+                          WHERE predecessor.tenant_id = candidate.tenant_id
+                            AND predecessor.document_id = candidate.document_id
+                            AND predecessor.document_version < candidate.document_version
+                            AND predecessor.processed_at IS NULL
+                      )
                       AND (
                           next_attempt_at IS NULL
                           OR next_attempt_at <= clock_timestamp()

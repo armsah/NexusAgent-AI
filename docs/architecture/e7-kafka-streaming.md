@@ -148,3 +148,17 @@ No cloud resources have been provisioned.
 - PostgreSQL remains authoritative.
 - Cloud expenditure: EUR 0.
 - E7.2 remains open pending broker-side ordering, rejection and crash-window acceptance.
+
+### E7.2 document predecessor ordering - CLOSED
+
+- Claim-time predecessor exclusion implemented.
+- Ordering scoped by tenant, document and revision.
+- Existing lease fencing and SKIP LOCKED retained.
+- Quarantined predecessors block subsequent revisions.
+- Partial predecessor index migration applied successfully.
+- Two isolated PostgreSQL ordering tests passed.
+- Sixteen outbox integration regression tests passed.
+- Initial shared-database test failures resolved through database isolation and timestamp adjustment.
+- No failed or skipped tests in final targeted acceptance.
+- Delayed duplicate delivery remains an at-least-once consideration.
+- Cloud expenditure: EUR 0.
