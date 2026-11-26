@@ -72,3 +72,15 @@ No cloud resources have been provisioned.
 - PostgreSQL transactional integration remains open.
 - Cross-system delivery semantics remain at-least-once.
 - Cloud expenditure: EUR 0.
+
+### E7.2 document publication integration
+
+- Existing PostgreSQL document publisher integrated with Kafka.
+- Kafka enabled explicitly through NEXUS_KAFKA_BOOTSTRAP_SERVERS.
+- Existing worker acknowledgment and retry mechanism retained.
+- Versioned document wire codec reused.
+- Live Kafka transport delivery test passed.
+- Delivery remains at-least-once.
+- Full PostgreSQL-to-Kafka failure recovery acceptance remains open.
+- Workflow lifecycle persistence remains open.
+- Cloud expenditure: EUR 0.

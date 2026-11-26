@@ -1,4 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using NexusAgent.Infrastructure.Messaging;
+using NexusAgent.Application.Documents;
+using System.Text.Json;
 using NexusAgent.Application.Abstractions;
 
 namespace NexusAgent.Infrastructure.Persistence.Outbox;
@@ -33,6 +36,41 @@ public sealed class PostgresDocumentIngestionEventPublisher(
 
         if (string.IsNullOrWhiteSpace(payload))
             throw new ArgumentException("Payload is required.", nameof(payload));
+
+        var bootstrapServers =
+            Environment.GetEnvironmentVariable("NEXUS_KAFKA_BOOTSTRAP_SERVERS");
+
+        if (!string.IsNullOrWhiteSpace(bootstrapServers))
+        {
+            using var json = JsonDocument.Parse(payload);
+            var fields = json.RootElement.EnumerateObject()
+                .ToDictionary(
+                    field => field.Name,
+                    field => field.Value,
+                    StringComparer.OrdinalIgnoreCase);
+
+            var contentVersion = fields["contentVersion"].GetInt32();
+            var occurredAt = fields["occurredAt"].GetDateTimeOffset();
+
+            var wirePayload = DocumentEventWireCodec.Serialize(
+                new DocumentIngestionEvent(
+                    EventId: eventId,
+                    EventType: eventType,
+                    TenantId: tenantId,
+                    DocumentId: documentId,
+                    DocumentVersion: documentVersion,
+                    ContentVersion: contentVersion,
+                    OccurredAt: occurredAt));
+
+            using var transport = new KafkaEventTransport(bootstrapServers);
+
+            await transport.PublishAsync(
+                KafkaEventTransport.DocumentsTopic,
+                tenantId,
+                documentId,
+                wirePayload,
+                cancellationToken);
+        }
 
         await dbContext.Database.ExecuteSqlInterpolatedAsync(
             $"""

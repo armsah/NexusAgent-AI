@@ -95,6 +95,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.2 progress: Kafka producer transport and partition-key validation implemented; transactional integration remains open.
 
+- E7.2 progress: document publisher integrated with Kafka; live transport delivery verified.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
