@@ -1,0 +1,15 @@
+{
+    "schemaVersion":  1,
+    "legacyPublications":  122,
+    "readableKafkaRecords":  219,
+    "parsedKafkaRecords":  181,
+    "malformedKafkaRecords":  38,
+    "matchingCandidates":  0,
+    "missingPublications":  122,
+    "conflictingPublications":  0,
+    "boundedReadComplete":  true,
+    "sourceReportSha256":  "983fd30bf6e8dc340f67c8f812762b1430fbd644ec13e00e4dafefac3d013432",
+    "historicalMigrationAuthorized":  false,
+    "productionRecordsModified":  0,
+    "disposition":  "PRESERVE_UNRESOLVED"
+}

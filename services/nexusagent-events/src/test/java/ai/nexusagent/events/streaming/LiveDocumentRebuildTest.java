@@ -97,9 +97,9 @@ final class LiveDocumentRebuildTest {
         String inventoryPath =
                 System.getenv("NEXUS_VERIFIED_DOCUMENT_HISTORY");
 
-        if (inventoryPath == null || inventoryPath.isBlank()) {
-            return;
-        }
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+                inventoryPath != null && !inventoryPath.isBlank(),
+                "Explicit cross-language acceptance inventory required");
 
         JsonNode inventory = JSON.readTree(
                 Path.of(inventoryPath).toFile());

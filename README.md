@@ -249,6 +249,16 @@ Java Kafka Streams rebuild acceptance are verified.
 Historical production migration remains fail-closed pending
 complete legacy publication coverage.
 
+
+### Historical recovery baseline
+
+A versioned recovery-baseline candidate and fail-closed migration
+policy preserve unresolved historical publication evidence.
+
+Prospective cross-language rebuild acceptance is verified.
+Production baseline migration and synthetic reconciliation remain
+unauthorized until their independent evidence gates are satisfied.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
