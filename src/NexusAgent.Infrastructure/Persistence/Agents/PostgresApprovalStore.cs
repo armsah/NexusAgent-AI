@@ -5,7 +5,7 @@ using NexusAgent.Domain.Workflows;
 namespace NexusAgent.Infrastructure.Persistence.Agents;
 
 public sealed class PostgresApprovalStore(
-    NexusAgentDbContext db) : IApprovalStore
+    NexusAgentDbContext db) : IApprovalStore, IWorkflowToolExecutionStore
 {
     public async Task<ApprovalRequest?> GetAsync(
         Guid approvalId,
@@ -290,5 +290,33 @@ public sealed class PostgresApprovalStore(
 
         await transaction.CommitAsync(cancellationToken);
         return consumed;
+    }
+
+    public async Task<bool> FinishAsync(
+        Guid approvalId,
+        Guid workflowId,
+        ApprovalAction action,
+        string outcome,
+        CancellationToken cancellationToken)
+    {
+        var status = outcome switch
+        {
+            "succeeded" => "Succeeded",
+            "tool_failed" => "Failed",
+            _ => "Uncertain"
+        };
+
+        return await db.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE workflow_tool_executions
+            SET status = {status},
+                finished_at = clock_timestamp()
+            WHERE approval_id = {approvalId}
+              AND workflow_id = {workflowId}
+              AND tenant_id = {action.TenantId}
+              AND requester_id = {action.RequesterId}
+              AND tool_name = {action.ToolName}
+              AND payload_digest = {action.PayloadDigest}
+              AND status = 'Executing'
+            """, cancellationToken) == 1;
     }
 }

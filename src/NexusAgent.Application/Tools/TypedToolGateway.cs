@@ -64,16 +64,22 @@ public sealed class TypedToolGateway(
                     (riskPolicy?.RequiresApproval(risk) ?? true);
 
                 var approvalGranted = !requiresApproval;
+                ApprovalAction? executionAction = null;
+                var executionStore =
+                    approvalStore as IWorkflowToolExecutionStore;
 
                 if (requiresApproval &&
                     approvalId.HasValue &&
-                    approvalStore is not null)
+                    approvalStore is not null &&
+                    (!workflowId.HasValue || executionStore is not null))
                 {
                     try
                     {
                         var action = ApprovalActionFactory.Create(
                             request,
                             caller);
+
+                        executionAction = action;
 
                         approvalGranted = await approvalStore.ConsumeAsync(
                             approvalId.Value,
@@ -142,6 +148,26 @@ public sealed class TypedToolGateway(
                         false,
                         default,
                         outcome);
+                }
+
+                if (workflowId.HasValue)
+                {
+                    using var persistenceTimeout =
+                        new CancellationTokenSource(TimeSpan.FromSeconds(15));
+
+                    var persisted = await executionStore!.FinishAsync(
+                        approvalId!.Value,
+                        workflowId.Value,
+                        executionAction!,
+                        outcome,
+                        persistenceTimeout.Token);
+
+                    if (!persisted)
+                    {
+                        outcome = "tool_outcome_uncertain";
+                        result = new ToolResult<TOutput>(
+                            false, default, outcome);
+                    }
                 }
                 }
             }

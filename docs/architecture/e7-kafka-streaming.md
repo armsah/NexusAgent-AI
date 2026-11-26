@@ -238,3 +238,20 @@ Remaining E7.2 requirements:
 
 Single-use authorization does not guarantee exactly-once external side effects.
 Ambiguous external actions must not be automatically retried.
+
+### E7.2 - Durable approved-action continuation
+
+- Atomic approval consumption and execution receipt creation.
+- Gateway outcome persistence and transactional terminal workflow transitions.
+- Automatic recovery of interrupted executions after five minutes.
+- Ambiguous outcomes become Uncertain and are never automatically replayed.
+- Premature completion and active-execution bypass protection.
+- Four PostgreSQL acceptance scenarios passed.
+- Lifecycle ordering, late completion fencing and recovery idempotency verified.
+- Targeted integration and unit regressions passed.
+- Cloud expenditure: EUR 0.
+
+Scope: terminal approved-action continuation. Arbitrary multi-step plan
+resumption and exactly-once external side effects are not guaranteed.
+Approved-but-unused expiry and actual process-interruption acceptance
+remain subject to additional verification.
