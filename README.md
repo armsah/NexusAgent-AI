@@ -141,6 +141,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.3.7 CLOSED: live Kafka broker interruption recovery, aborted transaction isolation, fresh-directory changelog restoration, buffered sequence recovery and duplicate suppression; 133 passing Java tests.
 
+- E7.3.8 checkpoint: 133 passing Java tests; consolidated streaming regression passed; six mandatory operational acceptance gates remain open.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

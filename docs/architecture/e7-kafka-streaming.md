@@ -628,3 +628,17 @@ Scope and limitations:
   synthetic snapshot cleanup remain consolidated acceptance obligations.
 
 E7.3.7 broker recovery and changelog restoration acceptance: CLOSED.
+
+### E7.3.8 - Consolidated streaming acceptance: OPEN
+
+- Consolidated Java regression: 133 passed.
+- Failures, errors and skips: zero.
+- Required production implementation files verified.
+- E7.3.1 through E7.3.7 closure evidence verified.
+- Live dead-letter and recovery acceptance rerun successfully.
+- Required topic configuration verified.
+- Acceptance internal topics and consumer groups absent.
+- Mandatory operational acceptance register created:
+  docs/architecture/e7-streaming-acceptance.md.
+- Six outstanding operational gates remain OPEN.
+- Cloud expenditure: EUR 0.
