@@ -11,7 +11,7 @@ the authoritative C# orchestration and PostgreSQL persistence layers.
 |---|---|---|
 | E6.1 | Baseline and event-contract audit | CLOSED |
 | E6.2 | Reproducible Java and Maven foundation | CLOSED |
-| E6.3 | Spring Boot service foundation | OPEN |
+| E6.3 | Spring Boot service foundation | CLOSED |
 | E6.4 | Immutable versioned event contracts | OPEN |
 | E6.5 | Functional transformations and analytics | OPEN |
 | E6.6 | Deduplication and ordering semantics | OPEN |
@@ -60,4 +60,12 @@ No cloud resources were provisioned.
 - JUnit and build plugin versions pinned.
 - Wrapper clean verify succeeded.
 - Tests: 1 passed, zero failed, zero skipped.
+- Cloud expenditure: EUR 0.
+
+## E6.3 acceptance
+
+Spring Boot 3.5.8 context, executable JAR and non-web startup verified.
+
+- Java regression: 3 passed.
+- Failed, errors and skipped: zero.
 - Cloud expenditure: EUR 0.
