@@ -127,6 +127,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.3.1 CLOSED: Kafka Streams 4.1.1 foundation, aligned dependencies, persistent state stores and 77 passing Java tests.
 
+- E7.3.2 CLOSED: persistent production Kafka Streams topology and 89 passing Java tests.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

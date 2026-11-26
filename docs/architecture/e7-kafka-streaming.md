@@ -362,3 +362,32 @@ Production processors, conflict handling, tenant analytics,
 dead-letter routing and live state restoration remain open.
 Foundation topology tests do not establish broker-level
 exactly-once delivery or production deduplication.
+
+### E7.3.2 - Production topology implementation: CLOSED
+
+- Production document and workflow Kafka Streams topology.
+- Strict event contract and aggregate-key validation.
+- Persistent aggregate-scoped identity and sequence history.
+- Duplicate suppression and conflicting revision rejection.
+- Contiguous sequence and lifecycle enforcement.
+- Tenant-isolated aggregate projections.
+- Redacted dead-letter records with source coordinates.
+- Opt-in Spring-managed Kafka Streams runtime.
+- Exactly-once-v2 transactional processing configuration.
+- Twelve dedicated production topology acceptance tests.
+- Ambiguous null-payload test overload corrected.
+- Full Java regression: 89 passed.
+- Failures, errors and skips: zero.
+- Cloud expenditure: EUR 0.
+
+E7.3.2 production topology implementation: CLOSED.
+
+Remaining mandatory acceptance:
+- Cross-aggregate event identity conflict detection.
+- Tenant-wide analytics counters and metrics.
+- Broker-backed transactional acceptance.
+- Changelog restoration with a fresh local state directory.
+- Runtime interruption and duplicate replay acceptance.
+
+E7.3 remains OPEN.
+PostgreSQL remains authoritative.
