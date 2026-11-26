@@ -124,3 +124,17 @@ applied to partial-window analytics.
 
 The proposed workflow lifecycle requires C# producer compatibility
 verification during E6.7.
+
+
+### E6.7 dependency security acceptance
+
+- Spring Boot upgraded to 3.5.16.
+- Jackson BOM aligned to 2.23.0.
+- Log4j aligned to 2.26.1.
+- Unused Mockito dependencies excluded.
+- Java regression: 66 passed, zero failures, errors or skipped tests.
+- OSV audit: 53 resolved dependencies, zero reported vulnerabilities.
+- NuGet audit: eight projects, zero reported vulnerable packages.
+- Audit date: 2026-11-26.
+- Results reflect advisory database coverage at audit time.
+- Cross-language acceptance remains pending.
