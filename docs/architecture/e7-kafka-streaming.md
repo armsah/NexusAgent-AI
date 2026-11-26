@@ -308,3 +308,37 @@ scheduling and arbitrary multi-step plan resumption are separate concerns.
 - Related unit and integration regressions passed.
 - xUnit2031 analyzer warning corrected.
 - Cloud expenditure: EUR 0.
+
+### E7.2 - Publication crash-window acceptance: CLOSED
+
+- Isolated PostgreSQL database with production migrations.
+- Live Kafka broker acknowledgement verified.
+- PostgreSQL publication acknowledgement deliberately rolled back.
+- Restarted database context and Kafka producer.
+- Production dispatcher republished the unacknowledged event.
+- Original event identity and serialized payload preserved.
+- Tenant and workflow partition key preserved.
+- All three deliveries observed in the same Kafka partition.
+- Delivery sequence verified as 1, 1, 2.
+- Successor publication preserved aggregate ordering.
+- PostgreSQL publication state reconciled.
+- No further pending publication remained.
+- Related E7 unit and integration regressions passed.
+- Temporary PostgreSQL database removed.
+- Cloud expenditure: EUR 0.
+
+Delivery semantics are at-least-once across PostgreSQL and Kafka.
+The acceptance test reproduces the acknowledgement failure boundary
+using transaction rollback rather than an operating-system process kill.
+Persistent consumer-side deduplication is an E7.3 requirement.
+
+### E7.2 - Formal closure
+
+Status: CLOSED (11/11 requirements).
+
+Durable publication, workflow lifecycle sequencing, publication ordering,
+tenant compatibility, approval association, expiration, workflow-bound
+execution, continuation, rejection and publication recovery acceptance
+have been implemented and verified.
+
+Next stage: E7.3 - Java Kafka Streams processing.

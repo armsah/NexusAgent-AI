@@ -123,6 +123,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.2 domain rejection lifecycle CLOSED: 18 dedicated domain acceptance cases, PostgreSQL lifecycle acceptance and related regressions passed.
 
+- E7.2 CLOSED (11/11): durable C# event publication, workflow lifecycle governance, approval continuation and live Kafka publication recovery verified.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
