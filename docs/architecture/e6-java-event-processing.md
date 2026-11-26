@@ -1,0 +1,53 @@
+# E6 - Java functional event processing
+
+## Objective
+
+Implement a substantive Java analytics service without duplicating
+the authoritative C# orchestration and PostgreSQL persistence layers.
+
+## Closure register
+
+| Step | Scope | Status |
+|---|---|---|
+| E6.1 | Baseline and event-contract audit | CLOSED |
+| E6.2 | Reproducible Java and Maven foundation | OPEN |
+| E6.3 | Spring Boot service foundation | OPEN |
+| E6.4 | Immutable versioned event contracts | OPEN |
+| E6.5 | Functional transformations and analytics | OPEN |
+| E6.6 | Deduplication and ordering semantics | OPEN |
+| E6.7 | Cross-language contract acceptance | OPEN |
+| E6.8 | Regression, documentation and GitHub merge | OPEN |
+
+## E6.1 acceptance
+
+Baseline: ad797e612ed4a581a0cfeaee629fe65d6aae97a7.
+
+Reviewed the exported C# event and outbox source files.
+
+Existing document events:
+
+- document.created
+- document.updated
+- document.deleted
+
+The existing record contains EventId, EventType, TenantId,
+DocumentId, DocumentVersion, ContentVersion and OccurredAt.
+
+PublishedDocumentEvent adds publication metadata.
+OccurredAt and PublishedAt have different meanings.
+
+PostgreSQL publication deduplicates by event ID.
+The outbox uses leased claims, retry scheduling and terminal failure.
+
+Java must not independently acknowledge the C# ingestion outbox,
+mutate authoritative workflow state or replace PostgreSQL.
+
+Workflow analytics requires a separate versioned event contract.
+Actual producer serialization compatibility must be tested in E6.7.
+
+Kafka transport and durable analytics projections remain E7 and E8.
+Trusted identity and external API authorization remain E10.
+
+Java 21 LTS is available locally.
+Maven is not currently on PATH.
+No cloud resources were provisioned.

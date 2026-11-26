@@ -73,6 +73,12 @@ acceptance requirements remain mandatory in E5 and E15.
 
 **E5 completed (PR #11):** AI evaluation, adversarial security, authenticated inference, resource controls and retrieval relevance validated locally. 490 cumulative passing tests. Cloud expenditure EUR 0.
 
+### E6 - Java functional event processing
+
+- E6.1 CLOSED: existing event contracts and Java environment audited.
+- E6.2-E6.8 OPEN: Java analytics implementation and acceptance.
+- Architecture: [E6 implementation record](docs/architecture/e6-java-event-processing.md).
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
