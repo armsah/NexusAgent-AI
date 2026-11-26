@@ -61,6 +61,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 **E4 completed (PR #10):** 348 passing tests, actual API-host crash recovery, delayed checkpoint rollback and replay cancellation verified. Cloud expenditure EUR 0.
 
+**E5 progress:** Baseline audit completed. AI evaluation, grounding and inference security implementation tracked in [E5 acceptance register](docs/architecture/e5-ai-evaluation-security.md).
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

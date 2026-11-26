@@ -1,0 +1,51 @@
+# E5 - AI Evaluation, Grounding and Inference Security
+
+## Baseline
+
+- E4 closure commit: 4f4ee16.
+- Previous full regression: 348 passing tests.
+- E5 baseline Python regression: 27 passed, zero failed or skipped.
+- Known warning: Starlette TestClient/httpx deprecation.
+- Cloud expenditure: EUR 0.
+
+## Implementation and acceptance register
+
+| Step | Requirement | Status |
+|---|---|---|
+| E5.1 | Baseline and source audit | CLOSED |
+| E5.2 | Versioned evaluation datasets | OPEN |
+| E5.3 | Automated evaluation framework | OPEN |
+| E5.4 | Hybrid retrieval and citation metrics | OPEN |
+| E5.5 | Adversarial and prompt-injection testing | OPEN |
+| E5.6 | Inference authentication | OPEN |
+| E5.7 | Concurrency, request limits and timeouts | OPEN |
+| E5.8 | Dependency warning remediation | OPEN |
+| E5.9 | Full regression and live acceptance | OPEN |
+| E5.10 | Documentation, PR merge and formal closure | OPEN |
+
+## E5.1 audit findings
+
+- Existing Python extractive normalization rejects unsupported
+  sentences, unknown citations and inconsistent citation declarations.
+- C# verifier independently retrieves authorized evidence.
+- PostgreSQL retrieval combines lexical and semantic rankings
+  using reciprocal rank fusion.
+- Semantic retrieval requires matching embedding model and
+  document content version.
+- Retrieval quality requires quantitative relevance evaluation.
+- Extractive verification alone does not establish relevance
+  to the original question.
+- Inference authentication and resource controls require
+  dedicated implementation and negative acceptance tests.
+- The Starlette dependency warning remains unresolved.
+
+## Progression policy
+
+Every step requires documented acceptance evidence, successful
+applicable tests, a committed implementation and remote branch
+verification before the next step begins.
+
+Stage-level closure additionally requires a merged pull request,
+synchronized main and completion-register updates.
+
+No required implementation may be silently deferred.
