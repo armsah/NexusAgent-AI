@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "topics": [
+    {
+      "name": "nexusagent.documents.v1",
+      "partitions": 3,
+      "retentionMs": 604800000
+    },
+    {
+      "name": "nexusagent.workflows.v1",
+      "partitions": 3,
+      "retentionMs": 604800000
+    },
+    {
+      "name": "nexusagent.analytics.v1",
+      "partitions": 3,
+      "retentionMs": 604800000
+    },
+    {
+      "name": "nexusagent.events.dlq.v1",
+      "partitions": 3,
+      "retentionMs": 1209600000
+    }
+  ]
+}

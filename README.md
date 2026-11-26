@@ -90,6 +90,9 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E6.5 CLOSED: Functional transformations and analytics. 40 Java tests passed.
 
+- E7.1 CLOSED: digest-pinned Kafka KRaft infrastructure, explicit topics, publication, consumption and persistent replay verified.
+- E7.2-E7.4 OPEN: durable event production, Kafka Streams and final acceptance.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
