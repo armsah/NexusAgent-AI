@@ -528,3 +528,55 @@ Operational limitations:
 - Missing-predecessor monitoring and reconciliation remain required.
 
 E7.3.5 implementation and topology acceptance: CLOSED.
+
+### E7.3.6 - End-to-end dead-letter acceptance: CLOSED
+
+Live broker acceptance:
+
+- Actual production Kafka Streams topology.
+- Exactly-once-v2 configuration.
+- Read-committed output observation.
+- Eleven rejected input records verified.
+- Malformed JSON, null, whitespace and oversized payload rejection.
+- Invalid aggregate key and unknown contract field rejection.
+- Cross-aggregate and cross-family event identity conflict rejection.
+- Accepted sequence conflict and excessive sequence gap rejection.
+- Invalid workflow transition rejection.
+- Original source topic, partition and offset verified.
+- Strict five-field dead-letter schema verified.
+- Sensitive sentinel values excluded from dead-letter output.
+- Raw payloads, tenant identifiers and exception details excluded.
+- Valid document and workflow successors processed after poison records.
+- Tenant analytics continuity verified.
+- Acceptance application internal topics removed.
+- Acceptance consumer groups removed.
+- Existing application topics preserved.
+
+Corrective implementation:
+
+- Initial regression encountered GroupNotEmptyException during cleanup.
+- Consumer-group membership release is asynchronous.
+- Added bounded retries for groups awaiting membership release.
+- Missing groups are handled idempotently.
+- Unexpected cleanup failures remain fatal.
+- Residual acceptance resources from the failed run were removed.
+- Final broker resource discovery verified cleanup.
+
+Final acceptance:
+
+- Full Java regression: 132 passed.
+- Failures, errors and skips: zero.
+- Live dead-letter acceptance: PASSED.
+- Acceptance internal topic cleanup: PASSED.
+- Acceptance consumer group cleanup: PASSED.
+- Cloud expenditure: EUR 0.
+
+Operational boundaries:
+
+- Synthetic records remain in shared application topics.
+- Compacted synthetic tenant snapshots require explicit reconciliation.
+- Live broker interruption and changelog restoration remain E7.3.7.
+- Retention governance and missing-predecessor reconciliation remain open.
+- Exactly-once external side effects are not established by this test.
+
+E7.3.6 end-to-end dead-letter acceptance: CLOSED.
