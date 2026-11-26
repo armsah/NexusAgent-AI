@@ -112,6 +112,8 @@ public static class DependencyInjection
         services.AddScoped<DocumentContentIndexer>();
         services.AddScoped<NexusAgent.Application.Agents.IAuthorizedEvidenceRetriever, PostgresEvidenceRetriever>();
         services.AddScoped<PublishedDocumentIndexProcessor>();
+        services.AddScoped<NexusAgent.Application.Agents.IDurableAgentExecutionStore, NexusAgent.Infrastructure.Persistence.Agents.PostgresAgentExecutionStore>();
+        services.AddScoped<NexusAgent.Application.Approvals.IApprovalStore, NexusAgent.Infrastructure.Persistence.Agents.PostgresApprovalStore>();
         services.AddScoped<IWorkflowRepository, WorkflowRepository>();
         services.AddScoped<IKnowledgeDocumentRepository, KnowledgeDocumentRepository>();
         services.AddScoped<IDocumentIngestionEventPublisher, PostgresDocumentIngestionEventPublisher>();

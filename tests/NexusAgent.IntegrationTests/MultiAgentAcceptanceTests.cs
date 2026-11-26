@@ -420,6 +420,90 @@ public sealed class MultiAgentAcceptanceTests
         }
     }
 
+    [Fact]
+    public async Task DurableReplayRejectsDeletedEvidence()
+    {
+        await using var factory = new AgentFactory("Development", false);
+        using var client = factory.CreateClient();
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<NexusAgentDbContext>();
+
+        var keyword = "replayprobe" + Guid.NewGuid().ToString("N");
+        var ids = new List<Guid>();
+
+        var workflow = Workflow.Create(
+            Guid.NewGuid(), Principal, Tenant,
+            keyword, DateTimeOffset.UtcNow);
+
+        try
+        {
+            db.Workflows.Add(workflow);
+
+            var document = AddDocument(
+                db, ids, Tenant, Principal, "Replay evidence");
+
+            await db.SaveChangesAsync();
+
+            AddIndex(db, document, $"{keyword} uses PostgreSQL.", false);
+            await db.SaveChangesAsync();
+
+            var url = $"/api/workflows/{workflow.Id}/agents/execute";
+
+            using var first = await client.PostAsync(url, null);
+            Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+            var initial = await first.Content
+                .ReadFromJsonAsync<MultiAgentResult>();
+
+            Assert.NotNull(initial);
+            Assert.True(initial.Succeeded);
+
+            using var second = await client.PostAsync(url, null);
+            Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+
+            var replay = await second.Content
+                .ReadFromJsonAsync<MultiAgentResult>();
+
+            Assert.NotNull(replay);
+            Assert.True(replay.Succeeded);
+            Assert.Equal(initial.Answer, replay.Answer);
+
+            Assert.Equal(1, await db.AgentExecutions.CountAsync(
+                x => x.WorkflowId == workflow.Id));
+
+            Assert.Equal(4, await db.AgentExecutionCheckpoints.CountAsync(
+                x => x.ExecutionId == workflow.Id));
+
+            document.Delete(Tenant, DateTimeOffset.UtcNow.AddSeconds(1));
+            await db.SaveChangesAsync();
+
+            using var third = await client.PostAsync(url, null);
+            Assert.Equal(HttpStatusCode.OK, third.StatusCode);
+
+            var rejected = await third.Content
+                .ReadFromJsonAsync<MultiAgentResult>();
+
+            Assert.NotNull(rejected);
+            Assert.False(rejected.Succeeded);
+            Assert.DoesNotContain(keyword, rejected.Answer);
+
+            using var status = await client.GetAsync(
+                $"/api/workflows/{workflow.Id}/agents/executions/{workflow.Id}");
+
+            Assert.Equal(HttpStatusCode.OK, status.StatusCode);
+
+            var statusBody = await status.Content.ReadAsStringAsync();
+
+            Assert.DoesNotContain(keyword, statusBody);
+            Assert.DoesNotContain("finalAnswer", statusBody);
+        }
+        finally
+        {
+            await CleanupAsync(db, ids, workflow.Id);
+        }
+    }
+
     private static KnowledgeDocument AddDocument(
         NexusAgentDbContext db,
         List<Guid> ids,

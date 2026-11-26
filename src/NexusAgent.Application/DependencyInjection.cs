@@ -32,6 +32,12 @@ public static class DependencyInjection
         services.AddScoped<IAgent, KnowledgeAgent>();
         services.AddScoped<IAgent, VerifierAgent>();
         services.AddScoped<MultiAgentCoordinator>();
+        services.AddScoped<DurableMultiAgentCoordinator>();
+        services.AddScoped<NexusAgent.Application.Approvals.ApprovalService>();
+        services.AddScoped<NexusAgent.Application.Approvals.IActionRiskPolicy>(
+            _ => new NexusAgent.Application.Approvals.ExplicitActionRiskPolicy(
+                Array.Empty<KeyValuePair<string,
+                    NexusAgent.Application.Approvals.ActionRisk>>()));
         services.AddScoped<AgentRegistry>();
         services.AddScoped<AgentHarness>();
         services.AddScoped<AuthorizedAgentExecutor>();

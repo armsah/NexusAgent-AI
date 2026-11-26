@@ -243,6 +243,197 @@ namespace NexusAgent.Infrastructure.Persistence.Migrations
                     b.ToTable("workflow_steps", (string)null);
                 });
 
+            modelBuilder.Entity("NexusAgent.Infrastructure.Persistence.Agents.AgentApprovalState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ApproverId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayloadDigest")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("RequesterId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("Risk")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ToolName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Status", "ExpiresAt");
+
+                    b.ToTable("agent_approvals", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_agent_approval_expiry", "\"ExpiresAt\" > \"CreatedAt\"");
+
+                            t.HasCheckConstraint("ck_agent_approval_risk", "\"Risk\" BETWEEN 2 AND 3");
+
+                            t.HasCheckConstraint("ck_agent_approval_status", "\"Status\" BETWEEN 0 AND 4");
+                        });
+                });
+
+            modelBuilder.Entity("NexusAgent.Infrastructure.Persistence.Agents.AgentExecutionCheckpoint", b =>
+                {
+                    b.Property<Guid>("ExecutionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("StageNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("AgentName")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("InvocationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Output")
+                        .IsRequired()
+                        .HasMaxLength(32000)
+                        .HasColumnType("character varying(32000)");
+
+                    b.Property<bool>("Succeeded")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("ExecutionId", "StageNumber");
+
+                    b.HasIndex("InvocationId")
+                        .IsUnique();
+
+                    b.ToTable("agent_execution_checkpoints", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_agent_checkpoint_stage", "\"StageNumber\" BETWEEN 0 AND 3");
+                        });
+                });
+
+            modelBuilder.Entity("NexusAgent.Infrastructure.Persistence.Agents.AgentExecutionState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("DeadlineAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("FinalAnswer")
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)");
+
+                    b.Property<DateTimeOffset?>("LeaseExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LeaseToken")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("NextStage")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PlanVersion")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("RequestDigest")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("RequesterId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("uuid");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeadlineAt");
+
+                    b.HasIndex("WorkflowId");
+
+                    b.HasIndex("Status", "LeaseExpiresAt");
+
+                    b.HasIndex("TenantId", "RequesterId", "WorkflowId");
+
+                    b.ToTable("agent_executions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_agent_execution_attempt", "\"AttemptCount\" BETWEEN 0 AND 3");
+
+                            t.HasCheckConstraint("ck_agent_execution_deadline", "\"DeadlineAt\" > \"CreatedAt\"");
+
+                            t.HasCheckConstraint("ck_agent_execution_lease", "(\"Status\" = 'Running' AND \"LeaseToken\" IS NOT NULL AND \"LeaseExpiresAt\" IS NOT NULL) OR (\"Status\" <> 'Running' AND \"LeaseToken\" IS NULL AND \"LeaseExpiresAt\" IS NULL)");
+
+                            t.HasCheckConstraint("ck_agent_execution_stage", "\"NextStage\" BETWEEN 0 AND 4");
+
+                            t.HasCheckConstraint("ck_agent_execution_status", "\"Status\" IN ('Pending','Running','Completed','Failed','Cancelled')");
+                        });
+                });
+
             modelBuilder.Entity("NexusAgent.Infrastructure.Persistence.Outbox.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -465,6 +656,24 @@ namespace NexusAgent.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("NexusAgent.Domain.Workflows.Workflow", null)
                         .WithMany("Steps")
+                        .HasForeignKey("WorkflowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("NexusAgent.Infrastructure.Persistence.Agents.AgentExecutionCheckpoint", b =>
+                {
+                    b.HasOne("NexusAgent.Infrastructure.Persistence.Agents.AgentExecutionState", null)
+                        .WithMany()
+                        .HasForeignKey("ExecutionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("NexusAgent.Infrastructure.Persistence.Agents.AgentExecutionState", b =>
+                {
+                    b.HasOne("NexusAgent.Domain.Workflows.Workflow", null)
+                        .WithMany()
                         .HasForeignKey("WorkflowId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

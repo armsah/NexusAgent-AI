@@ -1,3 +1,4 @@
+using NexusAgent.Infrastructure.Persistence.Agents;
 using NexusAgent.Infrastructure.Persistence.Search;
 using Microsoft.EntityFrameworkCore;
 using NexusAgent.Domain.Workflows;
@@ -29,6 +30,15 @@ public sealed class NexusAgentDbContext(
     public DbSet<DocumentVectorIndex> DocumentVectorIndexes => Set<DocumentVectorIndex>();
 
     public DbSet<ProcessedDocumentIndexEvent> ProcessedDocumentIndexEvents => Set<ProcessedDocumentIndexEvent>();
+
+    public DbSet<AgentExecutionState> AgentExecutions =>
+        Set<AgentExecutionState>();
+
+    public DbSet<AgentExecutionCheckpoint> AgentExecutionCheckpoints =>
+        Set<AgentExecutionCheckpoint>();
+
+    public DbSet<AgentApprovalState> AgentApprovals =>
+        Set<AgentApprovalState>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

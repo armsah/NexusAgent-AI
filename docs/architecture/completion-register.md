@@ -52,6 +52,11 @@ No required feature may remain a placeholder.
 | CR-034 | Hybrid retrieval relevance and citation integrity | E3/E5 | OPEN |
 | CR-035 | Production request-size enforcement verification | E10/E15 | OPEN |
 | CR-036 | Agent invocation authorization boundary verification | E3 | CLOSED |
+| CR-037 | Actual process-crash recovery acceptance | E4/E15 | OPEN |
+| CR-038 | Strict lease expiry under database lock contention | E4 | OPEN |
+| CR-039 | Replay verification budget enforcement | E4/E5 | OPEN |
+| CR-040 | Trusted approver identity and tenant authorization | E10 | OPEN |
+| CR-041 | Trusted requester binding in evidence retrieval | E10 | OPEN |
 
 ## Closure procedure
 
@@ -124,3 +129,15 @@ Production authentication remains tracked under CR-004 and CR-020.
 - Production authentication remains assigned to E10.
 - Automated GitHub checks remain assigned to E13.
 - Azure expenditure: EUR 0.
+
+## E4 implementation evidence
+
+- Durable execution state, planning, checkpoints and approvals implemented.
+- Full regression: 337 tests passed.
+- Two additional replay and approval gateway tests passed.
+- Final targeted hardening regression: 13 tests passed.
+- Cumulative distinct test coverage: 339 tests.
+- Database migration consistency passed.
+- Azure expenditure: EUR 0.
+- CR-006 through CR-009 remain open pending final closure verification.
+- CR-037 through CR-041 record outstanding verification requirements.

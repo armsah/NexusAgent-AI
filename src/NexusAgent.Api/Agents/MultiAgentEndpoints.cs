@@ -7,8 +7,7 @@ namespace NexusAgent.Api.Agents;
 
 public static class MultiAgentEndpoints
 {
-    public static void MapMultiAgentEndpoints(
-        this WebApplication app)
+    public static void MapMultiAgentEndpoints(this WebApplication app)
     {
         if (!app.Environment.IsDevelopment())
             throw new InvalidOperationException(
@@ -18,9 +17,11 @@ public static class MultiAgentEndpoints
             "/api/workflows/{id:guid}/agents/execute",
             async (
                 Guid id,
+                Guid? executionId,
                 DevelopmentRequestIdentity identity,
                 IWorkflowRepository repository,
-                MultiAgentCoordinator coordinator,
+                DurableMultiAgentCoordinator coordinator,
+                IDurableAgentExecutionStore store,
                 CancellationToken cancellationToken) =>
             {
                 var caller = new WorkflowAccess(
@@ -32,25 +33,49 @@ public static class MultiAgentEndpoints
                 if (workflow is null || !caller.CanAccess(workflow))
                     return Results.NotFound();
 
-                if (string.IsNullOrWhiteSpace(workflow.Request)
-                    || workflow.Request.Length > 2000)
+                if (string.IsNullOrWhiteSpace(workflow.Request) ||
+                    workflow.Request.Length > 2000 ||
+                    executionId == Guid.Empty)
                     return Results.BadRequest();
 
                 var request = new AgentRequest(
-                    Guid.NewGuid(),
+                    executionId ?? workflow.Id,
                     workflow.Id,
                     caller.TenantId,
                     workflow.Request);
 
                 try
                 {
-                    var result = await coordinator.ExecuteAsync(
-                        request,
-                        caller,
-                        TimeSpan.FromMinutes(5),
+                    var state = await coordinator.ExecuteAsync(
+                        request, caller, TimeSpan.FromMinutes(5),
                         cancellationToken);
 
-                    return Results.Ok(result);
+                    if (state.Status is "Pending" or "Running" ||
+                        (state.Status == "Completed" &&
+                         string.IsNullOrWhiteSpace(state.FinalAnswer)))
+                    {
+                        return Results.Accepted(
+                            $"/api/workflows/{id}/agents/executions/{state.ExecutionId}",
+                            new
+                            {
+                                state.ExecutionId,
+                                state.Status,
+                                state.NextStage,
+                                state.DeadlineAt
+                            });
+                    }
+
+                    var memory = await store.ReadMemoryAsync(
+                        state.ExecutionId, caller, cancellationToken);
+
+                    var succeeded = state.Status == "Completed" &&
+                        !string.IsNullOrWhiteSpace(state.FinalAnswer);
+
+                    return Results.Ok(new MultiAgentResult(
+                        succeeded,
+                        succeeded ? state.FinalAnswer! : "Execution rejected.",
+                        memory.Select(x => new AgentStageResult(
+                            x.AgentName, x.Succeeded)).ToArray()));
                 }
                 catch (UnauthorizedAccessException)
                 {
@@ -65,6 +90,63 @@ public static class MultiAgentEndpoints
                 {
                     return Results.StatusCode(503);
                 }
+            });
+
+        app.MapGet(
+            "/api/workflows/{id:guid}/agents/executions/{executionId:guid}",
+            async (
+                Guid id,
+                Guid executionId,
+                DevelopmentRequestIdentity identity,
+                IDurableAgentExecutionStore store,
+                CancellationToken cancellationToken) =>
+            {
+                var caller = new WorkflowAccess(
+                    identity.TenantId, identity.RequesterId);
+
+                var state = await store.GetAsync(
+                    executionId, caller, cancellationToken);
+
+                if (state is null || state.WorkflowId != id)
+                    return Results.NotFound();
+
+                // Status inspection must not disclose cached answers.
+                return Results.Ok(new
+                {
+                    state.ExecutionId,
+                    state.WorkflowId,
+                    state.Status,
+                    state.NextStage,
+                    state.AttemptCount,
+                    state.DeadlineAt,
+                    state.FailureCode
+                });
+            });
+
+        app.MapPost(
+            "/api/workflows/{id:guid}/agents/executions/{executionId:guid}/cancel",
+            async (
+                Guid id,
+                Guid executionId,
+                DevelopmentRequestIdentity identity,
+                IDurableAgentExecutionStore store,
+                CancellationToken cancellationToken) =>
+            {
+                var caller = new WorkflowAccess(
+                    identity.TenantId, identity.RequesterId);
+
+                var state = await store.GetAsync(
+                    executionId, caller, cancellationToken);
+
+                if (state is null || state.WorkflowId != id)
+                    return Results.NotFound();
+
+                var cancelled = await store.CancelAsync(
+                    executionId, caller, cancellationToken);
+
+                return cancelled
+                    ? Results.NoContent()
+                    : Results.Conflict();
             });
     }
 }
