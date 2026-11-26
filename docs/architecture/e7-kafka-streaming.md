@@ -412,3 +412,36 @@ The identity registry processor must be connected through an event-ID
 repartition boundary and followed by aggregate-key repartitioning.
 The existing production topology remains aggregate-scoped until
 that integration is completed and verified.
+
+### E7.3.3 - Production global identity integration: CLOSED
+
+- Global event identity validation integrated into production topology.
+- Kafka-managed event-ID repartition boundary.
+- Persistent global identity registry with changelog support.
+- Kafka-managed aggregate-key repartition boundary.
+- Three partitions per internal repartition topic.
+- Cross-tenant, cross-aggregate and cross-family conflict rejection.
+- Invalid source records cannot reserve event identities.
+- Identical deliveries remain eligible for sequence-gap recovery.
+- Accepted duplicate deliveries do not generate repeated projections.
+- Original source coordinates preserved in redacted failure records.
+- Seven additional production topology acceptance tests.
+- Full Java regression: 104 passed.
+- Failures, errors and skips: zero.
+- Cloud expenditure: EUR 0.
+
+Identity registration and aggregate acceptance occur in separate
+Kafka Streams subtopologies. Each processing transaction is governed
+by exactly-once-v2 configuration.
+
+Global identity registration precedes aggregate lifecycle acceptance.
+Identical retries remain permitted; conflicting identity reuse is rejected.
+
+The topology uses a new internal repartition layout. Deployment against
+previously populated application state requires an explicit migration
+or a new application ID with complete source replay.
+
+Live multi-partition processing, transactional interruption and
+changelog restoration remain mandatory E7.3.7 acceptance.
+
+E7.3.3 implementation and topology acceptance: CLOSED.

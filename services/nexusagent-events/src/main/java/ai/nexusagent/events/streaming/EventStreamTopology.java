@@ -16,6 +16,13 @@ import java.util.UUID;
 
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.Topology;
+import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.kstream.Repartitioned;
+import org.apache.kafka.streams.kstream.Named;
+import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.state.Stores;
 import org.apache.kafka.streams.processor.api.Processor;
 import org.apache.kafka.streams.processor.api.ProcessorContext;
 import org.apache.kafka.streams.processor.api.ProcessorSupplier;
@@ -31,28 +38,232 @@ public final class EventStreamTopology {
 
     public static Topology build() {
         var serde = Serdes.String();
+        var builder = new StreamsBuilder();
 
-        ProcessorSupplier<String, String, String, String> supplier =
-                EventProcessor::new;
+        for (String name : new String[]{
+                HISTORY, IDENTITIES, LATEST,
+                GlobalIdentityProcessor.STORE}) {
 
-        var topology = new Topology()
-                .addSource("documents",
-                        serde.deserializer(), serde.deserializer(),
-                        StreamSettings.DOCUMENTS)
-                .addSource("workflows",
-                        serde.deserializer(), serde.deserializer(),
-                        StreamSettings.WORKFLOWS)
-                .addProcessor("validate-and-project", supplier,
-                        "documents", "workflows")
-                .addSink("analytics", StreamSettings.ANALYTICS,
-                        serde.serializer(), serde.serializer(),
-                        "validate-and-project")
-                .addSink("dead-letter", StreamSettings.DEAD_LETTERS,
-                        serde.serializer(), serde.serializer(),
-                        "validate-and-project");
+            builder.addStateStore(
+                    Stores.keyValueStoreBuilder(
+                            Stores.persistentKeyValueStore(name),
+                            serde, serde));
+        }
 
-        return StreamStateStores.register(topology,
-                "validate-and-project", HISTORY, IDENTITIES, LATEST);
+        KStream<String, String> documents = builder.stream(
+                StreamSettings.DOCUMENTS,
+                Consumed.with(serde, serde));
+
+        KStream<String, String> workflows = builder.stream(
+                StreamSettings.WORKFLOWS,
+                Consumed.with(serde, serde));
+
+        var validated = documents.merge(workflows)
+                .process(
+                        ValidationProcessor::new,
+                        Named.as("validate-source-events"));
+
+        validated.filter((key, value) -> key.startsWith("failure:"))
+                .selectKey((key, value) -> key.substring(8))
+                .to(StreamSettings.DEAD_LETTERS,
+                        Produced.with(serde, serde));
+
+        var byIdentity = validated
+                .filter((key, value) -> !key.startsWith("failure:"))
+                .repartition(
+                        Repartitioned.<String, String>as("event-identity-v1")
+                                .withKeySerde(serde)
+                                .withValueSerde(serde)
+                                .withNumberOfPartitions(3));
+
+        var registered = byIdentity.process(
+                RegistryAdapter::new,
+                Named.as("global-identity-registry"),
+                GlobalIdentityProcessor.STORE);
+
+        registered.filter((key, value) -> key.startsWith("failure:"))
+                .selectKey((key, value) -> key.substring(8))
+                .to(StreamSettings.DEAD_LETTERS,
+                        Produced.with(serde, serde));
+
+        var byAggregate = registered
+                .filter((key, value) -> !key.startsWith("failure:"))
+                .repartition(
+                        Repartitioned.<String, String>as("aggregate-order-v1")
+                                .withKeySerde(serde)
+                                .withValueSerde(serde)
+                                .withNumberOfPartitions(3));
+
+        var projected = byAggregate.process(
+                EventProcessor::new,
+                Named.as("validate-and-project"),
+                HISTORY, IDENTITIES, LATEST);
+
+        projected.filter((key, value) -> key.startsWith("failure:"))
+                .selectKey((key, value) -> key.substring(8))
+                .to(StreamSettings.DEAD_LETTERS,
+                        Produced.with(serde, serde));
+
+        projected.filter((key, value) -> !key.startsWith("failure:"))
+                .to(StreamSettings.ANALYTICS,
+                        Produced.with(serde, serde));
+
+        return builder.build();
+    }
+
+    private static final class ValidationProcessor
+            implements Processor<String, String, String, String> {
+
+        private final EventProcessor decoder = new EventProcessor();
+        private final ObjectMapper json = new ObjectMapper();
+
+        private ProcessorContext<String, String> context;
+
+        @Override
+        public void init(ProcessorContext<String, String> context) {
+            this.context = context;
+        }
+
+        @Override
+        public void process(Record<String, String> record) {
+            var metadata = context.recordMetadata().orElseThrow();
+
+            Event event;
+
+            try {
+                event = decoder.decode(metadata.topic(), record.value());
+
+                StreamIdentity.requireMatchingKey(
+                        record.key(), event.tenant(), event.aggregate());
+
+            } catch (Rejected ex) {
+                failure(record, ex.getMessage());
+                return;
+            } catch (Exception ex) {
+                failure(record, "INVALID_CONTRACT_OR_KEY");
+                return;
+            }
+
+            ObjectNode envelope = json.createObjectNode();
+
+            envelope.put("eventId", event.eventId().toString());
+            envelope.put("family", event.family());
+            envelope.put("aggregateKey", record.key());
+            envelope.put("payload", event.canonical());
+            envelope.put("sourceTopic", metadata.topic());
+            envelope.put("sourcePartition", metadata.partition());
+            envelope.put("sourceOffset", metadata.offset());
+
+            context.forward(new Record<>(
+                    event.eventId().toString(),
+                    envelope.toString(),
+                    record.timestamp()));
+        }
+
+        private void failure(
+                Record<String, String> record, String reason) {
+
+            var metadata = context.recordMetadata().orElseThrow();
+
+            ObjectNode failure = json.createObjectNode();
+            failure.put("schemaVersion", 1);
+            failure.put("reason", reason);
+            failure.put("sourceTopic", metadata.topic());
+            failure.put("sourcePartition", metadata.partition());
+            failure.put("sourceOffset", metadata.offset());
+
+            context.forward(new Record<>(
+                    "failure:" + metadata.topic() + ":"
+                            + metadata.partition() + ":" + metadata.offset(),
+                    failure.toString(),
+                    record.timestamp()));
+        }
+    }
+
+    private static final class RegistryAdapter
+            implements Processor<String, String, String, String> {
+
+        private final ObjectMapper json = new ObjectMapper();
+
+        private ProcessorContext<String, String> context;
+        private KeyValueStore<String, String> registry;
+
+        @Override
+        public void init(ProcessorContext<String, String> context) {
+            this.context = context;
+            registry = context.getStateStore(GlobalIdentityProcessor.STORE);
+        }
+
+        @Override
+        public void process(Record<String, String> record) {
+            JsonNode envelope = readEnvelope(record.value());
+
+            String eventId = envelope.path("eventId").asText();
+            String family = envelope.path("family").asText();
+            String aggregateKey = envelope.path("aggregateKey").asText();
+            String payload = envelope.path("payload").asText();
+
+            String expectedKey = GlobalEventIdentity.registryKey(
+                    UUID.fromString(eventId));
+
+            if (!expectedKey.equals(record.key())) {
+                throw new IllegalStateException(
+                        "Identity repartition invariant violated");
+            }
+
+            String fingerprint = GlobalEventIdentity.fingerprint(
+                    family, aggregateKey, payload);
+
+            var decision = GlobalEventIdentity.classify(
+                    registry.get(expectedKey), fingerprint);
+
+            if (decision == GlobalEventIdentity.Decision.CONFLICT) {
+                ObjectNode failure = json.createObjectNode();
+
+                failure.put("schemaVersion", 1);
+                failure.put("reason", "GLOBAL_EVENT_ID_CONFLICT");
+                failure.put("sourceTopic",
+                        envelope.path("sourceTopic").asText());
+                failure.put("sourcePartition",
+                        envelope.path("sourcePartition").asInt());
+                failure.put("sourceOffset",
+                        envelope.path("sourceOffset").asLong());
+
+                context.forward(new Record<>(
+                        "failure:" + envelope.path("sourceTopic").asText()
+                                + ":" + envelope.path("sourcePartition").asInt()
+                                + ":" + envelope.path("sourceOffset").asLong(),
+                        failure.toString(),
+                        record.timestamp()));
+
+                return;
+            }
+
+            if (decision == GlobalEventIdentity.Decision.NEW) {
+                registry.put(expectedKey, fingerprint);
+            }
+
+            context.forward(new Record<>(
+                    family + ":" + aggregateKey,
+                    record.value(),
+                    record.timestamp()));
+        }
+    }
+
+    private static JsonNode readEnvelope(String value) {
+        try {
+            JsonNode envelope = new ObjectMapper().readTree(value);
+
+            if (envelope == null || !envelope.isObject()) {
+                throw new IllegalStateException("Invalid envelope");
+            }
+
+            return envelope;
+
+        } catch (Exception ex) {
+            throw new IllegalStateException(
+                    "Invalid internal event envelope", ex);
+        }
     }
 
     private record Event(
@@ -216,46 +427,53 @@ public final class EventStreamTopology {
                 Record<String, String> record,
                 String reason) {
 
-            var metadata = context.recordMetadata().orElseThrow();
+            JsonNode envelope = readEnvelope(record.value());
 
             ObjectNode failure = json.createObjectNode();
             failure.put("schemaVersion", 1);
             failure.put("reason", reason);
-            failure.put("sourceTopic", metadata.topic());
-            failure.put("sourcePartition", metadata.partition());
-            failure.put("sourceOffset", metadata.offset());
+            failure.put("sourceTopic",
+                    envelope.path("sourceTopic").asText());
+            failure.put("sourcePartition",
+                    envelope.path("sourcePartition").asInt());
+            failure.put("sourceOffset",
+                    envelope.path("sourceOffset").asLong());
 
-            String failureKey = metadata.topic() + ":"
-                    + metadata.partition() + ":" + metadata.offset();
+            String failureKey = "failure:"
+                    + envelope.path("sourceTopic").asText() + ":"
+                    + envelope.path("sourcePartition").asInt() + ":"
+                    + envelope.path("sourceOffset").asLong();
 
-            context.forward(
-                    new Record<>(failureKey,
-                            failure.toString(), record.timestamp()),
-                    "dead-letter");
+            context.forward(new Record<>(
+                    failureKey, failure.toString(), record.timestamp()));
         }
 
         @Override
         public void process(Record<String, String> record) {
+            JsonNode envelope = readEnvelope(record.value());
             Event event;
 
             try {
-                String topic = context.recordMetadata()
-                        .orElseThrow().topic();
-
-                event = decode(topic, record.value());
+                event = decode(
+                        envelope.path("sourceTopic").asText(),
+                        envelope.path("payload").asText());
 
                 StreamIdentity.requireMatchingKey(
-                        record.key(), event.tenant(), event.aggregate());
+                        envelope.path("aggregateKey").asText(),
+                        event.tenant(), event.aggregate());
 
-            } catch (Rejected ex) {
-                reject(record, ex.getMessage());
-                return;
             } catch (Exception ex) {
-                reject(record, "INVALID_CONTRACT_OR_KEY");
-                return;
+                throw new IllegalStateException(
+                        "Validated envelope invariant violated", ex);
             }
 
-            String aggregateKey = event.family() + ":" + record.key();
+            String aggregateKey = event.family() + ":"
+                    + envelope.path("aggregateKey").asText();
+
+            if (!aggregateKey.equals(record.key())) {
+                throw new IllegalStateException(
+                        "Aggregate repartition invariant violated");
+            }
 
             String identityKey = aggregateKey + ":" + event.eventId();
 
@@ -331,8 +549,7 @@ public final class EventStreamTopology {
             latest.put(aggregateKey, serialized);
 
             context.forward(
-                    new Record<>(aggregateKey, serialized, record.timestamp()),
-                    "analytics");
+                    new Record<>(aggregateKey, serialized, record.timestamp()));
         }
     }
 }

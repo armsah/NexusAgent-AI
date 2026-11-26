@@ -131,6 +131,8 @@ acceptance requirements remain mandatory in E5 and E15.
 
 - E7.3.3 checkpoint: persistent global identity registry implemented; 97 Java tests passed; production repartition integration pending.
 
+- E7.3.3 CLOSED: production global identity registry, dual repartition boundaries and 104 passing Java tests.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires

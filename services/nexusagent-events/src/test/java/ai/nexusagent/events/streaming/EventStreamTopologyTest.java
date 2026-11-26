@@ -154,7 +154,7 @@ class EventStreamTopologyTest {
         documents.pipeInput(key(tenant),
                 document(id, tenant, 2, "document.updated"));
 
-        reason("EVENT_ID_CONFLICT");
+        reason("GLOBAL_EVENT_ID_CONFLICT");
         assertTrue(analytics.isEmpty());
     }
 
@@ -298,5 +298,144 @@ class EventStreamTopologyTest {
 
         reason("INITIAL_SEQUENCE_REQUIRED");
         assertTrue(analytics.isEmpty());
+    }
+
+    @Test
+    void globalIdentityRejectsCrossTenantConflict() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        documents.pipeInput(key("tenant-a"),
+                document(id, "tenant-a", 1, "document.created"));
+
+        assertEquals("tenant-a",
+                projection().get("tenantId").asText());
+
+        documents.pipeInput(key("tenant-b"),
+                document(id, "tenant-b", 1, "document.created"));
+
+        reason("GLOBAL_EVENT_ID_CONFLICT");
+        assertTrue(analytics.isEmpty());
+
+        documents.pipeInput(key("tenant-b"),
+                document(UUID.randomUUID(), "tenant-b",
+                        1, "document.created"));
+
+        assertEquals("tenant-b",
+                projection().get("tenantId").asText());
+
+        assertTrue(failures.isEmpty());
+    }
+
+    @Test
+    void globalIdentityRejectsCrossAggregateConflict() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        documents.pipeInput(key(tenant),
+                document(id, tenant, 1, "document.created"));
+
+        projection();
+
+        UUID other = UUID.randomUUID();
+
+        String payload = document(id, tenant, 1, "document.created")
+                .replace(aggregate.toString(), other.toString());
+
+        documents.pipeInput(
+                StreamIdentity.aggregateKey(tenant, other),
+                payload);
+
+        reason("GLOBAL_EVENT_ID_CONFLICT");
+        assertTrue(analytics.isEmpty());
+    }
+
+    @Test
+    void globalIdentityRejectsCrossFamilyConflict() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        documents.pipeInput(key(tenant),
+                document(id, tenant, 1, "document.created"));
+
+        projection();
+
+        workflows.pipeInput(key(tenant),
+                workflow(id, 1, "STARTED"));
+
+        reason("GLOBAL_EVENT_ID_CONFLICT");
+        assertTrue(analytics.isEmpty());
+    }
+
+    @Test
+    void malformedRecordCannotReserveGlobalIdentity() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        String valid = document(id, tenant, 1, "document.created");
+
+        documents.pipeInput(key("wrong-tenant"), valid);
+
+        reason("INVALID_CONTRACT_OR_KEY");
+
+        documents.pipeInput(key(tenant), valid);
+
+        assertEquals(1, projection().get("sequence").asInt());
+        assertTrue(failures.isEmpty());
+    }
+
+    @Test
+    void topologyContainsBothRepartitionBoundaries() {
+        String description = EventStreamTopology.build()
+                .describe().toString();
+
+        assertTrue(description.contains(
+                "event-identity-v1-repartition"));
+
+        assertTrue(description.contains(
+                "aggregate-order-v1-repartition"));
+
+        assertTrue(description.contains(
+                GlobalIdentityProcessor.STORE));
+    }
+
+    @Test
+    void identityConflictPreservesOriginalSourceCoordinates()
+            throws Exception {
+
+        UUID id = UUID.randomUUID();
+
+        documents.pipeInput(key(tenant),
+                document(id, tenant, 1, "document.created"));
+
+        projection();
+
+        workflows.pipeInput(key(tenant),
+                workflow(id, 1, "STARTED"));
+
+        JsonNode failure = json.readTree(failures.readValue());
+
+        assertEquals("GLOBAL_EVENT_ID_CONFLICT",
+                failure.path("reason").asText());
+
+        assertEquals(StreamSettings.WORKFLOWS,
+                failure.path("sourceTopic").asText());
+
+        assertTrue(failure.path("sourcePartition").asInt() >= 0);
+        assertTrue(failure.path("sourceOffset").asLong() >= 0);
+        assertFalse(failure.has("payload"));
+        assertFalse(failure.has("tenantId"));
+    }
+
+    @Test
+    void duplicateAfterRepartitionProducesOnlyOneProjection()
+            throws Exception {
+
+        String payload = document(
+                UUID.randomUUID(), tenant, 1, "document.created");
+
+        for (int i = 0; i < 5; i++) {
+            documents.pipeInput(key(tenant), payload);
+        }
+
+        assertEquals(1, projection().get("acceptedEvents").asInt());
+        assertTrue(analytics.isEmpty());
+        assertTrue(failures.isEmpty());
     }
 }
