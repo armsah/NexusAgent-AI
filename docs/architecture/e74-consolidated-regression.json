@@ -1,0 +1,31 @@
+{
+    "schemaVersion":  1,
+    "sourceCommit":  "07cfeaba8f63b90436d3fb90f36a2501672d02c6",
+    "capturedAtUtc":  "2026-11-27T00:00:33.2147178Z",
+    "releaseBuild":  "PASSED",
+    "dotnetPassed":  406,
+    "pythonPassed":  151,
+    "javaPassed":  271,
+    "totalPassed":  828,
+    "finalFailures":  0,
+    "finalErrors":  0,
+    "finalSkipped":  0,
+    "javaVerificationMethod":  "FULL_SUITE_PLUS_TARGETED_CORRECTIVE_RERUN",
+    "javaOriginalFailureCorrected":  true,
+    "checkpointPreparation":  "PASSED",
+    "springRecovery":  "PASSED",
+    "crossLanguageRebuild":  "PASSED",
+    "registeredAcceptanceExportExclusion":  "PASSED",
+    "regressionStatus":  "PASSED",
+    "historicalCompletenessEstablished":  false,
+    "historicalMigrationPerformed":  false,
+    "productionCutoverPerformed":  false,
+    "residualTopicOwnershipVerified":  false,
+    "formalE7Closure":  false,
+    "cloudExpenditureEUR":  0,
+    "logHashes":  {
+                      "dotnet":  "523938B3169AE9BEBA52CF69BE93DC014AE1296D7D076EBF6476FC5FD29655DB",
+                      "python":  "6B97F94DE822C2E1160F6113E2C76EFC50595DDFFB0AE0B1FA53FF989C8235D3",
+                      "releaseBuild":  "E35E62421EDB7963795D5651A37F544C70116B8991069D48879CEF702DFECA74"
+                  }
+}

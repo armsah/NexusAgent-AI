@@ -362,6 +362,23 @@ required before operational cutover.
 - Previously unverified historical snapshots remain preserved.
 - Cloud expenditure: EUR 0.
 
+### E7 consolidated regression results
+
+| Language | Passed | Failed | Skipped |
+| --- | ---: | ---: | ---: |
+| C# | 406 | 0 | 0 |
+| Python | 151 | 0 | 0 |
+| Java | 271 | 0 | 0 |
+| Total | 828 | 0 | 0 |
+
+- Release build passed with zero warnings and errors.
+- Java results combine the full suite and targeted corrective rerun.
+- Spring recovery, checkpoint preparation and cross-language rebuild verified.
+- Registered acceptance identities excluded from operational exports.
+- Historical migration and production cutover not performed.
+- Final historical disposition and delivery closure remain pending.
+- Cloud expenditure: EUR 0.
+
 ## How can I run or inspect the demo?
 
 Multi-agent execution is disabled by default and requires
